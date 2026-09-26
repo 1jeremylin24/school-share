@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:,">
+<title>Jeremy's schoolwork · snapshot</title>
+<style>
+:root{--bg:#f6f7fb;--panel:#fff;--text:#1d2330;--muted:#6b7385;--line:#e4e7ef;--accent:#4f5bd5;
+--high:#d92d3a;--high-bg:#fde8ea;--med:#b76e00;--med-bg:#fff2d6;--low:#2f7d4f;--low-bg:#e3f5ea}
+@media (prefers-color-scheme:dark){:root{--bg:#11141b;--panel:#1a1f2a;--text:#e6e9f0;--muted:#98a0b3;--line:#2a3140;--accent:#8b95ff;
+--high:#ff6b76;--high-bg:#3a1c21;--med:#ffc15a;--med-bg:#3a2d14;--low:#6fd39a;--low-bg:#173024}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;margin:0 0 4px;line-height:1.25}.sub{color:var(--muted);font-size:13px}
+.ro{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:6px;color:var(--muted)}
+.old{background:var(--med-bg);color:var(--med);border-radius:10px;padding:8px 12px;margin-top:12px;font-size:13px}
+.day{margin-top:18px}.day h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 8px;display:flex;gap:8px;align-items:baseline}
+.day h2 .rel{text-transform:none;letter-spacing:0;font-weight:600}.day.past h2 .rel{color:var(--high)}
+.item{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--low);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.item.i-high{border-left-color:var(--high)}.item.i-medium{border-left-color:var(--med)}
+.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ttl{font-weight:650;font-size:15.5px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
+.b-high{background:var(--high-bg);color:var(--high)}.b-medium{background:var(--med-bg);color:var(--med)}.b-low{background:var(--low-bg);color:var(--low)}
+.meta{color:var(--muted);font-size:13px;margin-top:3px}.desc{font-size:14px;margin-top:4px;overflow-wrap:anywhere}
+.msg{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px 20px;text-align:center;margin-top:18px}
+.msg .big{font-size:36px}.msg h2{font-size:18px;margin:8px 0}.msg p{color:var(--muted);margin:6px 0}
+footer{color:var(--muted);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:10px}
+</style></head>
+<body><main class="wrap">
+<header><h1 id="ttl">Jeremy's schoolwork</h1><div class="sub" id="sub"></div></header>
+<div id="out"></div>
+<footer>Read-only snapshot. This page stores no data: everything shown comes from the link itself (the part after <code>#</code>), which your browser never sends to the server.</footer>
+</main>
+<script>
+(function(){
+ var TZ='America/Los_Angeles',LV={H:'High',M:'Medium',L:'Low'},ORD={H:0,M:1,L:2};
+ var out=document.getElementById('out'),ttl=document.getElementById('ttl'),sub=document.getElementById('sub');
+ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ function fmt(d,o){o.timeZone=TZ;try{return new Intl.DateTimeFormat('en-US',o).format(d);}catch(e){delete o.timeZone;return new Intl.DateTimeFormat('en-US',o).format(d);}}
+ function dayKey(d){var p={};new Intl.DateTimeFormat('en-US',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d).forEach(function(x){p[x.type]=x.value;});return p.year+'-'+p.month+'-'+p.day;}
+ function keyDate(k){var a=k.split('-');return new Date(Date.UTC(+a[0],+a[1]-1,+a[2],12));}
+ function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+ function inflate(u){if(typeof DecompressionStream!=='function')return Promise.reject({old:true});
+  var st=new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'));return new Response(st).arrayBuffer().then(function(b){return new Uint8Array(b);});}
+ function decode(h){h=(h||'').replace(/^#/,'').trim();try{h=decodeURIComponent(h);}catch(e){}
+  if(!h)return Promise.reject({empty:true});
+  var m=/^([zj])1\.([A-Za-z0-9_-]+)/.exec(h);if(!m)return Promise.reject({bad:true});
+  var raw;try{raw=b64d(m[2]);}catch(e){return Promise.reject({bad:true});}
+  return (m[1]==='z'?inflate(raw):Promise.resolve(raw)).then(function(b){
+   if(b.length>3e6)throw {bad:true};var o=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(b));
+   if(!o||o.v!==1||!Array.isArray(o.i))throw {bad:true};return o;});}
+ function message(icon,h,p){ttl.textContent="Jeremy's schoolwork";sub.textContent='';document.title="Jeremy's schoolwork · snapshot";
+  out.innerHTML='<div class="msg"><div class="big">'+icon+'</div><h2>'+esc(h)+'</h2>'+p.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';}
+ function parseDue(s){s=String(s||'');if(!s)return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return {key:s,sort:s+'T23:59',time:''};
+  var d=new Date(s);if(isNaN(d))return null;var k=dayKey(d);
+  return {key:k,sort:k+'T'+fmt(d,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),time:fmt(d,{hour:'numeric',minute:'2-digit'}).replace(':00','')};}
+ function render(o){
+  var snap=new Date(o.t),okSnap=!isNaN(snap),snapKey=okSnap?dayKey(snap):null;
+  var when=okSnap?fmt(snap,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})+' PT':'an unknown time';
+  ttl.textContent="Jeremy's schoolwork \u2014 snapshot from "+when;document.title="Jeremy's schoolwork \u00b7 "+when;
+  var items=o.i.filter(Array.isArray).map(function(a){var lv=String(a[4]||'L').charAt(0).toUpperCase();if(!LV[lv])lv='L';
+   return {title:String(a[0]||'Untitled'),cls:String(a[1]||''),type:String(a[2]||''),due:parseDue(a[3]),lv:lv,desc:String(a[5]||'')};});
+  var hi=items.filter(function(x){return x.lv==='H';}).length;
+  sub.innerHTML=esc(items.length+' open item'+(items.length===1?'':'s')+(hi?' \u00b7 '+hi+' high importance':''))+'<span class="ro">read-only</span>';
+  items.sort(function(a,b){var x=a.due?a.due.sort:'~',y=b.due?b.due.sort:'~';return x<y?-1:x>y?1:ORD[a.lv]-ORD[b.lv]||(a.title<b.title?-1:1);});
+  var h='';if(okSnap){var age=Math.floor((Date.now()-snap.getTime())/864e5);
+   if(age>=3)h+='<div class="old">This snapshot is '+age+' days old, so things may have changed since then.</div>';}
+  if(!items.length)h+='<div class="msg"><div class="big">\ud83c\udf89</div><h2>No open items</h2><p>Nothing was left to do when this snapshot was made.</p></div>';
+  var cur=null;
+  items.forEach(function(it){var k=it.due?it.due.key:'none';
+   if(k!==cur){if(cur!==null)h+='</section>';cur=k;var label,rel='',past=false;
+    if(k==='none')label='No due date';
+    else{var kd=keyDate(k),sy=snapKey&&snapKey.slice(0,4)===k.slice(0,4);
+     label=new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'long',month:'short',day:'numeric',year:sy?undefined:'numeric'}).format(kd);
+     if(snapKey){var n=Math.round((kd-keyDate(snapKey))/864e5);past=n<0;
+      rel=n<0?'overdue at snapshot time':n===0?'due the day of the snapshot':n===1?'next day':'';}}
+    h+='<section class="day'+(past?' past':'')+'"><h2>'+esc(label)+(rel?'<span class="rel">'+esc(rel)+'</span>':'')+'</h2>';}
+   var L=LV[it.lv],due=it.due?(new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'short',month:'short',day:'numeric'}).format(keyDate(it.due.key))+(it.due.time?' \u00b7 '+it.due.time+' PT':'')):'No due date';
+   h+='<div class="item i-'+L.toLowerCase()+'"><div class="top"><span class="badge b-'+L.toLowerCase()+'">'+L+'</span><span class="ttl">'+esc(it.title)+'</span></div>'+
+    '<div class="meta">'+esc([it.cls,it.type,due].filter(Boolean).join(' \u00b7 '))+'</div>'+(it.desc?'<div class="desc">'+esc(it.desc)+'</div>':'')+'</div>';});
+  if(cur!==null)h+='</section>';out.innerHTML=h;}
+ function go(){decode(location.hash).then(render,function(e){
+  if(e&&e.empty)message('\ud83d\udd17','No snapshot in this link',['This page shows a read-only snapshot of Jeremy\u2019s schoolwork, but only when opened from a Share link.','Ask Jeremy to send the full link (it\u2019s long and includes a # part).']);
+  else if(e&&e.old)message('\ud83e\udded','Your browser can\u2019t open this link',['Please try a current version of Chrome, Safari, Edge or Firefox.']);
+  else message('\u26a0\ufe0f','This link looks incomplete or damaged',['The snapshot couldn\u2019t be read. It may have been cut off when it was copied.','Ask Jeremy to share it again, and copy the whole link.']);});}
+ window.addEventListener('hashchange',go);go();
+})();
+</script>
+</body></html>
