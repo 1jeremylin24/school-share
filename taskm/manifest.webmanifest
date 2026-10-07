@@ -1,0 +1,31 @@
+{
+  "name": "TaskM",
+  "short_name": "TaskM",
+  "description": "School tasks",
+  "id": "/school-share/taskm/",
+  "start_url": "/school-share/taskm/",
+  "scope": "/school-share/taskm/",
+  "display": "standalone",
+  "theme_color": "#4f5bd5",
+  "background_color": "#f6f7fb",
+  "icons": [
+    {
+      "src": "/school-share/taskm/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/school-share/taskm/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/school-share/taskm/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
