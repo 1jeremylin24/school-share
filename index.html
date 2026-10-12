@@ -1,92 +1,83 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
-<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
-<link rel="icon" href="data:,">
-<title>Jeremy's schoolwork · snapshot</title>
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><link rel="icon" href="data:,"><title>Jeremy’s schoolwork · TaskM</title>
 <style>
-:root{--bg:#f6f7fb;--panel:#fff;--text:#1d2330;--muted:#6b7385;--line:#e4e7ef;--accent:#4f5bd5;
---high:#d92d3a;--high-bg:#fde8ea;--med:#b76e00;--med-bg:#fff2d6;--low:#2f7d4f;--low-bg:#e3f5ea}
-@media (prefers-color-scheme:dark){:root{--bg:#11141b;--panel:#1a1f2a;--text:#e6e9f0;--muted:#98a0b3;--line:#2a3140;--accent:#8b95ff;
---high:#ff6b76;--high-bg:#3a1c21;--med:#ffc15a;--med-bg:#3a2d14;--low:#6fd39a;--low-bg:#173024}}
-*{box-sizing:border-box}
-body{margin:0;font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
-.wrap{max-width:760px;margin:0 auto;padding:20px 16px 40px}
-h1{font-size:22px;margin:0 0 4px;line-height:1.25}.sub{color:var(--muted);font-size:13px}
-.ro{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:6px;color:var(--muted)}
-.old{background:var(--med-bg);color:var(--med);border-radius:10px;padding:8px 12px;margin-top:12px;font-size:13px}
-.day{margin-top:18px}.day h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 8px;display:flex;gap:8px;align-items:baseline}
-.day h2 .rel{text-transform:none;letter-spacing:0;font-weight:600}.day.past h2 .rel{color:var(--high)}
-.item{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--low);border-radius:10px;padding:10px 12px;margin-bottom:8px}
-.item.i-high{border-left-color:var(--high)}.item.i-medium{border-left-color:var(--med)}
-.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ttl{font-weight:650;font-size:15.5px}
-.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px}
-.b-high{background:var(--high-bg);color:var(--high)}.b-medium{background:var(--med-bg);color:var(--med)}.b-low{background:var(--low-bg);color:var(--low)}
-.meta{color:var(--muted);font-size:13px;margin-top:3px}.desc{font-size:14px;margin-top:4px;overflow-wrap:anywhere}
-.msg{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:28px 20px;text-align:center;margin-top:18px}
-.msg .big{font-size:36px}.msg h2{font-size:18px;margin:8px 0}.msg p{color:var(--muted);margin:6px 0}
-footer{color:var(--muted);font-size:12px;margin-top:26px;border-top:1px solid var(--line);padding-top:10px}
-</style></head>
-<body><main class="wrap">
-<header><h1 id="ttl">Jeremy's schoolwork</h1><div class="sub" id="sub"></div></header>
-<div id="out"></div>
-<footer>Read-only snapshot. This page stores no data: everything shown comes from the link itself (the part after <code>#</code>), which your browser never sends to the server.</footer>
-</main>
+:root{color-scheme:light dark;--bg:#f5f6fa;--panel:#fff;--text:#202637;--muted:#657087;--line:#e2e6ef;--accent:#5854c9;--tint:#eeedfc;--red:#b94454;--amber:#986217;--green:#277656}
+@media(prefers-color-scheme:dark){:root{--bg:#10131c;--panel:#181d29;--text:#ecedf5;--muted:#a1abc0;--line:#2c3448;--accent:#adaaff;--tint:#292746;--red:#f59aa9;--amber:#eac28a;--green:#86d3b1}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:920px;margin:auto;padding:40px 28px 32px}header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.brand{font-size:11px;font-weight:700;letter-spacing:1.6px;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
+h1{font-size:32px;line-height:1.2;letter-spacing:-1px;margin:0 0 10px}h2{font-size:16px;letter-spacing:-.2px;margin:0}h3{font-size:15px;font-weight:600;margin:0;overflow-wrap:anywhere}
+.muted,.sub{color:var(--muted)}.sub{font-size:12px}.notice{font-size:12px;padding:12px 14px;background:var(--tint);border-radius:9px;margin-top:16px;overflow-wrap:anywhere}.old{color:var(--amber);background:color-mix(in srgb,var(--amber) 10%,var(--panel))}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;border-block:1px solid var(--line);padding:22px 0;margin:24px 0}.stats b{display:block;font-size:30px;font-weight:650;line-height:1.3;letter-spacing:-1px;font-variant-numeric:tabular-nums}.stats span{color:var(--muted);font-size:12px}.stats .late{color:var(--red)}
+.controls{display:flex;align-items:flex-end;flex-wrap:wrap;gap:10px;margin:22px 0 12px}.controls label{font-size:11px;color:var(--muted);display:grid;gap:5px}.controls .search{flex:1 1 200px}
+input,select,button{font:inherit;color:var(--text)}input,select{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 10px;min-width:0;max-width:100%;font-size:13px}button{cursor:pointer;border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:var(--panel);font-size:12px;white-space:nowrap}button:hover{border-color:var(--accent)}:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.results{font-size:12px;color:var(--muted);margin:10px 0}.group{margin-top:26px}.group-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;gap:12px}.group-head span{font-size:12px;color:var(--muted)}
+.items{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0 18px}.item{padding:17px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.badge{font-size:10px;font-weight:700;border-radius:5px;padding:3px 7px;background:var(--tint);color:var(--accent);white-space:nowrap}.badge.H{background:color-mix(in srgb,var(--red) 10%,var(--panel));color:var(--red)}.badge.M{background:color-mix(in srgb,var(--amber) 10%,var(--panel));color:var(--amber)}.badge.L{background:color-mix(in srgb,var(--green) 10%,var(--panel));color:var(--green)}
+.meta{display:flex;gap:7px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}.meta .late{color:var(--red)}.desc{font-size:13px;color:var(--muted);margin:10px 0 0;overflow-wrap:anywhere;white-space:pre-wrap}.optional{color:var(--accent)}
+.empty{padding:35px 22px;text-align:center;border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-top:24px}.empty p{color:var(--muted);max-width:520px;margin:10px auto 0}.empty h2{font-size:20px}
+footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}[hidden]{display:none!important}
+@media(max-width:600px){main{padding:24px 16px}header{flex-wrap:wrap}h1{font-size:28px}.stats{gap:12px;grid-template-columns:repeat(2,1fr)}.stats b{font-size:27px}.controls label{flex:1 1 130px}.controls .search{flex-basis:100%}.items{padding:0 13px}input,select{font-size:16px}.top{gap:8px}button{min-height:40px}}
+@media print{body{background:#fff;color:#111}main{max-width:none;padding:0}.controls,.print,.notice{display:none}.stats{margin:16px 0}.items{border-color:#ccc;background:#fff}.item{break-inside:avoid}.sub,.meta,.desc,footer{color:#444}.badge{color:#111}.group{break-inside:auto}}
+</style></head><body><main><header><div><div class="brand">TaskM · shared plan</div><h1>Jeremy’s schoolwork</h1><div class="sub" id="captured">Read-only snapshot</div></div><button class="print" id="print" hidden>Print / Save PDF</button></header><div id="notice" class="notice" hidden></div><section class="stats" id="stats" aria-label="Snapshot summary" hidden></section><div class="controls" id="controls" hidden><label class="search">Search<input id="search" type="search" placeholder="Find a task or class…"></label><label>Class<select id="class"><option value="">All classes</option></select></label><label>Type<select id="type"><option value="">All types</option></select></label><label>Group<select id="group"><option value="date">By deadline</option><option value="class">By class</option><option value="priority">By importance</option></select></label><button id="clear">Clear filters</button></div><div id="results" class="results" role="status" aria-live="polite"></div><div id="out"><div class="empty"><h2>Opening snapshot…</h2></div></div><footer>Read-only snapshot. Tasks come from the part of the link after <code>#</code>, which is not sent to the server. No analytics, accounts or saved reader data. Private notes and emails are not included by TaskM. Anyone who has the complete link can read it.</footer></main>
+<script>
+/* TaskM snapshot codec: no persistence or network access. */
+(function(root){
+'use strict';
+const TZ='America/Los_Angeles',MAX=1000000,LIMIT=2000;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function clean(value,description=false){let s=String(value??'').replace(/\b(?:Mrs|Mr|Ms|Mx|Dr|Prof)(?:\.\s*|\s+)[A-Z][A-Za-z'\u2019-]*(?:\s+[A-Z][a-z][A-Za-z'\u2019-]*)?/g,'staff').replace(/\bper\s+[A-Z][a-z]+\s+[A-Z][a-z]+(?:['\u2019]s)?\b/g,'per staff');
+if(description)s=s.replace(/\b(?:Notes?|NB|N\.B\.|PS|P\.S\.)\s*[:\u2013\u2014-]\s*[^.!?\n]*[.!?]?/gi,'');
+return s.replace(/[a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/gi,'').replace(/\b(?:https?:\/\/|www\.)[^\s<>"'\])]+/gi,'').replace(/\b(?:[a-z0-9-]+\.)+(?:com|net|org|edu|gov|us|io|me|ly|co|app|dev|info)\b(?:\/[^\s<>"'\])]*)?/gi,'').replace(/\((?:see|at|via|here)?:?\s*\)|\[\s*\]/gi,'').replace(/\s+([.,;:!?])/g,'$1').replace(/\s{2,}/g,' ').trim();}
+function fmt(d,options){return new Intl.DateTimeFormat('en-US',{timeZone:TZ,...options}).format(d)}
+function dayKey(d){const p={};new Intl.DateTimeFormat('en-US',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d).forEach(x=>p[x.type]=x.value);return `${p.year}-${p.month}-${p.day}`}
+function validKey(s){if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const d=new Date(s+'T12:00:00Z');return !isNaN(d)&&d.toISOString().slice(0,10)===s}
+function diff(a,b){return Math.round((Date.parse(a+'T12:00:00Z')-Date.parse(b+'T12:00:00Z'))/864e5)}
+function due(value,hasTime){if(!value)return null;const s=String(value);if(validKey(s))return {key:s,sort:s+'T23:59',time:''};const d=new Date(s);if(isNaN(d))return null;const k=dayKey(d);return {key:k,sort:k+'T'+fmt(d,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),time:hasTime===false?'':fmt(d,{hour:'numeric',minute:'2-digit'})+' PT'};}
+function snapshot(items,isChecked,options={},now=new Date()){
+const selected=items.filter(t=>t&&t.status==='open'&&!t.past&&!isChecked(t.id)&&(options.optional!==false||!t.optional)&&(!options.cls||t.category===options.cls));
+if(selected.length>LIMIT)throw new Error('Too many tasks in this snapshot. Choose a class to share.');
+return {v:2,t:now.toISOString(),i:selected.map(t=>[clean(t.title),clean(t.category),String(t.type||'other'),String(t.due||''),String(t.importance||'Low')[0].toUpperCase(),options.descriptions===false?'':clean(t.description,true),String(t.due_sort||''),!!t.optional,!!t.due_has_time])};
+}
+function normalize(o){if(!o||![1,2].includes(o.v)||!Array.isArray(o.i)||o.i.length>LIMIT)throw new Error('Unsupported snapshot');
+const captured=new Date(o.t);if(isNaN(captured))throw new Error('Invalid snapshot date');
+const items=o.i.map(a=>{if(!Array.isArray(a)||a.length<5||a.slice(0,6).some(x=>x!=null&&typeof x!=='string')||a.some(x=>typeof x==='string'&&x.length>20000))throw new Error('Invalid task');
+const lv=String(a[4]||'L').slice(0,1).toUpperCase(),optional=o.v===2&&a[7]===true,d=due(o.v===2?(a[6]||a[3]):a[3],o.v===2?a[8]:undefined);
+return {title:a[0]||'Untitled',cls:a[1]||'Uncategorized',type:a[2]||'other',due:d,lv:['H','M','L'].includes(lv)?lv:'L',desc:a[5]||'',optional};});
+return {captured,key:dayKey(captured),items};}
+function stats(model){return {tasks:model.items.length,classes:new Set(model.items.map(t=>t.cls)).size,week:model.items.filter(t=>t.due&&diff(t.due.key,model.key)>=0&&diff(t.due.key,model.key)<7).length,overdue:model.items.filter(t=>overdue(t,model.key)).length};}
+function overdue(t,key){return t.due&&t.due.key<key&&!t.optional&&!['event','other'].includes(t.type.toLowerCase());}
+function bucket(t,key){if(!t.due)return 'No date yet';const d=diff(t.due.key,key);return d<0?(overdue(t,key)?'Overdue':'Earlier dates'):d===0?'Due that day':d===1?'Next day':d<7?'Next 7 days':d<14?'Following week':'Later';}
+function dueLabel(t){return !t.due?'No date yet':new Intl.DateTimeFormat('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'}).format(new Date(t.due.key+'T12:00:00Z'))+(t.due.time?' · '+t.due.time:'');}
+function b64(bytes){let s='';for(let i=0;i<bytes.length;i+=32768)s+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+async function encode(o){const bytes=new TextEncoder().encode(JSON.stringify(o));if(bytes.length>MAX)throw new Error('Snapshot is too large. Try excluding descriptions.');let result='j'+o.v+'.'+b64(bytes);if(typeof CompressionStream==='function'){try{const stream=new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));const compressed=new Uint8Array(await new Response(stream).arrayBuffer());const z='z'+o.v+'.'+b64(compressed);if(z.length<result.length)result=z;}catch(_){}}return result;}
+async function decode(hash){let s=String(hash||'').replace(/^#/,'').trim();if(!s)throw new Error('empty');if(s.length>MAX*2)throw new Error('Snapshot is too large');try{s=decodeURIComponent(s)}catch(_){throw new Error('Invalid link')}
+const m=/^([jz])([12])\.([A-Za-z0-9_-]+)$/.exec(s);if(!m)throw new Error('Invalid or unsupported link');
+let raw;try{raw=Uint8Array.from(atob(m[3].replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))}catch(_){throw new Error('Invalid link')}
+if(m[1]==='z'){if(typeof DecompressionStream!=='function')throw new Error('browser');let stream;try{stream=new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))}catch(_){throw new Error('browser')}
+const reader=stream.getReader(),chunks=[];let size=0;try{while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>MAX){await reader.cancel();throw new Error('Snapshot is too large')}chunks.push(part.value)}}finally{reader.releaseLock()}
+raw=new Uint8Array(size);let pos=0;chunks.forEach(c=>{raw.set(c,pos);pos+=c.length});}
+if(raw.length>MAX)throw new Error('Snapshot is too large');const o=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(raw));if(o.v!==+m[2])throw new Error('Version mismatch');normalize(o);return o;}
+root.TaskMShare={esc,clean,fmt,dayKey,diff,due,snapshot,normalize,stats,overdue,bucket,dueLabel,encode,decode};
+})(typeof window==='undefined'?globalThis:window);
+
+</script>
 <script>
 (function(){
- var TZ='America/Los_Angeles',LV={H:'High',M:'Medium',L:'Low'},ORD={H:0,M:1,L:2};
- var out=document.getElementById('out'),ttl=document.getElementById('ttl'),sub=document.getElementById('sub');
- function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
- function fmt(d,o){o.timeZone=TZ;try{return new Intl.DateTimeFormat('en-US',o).format(d);}catch(e){delete o.timeZone;return new Intl.DateTimeFormat('en-US',o).format(d);}}
- function dayKey(d){var p={};new Intl.DateTimeFormat('en-US',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d).forEach(function(x){p[x.type]=x.value;});return p.year+'-'+p.month+'-'+p.day;}
- function keyDate(k){var a=k.split('-');return new Date(Date.UTC(+a[0],+a[1]-1,+a[2],12));}
- function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
- function inflate(u){if(typeof DecompressionStream!=='function')return Promise.reject({old:true});
-  var st=new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'));return new Response(st).arrayBuffer().then(function(b){return new Uint8Array(b);});}
- function decode(h){h=(h||'').replace(/^#/,'').trim();try{h=decodeURIComponent(h);}catch(e){}
-  if(!h)return Promise.reject({empty:true});
-  var m=/^([zj])1\.([A-Za-z0-9_-]+)/.exec(h);if(!m)return Promise.reject({bad:true});
-  var raw;try{raw=b64d(m[2]);}catch(e){return Promise.reject({bad:true});}
-  return (m[1]==='z'?inflate(raw):Promise.resolve(raw)).then(function(b){
-   if(b.length>3e6)throw {bad:true};var o=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(b));
-   if(!o||o.v!==1||!Array.isArray(o.i))throw {bad:true};return o;});}
- function message(icon,h,p){ttl.textContent="Jeremy's schoolwork";sub.textContent='';document.title="Jeremy's schoolwork · snapshot";
-  out.innerHTML='<div class="msg"><div class="big">'+icon+'</div><h2>'+esc(h)+'</h2>'+p.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';}
- function parseDue(s){s=String(s||'');if(!s)return null;
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return {key:s,sort:s+'T23:59',time:''};
-  var d=new Date(s);if(isNaN(d))return null;var k=dayKey(d);
-  return {key:k,sort:k+'T'+fmt(d,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),time:fmt(d,{hour:'numeric',minute:'2-digit'}).replace(':00','')};}
- function render(o){
-  var snap=new Date(o.t),okSnap=!isNaN(snap),snapKey=okSnap?dayKey(snap):null;
-  var when=okSnap?fmt(snap,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})+' PT':'an unknown time';
-  ttl.textContent="Jeremy's schoolwork \u2014 snapshot from "+when;document.title="Jeremy's schoolwork \u00b7 "+when;
-  var items=o.i.filter(Array.isArray).map(function(a){var lv=String(a[4]||'L').charAt(0).toUpperCase();if(!LV[lv])lv='L';
-   return {title:String(a[0]||'Untitled'),cls:String(a[1]||''),type:String(a[2]||''),due:parseDue(a[3]),lv:lv,desc:String(a[5]||'')};});
-  var hi=items.filter(function(x){return x.lv==='H';}).length;
-  sub.innerHTML=esc(items.length+' open item'+(items.length===1?'':'s')+(hi?' \u00b7 '+hi+' high importance':''))+'<span class="ro">read-only</span>';
-  items.sort(function(a,b){var x=a.due?a.due.sort:'~',y=b.due?b.due.sort:'~';return x<y?-1:x>y?1:ORD[a.lv]-ORD[b.lv]||(a.title<b.title?-1:1);});
-  var h='';if(okSnap){var age=Math.floor((Date.now()-snap.getTime())/864e5);
-   if(age>=3)h+='<div class="old">This snapshot is '+age+' days old, so things may have changed since then.</div>';}
-  if(!items.length)h+='<div class="msg"><div class="big">\ud83c\udf89</div><h2>No open items</h2><p>Nothing was left to do when this snapshot was made.</p></div>';
-  var cur=null;
-  items.forEach(function(it){var k=it.due?it.due.key:'none';
-   if(k!==cur){if(cur!==null)h+='</section>';cur=k;var label,rel='',past=false;
-    if(k==='none')label='No due date';
-    else{var kd=keyDate(k),sy=snapKey&&snapKey.slice(0,4)===k.slice(0,4);
-     label=new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'long',month:'short',day:'numeric',year:sy?undefined:'numeric'}).format(kd);
-     if(snapKey){var n=Math.round((kd-keyDate(snapKey))/864e5);past=n<0;
-      rel=n<0?'overdue at snapshot time':n===0?'due the day of the snapshot':n===1?'next day':'';}}
-    h+='<section class="day'+(past?' past':'')+'"><h2>'+esc(label)+(rel?'<span class="rel">'+esc(rel)+'</span>':'')+'</h2>';}
-   var L=LV[it.lv],due=it.due?(new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'short',month:'short',day:'numeric'}).format(keyDate(it.due.key))+(it.due.time?' \u00b7 '+it.due.time+' PT':'')):'No due date';
-   h+='<div class="item i-'+L.toLowerCase()+'"><div class="top"><span class="badge b-'+L.toLowerCase()+'">'+L+'</span><span class="ttl">'+esc(it.title)+'</span></div>'+
-    '<div class="meta">'+esc([it.cls,it.type,due].filter(Boolean).join(' \u00b7 '))+'</div>'+(it.desc?'<div class="desc">'+esc(it.desc)+'</div>':'')+'</div>';});
-  if(cur!==null)h+='</section>';out.innerHTML=h;}
- function go(){decode(location.hash).then(render,function(e){
-  if(e&&e.empty)message('\ud83d\udd17','No snapshot in this link',['This page shows a read-only snapshot of Jeremy\u2019s schoolwork, but only when opened from a Share link.','Ask Jeremy to send the full link (it\u2019s long and includes a # part).']);
-  else if(e&&e.old)message('\ud83e\udded','Your browser can\u2019t open this link',['Please try a current version of Chrome, Safari, Edge or Firefox.']);
-  else message('\u26a0\ufe0f','This link looks incomplete or damaged',['The snapshot couldn\u2019t be read. It may have been cut off when it was copied.','Ask Jeremy to share it again, and copy the whole link.']);});}
- window.addEventListener('hashchange',go);go();
+'use strict';const C=window.TaskMShare,$=id=>document.getElementById(id),names={H:'High',M:'Medium',L:'Low'},order={H:0,M:1,L:2};let model=null,request=0;
+function message(title,text){model=null;['stats','controls','print','notice'].forEach(id=>$(id).hidden=true);$('captured').textContent='Read-only snapshot';$('results').textContent='';$('out').innerHTML=`<div class="empty"><h2>${C.esc(title)}</h2><p>${C.esc(text)}</p></div>`;}
+function fill(id,values,label){$(id).replaceChildren();const first=document.createElement('option');first.value='';first.textContent=label;$(id).appendChild(first);[...new Set(values)].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;$(id).appendChild(o)})}
+function render(){if(!model)return;const query=$('search').value.toLowerCase().trim(),cls=$('class').value,type=$('type').value,mode=$('group').value;const items=model.items.filter(t=>(!cls||t.cls===cls)&&(!type||t.type===type)&&(!query||(t.title+' '+t.cls+' '+t.desc).toLowerCase().includes(query))).sort((a,b)=>{const x=a.due?.sort||'~',y=b.due?.sort||'~';return (x<y?-1:x>y?1:0)||order[a.lv]-order[b.lv]||a.title.localeCompare(b.title)});
+const groups=new Map();items.forEach(t=>{const k=mode==='class'?t.cls:mode==='priority'?names[t.lv]:C.bucket(t,model.key);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(t)});
+let entries=[...groups];if(mode==='class')entries.sort((a,b)=>a[0].localeCompare(b[0]));if(mode==='priority')entries.sort((a,b)=>['High','Medium','Low'].indexOf(a[0])-['High','Medium','Low'].indexOf(b[0]));if(mode==='date'){const seq=['Overdue','Earlier dates','Due that day','Next day','Next 7 days','Following week','Later','No date yet'];entries.sort((a,b)=>seq.indexOf(a[0])-seq.indexOf(b[0]));}
+$('results').textContent=items.length+' of '+model.items.length+' tasks'+(query||cls||type?' match your filters':'')+' · deadlines relative to snapshot date';
+$('out').innerHTML=entries.map(([label,list])=>`<section class="group"><div class="group-head"><h2>${C.esc(label)}</h2><span>${list.length} task${list.length===1?'':'s'}</span></div><div class="items">${list.map(t=>`<article class="item"><div class="top"><h3>${C.esc(t.title)}</h3><span class="badge ${t.lv}">${names[t.lv]}</span></div><div class="meta"><span>${C.esc(t.cls)}</span><span>·</span><span>${C.esc(t.type)}</span><span>·</span><span class="${C.overdue(t,model.key)?'late':''}">${C.esc(C.dueLabel(t))}</span>${t.optional?'<span class="optional">· Optional</span>':''}</div>${t.desc?`<p class="desc">${C.esc(t.desc)}</p>`:''}</article>`).join('')}</div></section>`).join('')||`<div class="empty"><h2>${model.items.length?'No matching tasks':'No open tasks'}</h2><p>${model.items.length?'Try a different search or clear the filters.':'There were no open tasks in the selected scope when this snapshot was made.'}</p></div>`;}
+async function go(){const current=++request;message('Opening snapshot…','');try{const data=await C.decode(location.hash);if(current!==request)return;model=C.normalize(data);const s=C.stats(model);$('captured').textContent='Captured '+C.fmt(model.captured,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'})+' PT · Read-only';document.title='Jeremy’s schoolwork · '+model.key;
+$('stats').innerHTML=`<div><b>${s.tasks}</b><span>Open tasks</span></div><div><b>${s.classes}</b><span>Classes</span></div><div><b>${s.week}</b><span>Due in the next 7 days</span></div><div><b class="late">${s.overdue}</b><span>Overdue at capture</span></div>`;
+['stats','controls','print'].forEach(id=>$(id).hidden=false);fill('class',model.items.map(t=>t.cls),'All classes');fill('type',model.items.map(t=>t.type),'All types');$('search').value='';const age=C.diff(C.dayKey(new Date()),model.key);$('notice').hidden=false;$('notice').className='notice'+(age>=3?' old':'');$('notice').textContent=age>=3?`This snapshot is ${age} days old. Tasks and completion may have changed. Ask for a fresh link to see the latest plan.`:'This is a frozen snapshot, not a live task list. Task status and deadline groups reflect the captured date.';render();}
+catch(e){if(current!==request)return;if(e.message==='empty')message('Open a complete share link','This page opens a read-only plan from TaskM. Use Share on the dashboard, then copy the full link—including the part after #.');else if(e.message==='browser')message('This browser cannot decode the snapshot','Try a current browser, or ask the sender for a new link.');else message('This link looks incomplete or damaged','The snapshot could not be read. Copy the complete link, or ask the sender to share a fresh snapshot.');}}
+$('search').addEventListener('input',render);['class','type','group'].forEach(id=>$(id).addEventListener('change',render));$('clear').onclick=()=>{$('search').value='';$('class').value='';$('type').value='';render();$('search').focus()};$('print').onclick=()=>window.print();window.addEventListener('hashchange',go);go();
 })();
+
 </script>
 </body></html>
