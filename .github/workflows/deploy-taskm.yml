@@ -1,0 +1,25 @@
+# Publishes the TaskM web app (app/) to https://taskm-app.web.app whenever main changes.
+# Needs the repo secret FIREBASE_SERVICE_ACCOUNT (Firebase › Project settings › Service accounts › Generate new private key).
+name: Deploy TaskM
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", "firebase.json", ".github/workflows/deploy-taskm.yml"]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip until the Firebase key is added
+        if: env.HAS_KEY != 'true'
+        run: echo "FIREBASE_SERVICE_ACCOUNT secret not set yet; skipping deploy."
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: env.HAS_KEY == 'true'
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: taskm-sync-d6861
+          channelId: live
