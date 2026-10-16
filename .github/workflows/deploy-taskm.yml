@@ -1,4 +1,4 @@
-# Publishes the TaskM web app (app/) to https://taskm-app.web.app whenever main changes.
+# Publishes the TaskM web app (app/) to https://taskm-school.web.app whenever main changes.
 # Needs the repo secret FIREBASE_SERVICE_ACCOUNT (Firebase › Project settings › Service accounts › Generate new private key).
 name: Deploy TaskM
 on:
