@@ -3840,6 +3840,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function dots(){return '<div class="au-steps" aria-label="Step '+(step+1)+' of 3">'+[0,1,2].map(function(i){return '<i class="'+(i<step?'done':i===step?'on':'')+'"></i>';}).join('')+'</div>';}
  function onboard(){var h='<div class="au-top">'+(step?'<button type="button" class="au-back" data-act="back" aria-label="Back">'+ic(I.back,20)+'</button>':'<span></span>')+dots()+'<span></span></div>';
   if(step===0)h+='<h1 class="au-h">Where do you <em>go to school?</em></h1><p class="au-sub">TaskM adds your school’s days off, finals and late starts for you.</p>'+
+   (needName()?'<label class="au-f" for="auObName"><span>First name</span><span class="au-in"><input id="auObName" type="text" autocomplete="given-name" autocapitalize="words" enterkeyhint="next" value="'+esc(draft.name)+'"></span></label>':'')+
    '<label class="au-f" for="auSchool"><span>School</span><span class="au-in">'+ic(I.school,18)+'<input id="auSchool" type="text" autocomplete="organization" placeholder="Start typing your school" value="'+esc(draft.school)+'" role="combobox" aria-expanded="false" aria-controls="auSchoolList" aria-autocomplete="list" enterkeyhint="next"></span></label>'+
    '<ul class="au-list" id="auSchoolList" role="listbox" hidden></ul>'+
    '<fieldset class="au-f au-grades"><legend>Grade</legend><div class="au-seg">'+['9','10','11','12','Other'].map(function(g){return '<button type="button" class="au-chip" data-grade="'+g+'" aria-pressed="'+(draft.grade===g)+'">'+g+'</button>';}).join('')+'</div></fieldset>'+
@@ -3852,6 +3853,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   else h+='<h1 class="au-h">Connect <em>your classes.</em></h1><p class="au-sub">Each one takes a few seconds. Skip any and add it later in Settings.</p><div class="au-conn">'+connectRows()+'</div>'+
    err()+'<button type="button" class="au-btn au-primary" data-act="finish">Finish setup</button>';
   return h;}
+ var askName=null;
+ function needName(){if(askName===null)askName=!(draft.name||(lastUser&&lastUser.name)||(A().profile&&A().profile.name));return askName;}
  function linkState(k){var L=(lastLinks||{});return k==='canvas'||k==='schoology'?(L.ical&&L.ical.platform===k?L.ical:null):L[k]||null;}
  var lastLinks={};
  function connectRows(){var sel=draft.platforms,has=function(h){return sel.filter(function(k){var p=plat(k);return p&&p.how===h;});},out='';
@@ -3910,7 +3913,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   else if(a==='reset'){var em=($('#auEmail')||{}).value||'';if(!/\S+@\S+\.\S+/.test(em)){showErr('Type your email above, then tap “Forgot your password?” again.');return;}
    run(t,function(){return A().resetPassword(em.trim());},function(){showErr('');var e2=$('.au-err');e2.hidden=false;e2.classList.add('ok');e2.textContent='Check your email for a link to reset your password.';});}
   else if(a==='back'){step=Math.max(0,step-1);render();}
-  else if(a==='next'){if(step===0&&!draft.school){showErr('Pick your school, or type its name.');$('#auSchool').focus();return;}
+  else if(a==='next'){var on=$('#auObName');if(step===0&&on){draft.name=on.value.trim();if(!draft.name){showErr('Type your first name so TaskM can greet you.');on.focus();return;}}
+   if(step===0&&!draft.school){showErr('Pick your school, or type its name.');$('#auSchool').focus();return;}
    if(step===1&&!draft.platforms.length){showErr('Pick at least one, even if it’s “I’ll add some myself.”');return;}
    if(step===1){var oi=$('#auOther');draft.other=oi?oi.value.trim():'';if(draft.platforms.indexOf('other')>=0&&!draft.other){showErr('Type where else you get homework, or unselect Other.');oi.focus();return;}}
    step++;render();}
