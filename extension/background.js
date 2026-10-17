@@ -72,17 +72,26 @@ function loaded(tabId) {
   });
 }
 
-// Hand the page to TaskM once it says it's ready to take one
+// Hand the page to TaskM once it says it's ready to take one. A TaskM tab opened before an update
+// doesn't know how to take pages yet, so it's reloaded once if it doesn't answer.
 async function deliver(tabId, clip) {
+  if (await post(tabId, clip, 15)) return true;
+  await chrome.tabs.reload(tabId);
+  await new Promise((r) => setTimeout(r, 500));
+  if ((await chrome.tabs.get(tabId)).status !== 'complete') await loaded(tabId);
+  return post(tabId, clip, 100);
+}
+
+async function post(tabId, clip, maxTries) {
   const [r] = await chrome.scripting.executeScript({
     target: { tabId },
     world: 'MAIN',
-    args: [clip],
-    func: (c) => new Promise((resolve) => {
+    args: [clip, maxTries],
+    func: (c, max) => new Promise((resolve) => {
       let tries = 0;
       const go = () => {
         if (document.documentElement.getAttribute('data-taskm-clip') === '1') { window.postMessage(c, location.origin); resolve(true); }
-        else if (++tries > 100) resolve(false);
+        else if (++tries > max) resolve(false);
         else setTimeout(go, 200);
       };
       go();
