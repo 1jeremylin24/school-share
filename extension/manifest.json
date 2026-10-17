@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TaskM",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Click once on a school page, like a class OneNote, Aeries grades or your school email, and TaskM keeps your homework and grades updated from it.",
   "icons": {
     "16": "icons/icon16.png",
@@ -19,6 +19,17 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://taskm-school.web.app/*"
+      ],
+      "js": [
+        "taskm.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
   "permissions": [
     "activeTab",
     "scripting",

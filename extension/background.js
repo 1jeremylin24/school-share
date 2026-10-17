@@ -37,6 +37,29 @@ async function sendTab(tab) {
   }
 }
 
+// ---- "Link Gmail" / "Link school Outlook" in TaskM's Email view: read the inbox without leaving TaskM
+const MAIL_HOSTS = /^(mail\.google\.com|outlook\.(office|office365|live)\.com)$/i;
+chrome.runtime.onMessage.addListener((m, sender) => {
+  if (!m || m.type !== 'read' || !sender.tab || !(sender.tab.url || '').startsWith(TASKM)) return;
+  let host;
+  try { const u = new URL(m.url); host = u.protocol === 'https:' && u.hostname; } catch (e) { return; }
+  if (!host || !MAIL_HOSTS.test(host)) return;
+  readMail(sender.tab.id, m.url, m.title);
+});
+async function readMail(tabId, url, title) {
+  const tell = (res) => chrome.scripting.executeScript({ target: { tabId }, world: 'MAIN', args: [res],
+    func: (r) => window.postMessage(r, location.origin) }).catch(() => {});
+  let r;
+  try { r = await readInWindow(url); } catch (e) { r = {}; }
+  if (r.signin || !r.text || r.text.length < 40) {
+    return tell({ type: 'taskm-read-result', ok: false, reason: r.signin ? 'signin' : 'empty', url });
+  }
+  const clip = { type: 'taskm-clip', v: 2, url, title: r.title || title || '', text: r.text };
+  await remember(clip);
+  const ok = await post(tabId, clip, 50).catch(() => false);
+  tell({ type: 'taskm-read-result', ok, url });
+}
+
 // ---- saved pages: { [pageKey]: { url, title, hash, at } } in chrome.storage.local
 function pageKey(u) { try { const x = new URL(u); return x.origin + x.pathname + x.search; } catch (e) { return null; } }
 async function getPages() { return (await chrome.storage.local.get('pages')).pages || {}; }
@@ -78,18 +101,24 @@ async function refreshAll() {
   } finally { refreshRunning = false; }
 }
 async function refreshOne(k, p) {
-  const w = await chrome.windows.create({ url: p.url, state: 'minimized', focused: false });
+  const r = await readInWindow(p.url);
+  if (r.signin) return quietUpdate(k, { url: p.url, title: p.title, signin: true });
+  if (r.text && r.text.length >= 40) await quietUpdate(k, { url: p.url, title: r.title || p.title, text: r.text });
+}
+// Open a page in a minimized window, read it, close it: { text, title, signin }
+async function readInWindow(url) {
+  const w = await chrome.windows.create({ url, state: 'minimized', focused: false });
   const tabId = w.tabs[0].id;
   refreshing.add(tabId);
   try {
     await loaded(tabId);
     await wait(6000);
     let t = await chrome.tabs.get(tabId);
-    if (needsSignIn(p.url, t.url)) return quietUpdate(k, { url: p.url, title: p.title, signin: true });
+    if (needsSignIn(url, t.url)) return { signin: true };
     let text = await readTab(tabId);
     if (!text || text.length < 200) { await wait(6000); text = await readTab(tabId); t = await chrome.tabs.get(tabId); }
-    if (needsSignIn(p.url, t.url)) return quietUpdate(k, { url: p.url, title: p.title, signin: true });
-    if (text && text.length >= 40) await quietUpdate(k, { url: p.url, title: t.title || p.title, text });
+    if (needsSignIn(url, t.url)) return { signin: true };
+    return { text, title: t.title || '' };
   } finally {
     refreshing.delete(tabId);
     chrome.windows.remove(w.id).catch(() => {});
@@ -99,7 +128,7 @@ async function refreshOne(k, p) {
 function needsSignIn(saved, now) {
   try {
     const a = new URL(saved), b = new URL(now);
-    return a.hostname !== b.hostname && /login|signin|sso|adfs|auth|accounts\.google/i.test(b.hostname + b.pathname);
+    return a.hostname !== b.hostname && /login|signin|sso|adfs|auth|accounts\.google|workspace\.google/i.test(b.hostname + b.pathname);
   } catch (e) { return false; }
 }
 
@@ -107,15 +136,19 @@ function needsSignIn(saved, now) {
 async function quietUpdate(k, clip) {
   const pages = await getPages();
   if (!pages[k]) return;
+  let same = false;
   if (!clip.signin) {
     const h = await sha(clip.text);
     pages[k].at = Date.now();
-    if (h === pages[k].hash) { await setPages(pages); return; }
+    same = h === pages[k].hash;
     pages[k].hash = h;
   }
   await setPages(pages);
   const msg = { type: 'taskm-clip', v: 2, quiet: true, url: clip.url, title: clip.title, text: clip.text || '', signin: !!clip.signin };
   const { buttonKey } = await chrome.storage.local.get('buttonKey');
+  // An unchanged page is still sent when TaskM can take it directly: it costs no AI read, and TaskM then shows
+  // the page as checked today. Without a key there's nothing new worth holding.
+  if (same && !buttonKey) return;
   if (buttonKey) {
     try {
       const r = await fetch(CLIP_IN, { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -124,6 +157,7 @@ async function quietUpdate(k, clip) {
       if (r.status === 401) await chrome.storage.local.remove('buttonKey');
       if (r.status === 400 || r.status === 429) return;   // TaskM looked at it and said no; holding it won't help
     } catch (e) { /* offline: hold it */ }
+    if (same) return;
   }
   const { pending = {} } = await chrome.storage.local.get('pending');
   pending[k] = msg;
