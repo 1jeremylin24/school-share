@@ -1,7 +1,7 @@
 /* TaskM Chrome button.
    Click it once on a school page (a class OneNote, Aeries grades, Teams, a Gmail or Outlook inbox) and TaskM finds the
    homework and grades on it. After that the page stays updated on its own: whenever the student opens it again, and
-   once a day in the background (a minimized window, using the school sign-in the student already has).
+   once a day in the background (a hidden tab, using the school sign-in the student already has).
    The extension never sees or stores a password. To send updates without a TaskM tab it keeps a limited "button key"
    from TaskM that can only add pages for that student and expires after 90 days. */
 const TASKM = 'https://taskm-school.web.app/';
@@ -142,7 +142,7 @@ async function onTabUpdated(tabId, info, tab) {
   }, 6000);
 }
 
-// Once a day: open each saved page in a minimized window, read it, close it
+// Once a day: open each saved page in a hidden tab, read it, close it
 const refreshing = new Set();
 let refreshRunning = false;
 async function refreshAll() {
@@ -161,10 +161,26 @@ async function refreshOne(k, p) {
   if (r.signin) return quietUpdate(k, { url: p.url, title: p.title, signin: true });
   if (r.text && r.text.length >= 40) await quietUpdate(k, { url: p.url, title: r.title || p.title, text: r.text });
 }
-// Open a page in a minimized window, read it, close it: { text, title, signin }
+// Open a page out of the way, read it, close it: { text, title, signin }.
+// A background tab tucked into a collapsed "TaskM" group, not a new window: on a Mac a new window
+// pulls a full-screen Chrome out of its space and the screen goes black.
+async function openReader(url) {
+  const wins = await chrome.windows.getAll({ windowTypes: ['normal'] });
+  const w = wins.find((x) => x.focused) || wins[0];
+  if (w) {
+    const t = await chrome.tabs.create({ windowId: w.id, url, active: false });
+    try {
+      const g = await chrome.tabs.group({ tabIds: [t.id], createProperties: { windowId: w.id } });
+      await chrome.tabGroups.update(g, { title: 'TaskM', color: 'blue', collapsed: true });
+    } catch (e) { /* groups are only for looks */ }
+    return { tabId: t.id, close: () => chrome.tabs.remove(t.id).catch(() => {}) };
+  }
+  const nw = await chrome.windows.create({ url, state: 'minimized', focused: false });   // Chrome open with no windows
+  return { tabId: nw.tabs[0].id, close: () => chrome.windows.remove(nw.id).catch(() => {}) };
+}
 async function readInWindow(url) {
-  const w = await chrome.windows.create({ url, state: 'minimized', focused: false });
-  const tabId = w.tabs[0].id;
+  const reader = await openReader(url);
+  const tabId = reader.tabId;
   refreshing.add(tabId);
   try {
     await loaded(tabId);
@@ -183,7 +199,7 @@ async function readInWindow(url) {
     return { text, title: t.title || '' };
   } finally {
     refreshing.delete(tabId);
-    chrome.windows.remove(w.id).catch(() => {});
+    reader.close();
   }
 }
 // The school sent the student to a sign-in page instead of the saved one
