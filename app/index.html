@@ -4013,8 +4013,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
  // ---- Microsoft (Teams assignments + Outlook): MSAL popup, then Microsoft Graph
  var msalApp=null,msAcct=null;
+ // Microsoft's sign-in library is served by TaskM itself (vendor/), because Microsoft's own CDN copy is unreliable
+ var msalP=null;function loadMsal(){if(window.msal)return Promise.resolve();if(!msalP)msalP=loadScript('vendor/msal-browser.min.js').catch(function(e){msalP=null;throw e;});return msalP;}
+ if(MID)setTimeout(function(){loadMsal().catch(function(){});},2500);   // ready before the student taps, so the popup isn't blocked
  function ms(scopes,silent){if(!MID)return fail('no-config','Microsoft sign-in isn’t set up in TaskM yet.');
-  return (window.msal?Promise.resolve():loadScript('https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js')).then(function(){
+  return loadMsal().then(function(){
    if(!msalApp){msalApp=new msal.PublicClientApplication({auth:{clientId:MID,authority:'https://login.microsoftonline.com/common',redirectUri:location.origin+'/msal.html'},cache:{cacheLocation:'localStorage'}});}
    return (msalApp.initialize?msalApp.initialize():Promise.resolve());}).then(function(){
    msAcct=msAcct||msalApp.getAllAccounts()[0]||null;
