@@ -135,4 +135,69 @@ function combine(lists, today) {
   return Object.values(by).sort((a, b) => String(a.due_sort).localeCompare(String(b.due_sort)));
 }
 
-module.exports = { TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES };
+// A class grade the AI found (gradebook pages like Aeries) -> the app's grade shape
+function toGrade(g, source) {
+  if (!g || !g.class_name || g.percent === null || g.percent === undefined || g.percent === '') return null;
+  const pct = Number(g.percent);
+  if (!isFinite(pct) || pct < 0 || pct > 150) return null;
+  return { course: String(g.class_name).trim().slice(0, 80), pct: Math.round(pct * 10) / 10, source };
+}
+
+// Newest grade per class across every source ({at, list} per source)
+function combineGrades(bySource) {
+  const by = {};
+  for (const s of Object.values(bySource || {})) for (const g of (s && s.list) || []) {
+    const k = String(g.course).toLowerCase();
+    if (!by[k] || String(s.at) >= by[k].at) by[k] = { at: String(s.at), g };
+  }
+  return Object.values(by).map(x => x.g).sort((a, b) => a.course.localeCompare(b.course));
+}
+
+// Read files out of a .docx / .pptx (they are zip files) without extra packages
+function unzip(buf) {
+  const zlib = require('zlib');
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) return {};
+  const count = buf.readUInt16LE(eocd + 10);
+  let p = buf.readUInt32LE(eocd + 16);
+  const out = {};
+  for (let n = 0; n < count && buf.readUInt32LE(p) === 0x02014b50; n++) {
+    const method = buf.readUInt16LE(p + 10), csize = buf.readUInt32LE(p + 20), size = buf.readUInt32LE(p + 24);
+    const nameLen = buf.readUInt16LE(p + 28), extra = buf.readUInt16LE(p + 30), comment = buf.readUInt16LE(p + 32);
+    const local = buf.readUInt32LE(p + 42);
+    const name = buf.toString('utf8', p + 46, p + 46 + nameLen);
+    p += 46 + nameLen + extra + comment;
+    if (!/\.xml$/.test(name) || size > 20 * 1024 * 1024) continue;
+    const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+    const data = buf.subarray(start, start + csize);
+    try { out[name] = method === 8 ? zlib.inflateRawSync(data).toString('utf8') : method === 0 ? data.toString('utf8') : ''; } catch (e) { /* skip a broken part */ }
+  }
+  return out;
+}
+function officeText(buf) {
+  const files = unzip(buf);
+  const xmlText = x => x.replace(/<w:tab\/>|<a:tab\/>/g, '\t').replace(/<\/w:p>|<\/a:p>|<w:br\/>/g, '\n').replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+  if (files['word/document.xml']) return xmlText(files['word/document.xml']).replace(/\n{3,}/g, '\n\n').trim();
+  const slides = Object.keys(files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => parseInt(a.match(/\d+/)) - parseInt(b.match(/\d+/)));
+  return slides.map((n, i) => `Slide ${i + 1}\n` + xmlText(files[n]).trim()).join('\n\n').trim();
+}
+
+// The id a page sent by the TaskM Chrome button is saved under (same math the app used before, so old pages keep their id)
+function clipKey(u) {
+  let x;
+  try { x = new URL(u); } catch (e) { return null; }
+  const s = x.origin + x.pathname + x.search;
+  let h = 7, g = 11;
+  for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) | 0; g = (g * 131 + s.charCodeAt(i)) | 0; }
+  return 'c' + (h >>> 0).toString(36) + (g >>> 0).toString(36);
+}
+// A short name for a page from its tab title
+function clipLabel(title, url) {
+  let host = '';
+  try { host = new URL(url).hostname.replace(/^www\./, ''); } catch (e) { /* no host */ }
+  return (String(title || '').replace(/\s*[-|–—:]\s*(Microsoft\s+)?(OneNote|Teams|SharePoint|Outlook)(\s+(Online|for the web))?\s*$/i, '').trim() || host).slice(0, 60);
+}
+
+module.exports = { TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, officeText, clipKey, clipLabel };

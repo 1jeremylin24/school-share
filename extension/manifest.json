@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "TaskM",
-  "version": "1.0.1",
-  "description": "Send the school page you're looking at, like a class OneNote or Teams post, to TaskM so it can find your homework.",
+  "version": "1.1.0",
+  "description": "Click once on a school page, like a class OneNote, Aeries grades or your school email, and TaskM keeps your homework and grades updated from it.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -21,7 +21,9 @@
   },
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"
