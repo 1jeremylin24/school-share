@@ -1,0 +1,33 @@
+# Publishes the TaskM server (functions/: the AI homework importer) to Firebase whenever it changes on main.
+# Uses the same FIREBASE_SERVICE_ACCOUNT secret as the website, and the ANTHROPIC_API_KEY secret in Google Cloud Secret Manager.
+name: Deploy TaskM server
+on:
+  push:
+    branches: [main]
+    paths: ["functions/**", ".github/workflows/deploy-functions.yml"]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+        working-directory: functions
+      - run: npm test
+        working-directory: functions
+      - name: Deploy functions
+        if: env.HAS_KEY == 'true'
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@15.34.0 deploy --only functions --project taskm-sync-d6861 --force --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
