@@ -206,7 +206,7 @@ async function addForUser(uid, d) {
   const clip = d.clip && typeof d.clip === 'object' && L.safeUrl(String(d.clip.url || '')) ? { url: L.safeUrl(String(d.clip.url)).slice(0, 2000), title: String(d.clip.title || '') } : null;
   const clipId = clip ? L.clipKey(clip.url) : null;
   if (clip && d.signin) {
-    await db.ref(`users/${uid}/sources/${clipId}`).update({ checked: new Date().toISOString(), error: 'Sign in to this page again, then click the TaskM button on it.' });
+    await db.ref(`users/${uid}/sources/${clipId}`).update({ checked: new Date().toISOString(), error: 'Sign in to this page again in Chrome. TaskM picks it up from there.' });
     return { signin: true };
   }
   const isOneNote = clip && /\.sharepoint\.com$|onenote/i.test(new URL(clip.url).hostname);
