@@ -275,6 +275,11 @@ async function syncWithTaskM(tabId) {
   const keep = new Set(out.pages.map(pageKey));
   const pages = await getPages();
   for (const k of Object.keys(pages)) if (!keep.has(k) && !pending[k] && Date.now() - pages[k].at > 120000) delete pages[k];
+  // pages saved in TaskM that this button doesn't know yet (after a reinstall, or another computer) start updating too
+  for (const u of out.pages) {
+    const k = pageKey(u);
+    if (k && !pages[k] && /^https:/.test(u)) pages[k] = { url: u, title: '', hash: '', at: 0 };
+  }
   save.pages = pages;
   await chrome.storage.local.set(save);
 }

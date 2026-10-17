@@ -218,7 +218,8 @@ function clipLabel(title, url) {
   }
   if (/^outlook\./.test(host)) {
     const who = t.replace(/^(Mail|Inbox)\s*[-–—]\s*/i, '').replace(/\s*[-–—]\s*Outlook.*$/i, '').trim();
-    return (who && !/^(mail|inbox|outlook)$/i.test(who) ? 'Outlook · ' + who : 'Outlook').slice(0, 60);
+    const name = /live\.com$/.test(host) ? 'Outlook.com' : 'School Outlook';
+    return (who && !/^(mail|inbox|outlook)$/i.test(who) ? name + ' · ' + who : name).slice(0, 60);
   }
   return (String(title || '').replace(/\s*[-|–—:]\s*(Microsoft\s+)?(OneNote|Teams|SharePoint|Outlook)(\s+(Online|for the web))?\s*$/i, '').trim() || host).slice(0, 60);
 }
