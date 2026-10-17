@@ -110,7 +110,7 @@ function checkText(text) {
 }
 
 // Read one source (pasted text or a link) into TaskM items
-async function readSource({ text, url, label, hint }, prevHash) {
+async function readSource({ text, url, label, hint, link }, prevHash) {
   const today = L.ymdIn(new Date());
   let got;
   if (url) got = await download(url);
@@ -122,7 +122,7 @@ async function readSource({ text, url, label, hint }, prevHash) {
   if (got.kind === 'ics') tasks = L.icsToTasks(got.body, today);
   else if (got.kind === 'pdf') tasks = await readWithAI({ pdf: got.body, label: source, hint, today });
   else { checkText(got.body); tasks = await readWithAI({ text: got.body, label: source, hint, today }); }
-  const items = tasks.map(t => L.toItem(t, { source, link: url ? got.url : null, today })).filter(Boolean);
+  const items = tasks.map(t => L.toItem(t, { source, link: url ? got.url : link || null, today })).filter(Boolean);
   return { items, hash: h };
 }
 
@@ -161,7 +161,8 @@ exports.aiAdd = onCall(callOpts, async (req) => {
   const text = d.text ? String(d.text) : '';
   const label = String(d.label || '').trim().slice(0, 60) || null;
   const hint = String(d.hint || '').trim().slice(0, 300) || null;
-  const key = /^[-\w]{1,40}$/.test(String(d.key || '')) && !/^p/.test(d.key) ? String(d.key) : null; // a source the app reads itself (OneNote)
+  const key = /^[-\w]{1,40}$/.test(String(d.key || '')) && !/^p/.test(d.key) ? String(d.key) : null; // a source the app reads itself (OneNote, Chrome button)
+  const link = d.link ? L.safeUrl(String(d.link).slice(0, 2000)) : null; // the page pasted text came from, so tasks open it
   if (!url && !text.trim()) throw new HttpsError('invalid-argument', 'Paste some text or a link first.');
   if (url && !L.safeUrl(url)) throw new HttpsError('invalid-argument', 'That link doesn’t look like a public web address.');
   if (!url) checkText(text.trim());
@@ -174,7 +175,7 @@ exports.aiAdd = onCall(callOpts, async (req) => {
   } else sid = key || 'p' + Date.now();
   await useOne(uid);
   try {
-    const r = await readSource({ text, url, label, hint });
+    const r = await readSource({ text, url, label, hint, link });
     const updates = { [`users/${uid}/aiItems/${sid}`]: r.items.length ? r.items : null };
     if (url && d.save) {
       updates[`users/${uid}/sources/${sid}`] = { url, label, added: ServerValue.TIMESTAMP, at: new Date().toISOString(), hash: r.hash, count: r.items.length, error: null };
@@ -209,7 +210,7 @@ exports.aiDaily = onSchedule({ schedule: '30 5 * * *', timeZone: L.TZ, secrets: 
     const sources = (await db.ref(`users/${uid}/sources`).once('value')).val() || {};
     if (!Object.keys(sources).length) { await db.ref(`aiIndex/${uid}`).remove(); continue; }
     for (const [sid, s] of Object.entries(sources)) {
-      if (!s || !s.url || s.kind === 'onenote') continue; // OneNote needs the student's Microsoft sign-in, so the app refreshes it
+      if (!s || !s.url || s.kind) continue; // OneNote and Chrome-button pages need the student's own sign-in, so the app refreshes them
       try {
         const r = await readSource({ url: s.url, label: s.label }, s.hash);
         const base = `users/${uid}/sources/${sid}`;
