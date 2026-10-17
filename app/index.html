@@ -4013,15 +4013,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
  // ---- Microsoft (Teams assignments + Outlook): MSAL popup, then Microsoft Graph
  var msalApp=null,msAcct=null;
- function ms(scopes){if(!MID)return fail('no-config','Microsoft Teams isn’t set up yet. Ask TaskM to add a Microsoft key.');
+ function ms(scopes,silent){if(!MID)return fail('no-config','Microsoft sign-in isn’t set up in TaskM yet.');
   return (window.msal?Promise.resolve():loadScript('https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js')).then(function(){
    if(!msalApp){msalApp=new msal.PublicClientApplication({auth:{clientId:MID,authority:'https://login.microsoftonline.com/common',redirectUri:location.origin+location.pathname},cache:{cacheLocation:'localStorage'}});}
    return (msalApp.initialize?msalApp.initialize():Promise.resolve());}).then(function(){
    msAcct=msAcct||msalApp.getAllAccounts()[0]||null;
    var req={scopes:scopes,account:msAcct||undefined};
-   return (msAcct?msalApp.acquireTokenSilent(req):Promise.reject()).catch(function(){return msalApp.acquireTokenPopup({scopes:scopes,prompt:msAcct?undefined:'select_account'});})
+   return (msAcct?msalApp.acquireTokenSilent(req):Promise.reject()).catch(function(){if(silent)throw {code:'login',message:'Tap Refresh to sign in to Microsoft again.'};return msalApp.acquireTokenPopup({scopes:scopes,prompt:msAcct?undefined:'select_account'});})
     .then(function(r){msAcct=r.account;return r.accessToken;});})
-   .catch(function(e){throw (e&&e.code&&e.message&&!e.errorCode)?e:{code:(e&&e.errorCode)||'ms',message:/consent|admin/i.test((e&&e.message)||'')?'Your school needs to approve TaskM before it can read Teams. Ask your school’s IT, or use another source for now.':'Microsoft sign-in didn’t finish.'};});}
+   .catch(function(e){throw (e&&e.code&&e.message&&!e.errorCode)?e:{code:(e&&e.errorCode)||'ms',message:/consent|admin/i.test((e&&e.message)||'')?'Your school needs to approve TaskM before it can read your Microsoft account. Ask your school’s IT, or paste the text for now.':'Microsoft sign-in didn’t finish.'};});}
  var G='https://graph.microsoft.com/v1.0/';
  function importTeams(){return ms(['User.Read','EduRoster.ReadBasic','EduAssignments.Read']).then(function(t){
    return Promise.all([getJSON(G+'education/me/classes?$select=id,displayName',t),getJSON(G+'education/me/assignments?$top=200',t)]).then(function(r){
@@ -4050,7 +4050,48 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   return {status:'connected',count:v&&v.items?v.items.length:0,at:v&&v.at};});}
  var aiSrc={};
  function loadSources(){return db('users/'+A.uid+'/sources').then(function(v){aiSrc=v||{};paintSources();},function(){});}
+ function quietOneNote(){var k='taskm-onenote-at',last=+(localStorage.getItem(k)||0);if(Date.now()-last<3*3600e3||!MID)return;
+  if(!Object.keys(aiSrc).some(function(i){return aiSrc[i].kind==='onenote';}))return;try{localStorage.setItem(k,String(Date.now()));}catch(e){}syncAllOneNote(true);}
  A.aiAdd=function(d){return callFn('aiAdd',d).then(function(r){return pullAI().then(function(){if(d&&d.save)loadSources();return r;});});};
+ // ---- OneNote (school notebooks on SharePoint): read with the student's Microsoft sign-in, then Claude pulls out the homework.
+ // Runs in the browser (TaskM's server has no Microsoft sign-in), when the link is added, on Refresh, and when TaskM opens.
+ function isOneNote(u){return /^https:\/\/[^\/]+\.sharepoint\.com\//i.test(u)||/onenote/i.test(u);}
+ function oneNoteTarget(u){var x;try{x=new URL(u);}catch(e){return null;}if(!/\.sharepoint\.com$/i.test(x.hostname))return null;
+  var m=/^\/(personal|sites|teams)\/[^\/]+/i.exec(x.pathname);if(!m)return null;
+  var wd=decodeURIComponent(x.searchParams.get('wd')||''),sec=/target\(([^|]+?)\.one\|/i.exec(wd);
+  var upn='',tenant=x.hostname.split('.')[0].replace(/-my$/i,'').toLowerCase(),name=m[0].split('/')[2]||'',at=name.toLowerCase().lastIndexOf('_'+tenant+'_');
+  if(/^\/personal\//i.test(m[0])&&at>0)upn=name.slice(0,at)+'@'+name.slice(at+1).replace(/_/g,'.');   // kimk_pvpusd_net -> kimk@pvpusd.net
+  return {host:x.hostname,path:m[0],upn:upn,section:sec?sec[1].trim():''};}
+ function graphText(url,token){return fetch(url,{headers:{Authorization:'Bearer '+token}}).then(function(r){
+  if(r.status===401)throw {code:'expired',message:'Your Microsoft sign-in expired. Tap Refresh.'};
+  if(r.status===403||r.status===404)throw {code:'denied',message:'Your Microsoft account can’t open that notebook. Open it once in OneNote, then try again.'};
+  if(!r.ok)throw {code:'ms',message:'OneNote didn’t answer. Try again in a minute.'};return r.text();});}
+ function pageText(h){var d=new DOMParser().parseFromString(h,'text/html');d.querySelectorAll('script,style').forEach(function(n){n.remove();});
+  d.querySelectorAll('p,div,li,tr,br,h1,h2,h3').forEach(function(n){n.insertAdjacentText('afterend','\n');});return (d.body.textContent||'').replace(/[ \t\u00a0]+/g,' ').replace(/\s*\n\s*/g,'\n').trim();}
+ function readOneNote(src,silent){var t=oneNoteTarget(src.url);if(!t)return fail('link','That doesn’t look like a OneNote link from your school.');
+  // a teacher's own OneDrive notebook: read through their user (Notes.Read.All only); team and class sites need Sites.Read.All too
+  return ms(t.upn?['User.Read','Notes.Read.All']:['User.Read','Notes.Read.All','Sites.Read.All'],silent).then(function(tok){
+   return (t.upn?Promise.resolve(G+'users/'+encodeURIComponent(t.upn)+'/onenote/'):getJSON(G+'sites/'+t.host+':'+t.path+'?$select=id',tok).then(function(site){return G+'sites/'+site.id+'/onenote/';})).then(function(base){
+    return getJSON(base+'sections?$select=id,displayName,lastModifiedDateTime&$top=100',tok).then(function(r){var secs=(r.value||[]).slice().sort(function(a,b){return a.lastModifiedDateTime<b.lastModifiedDateTime?1:-1;});
+     var pick=t.section?secs.filter(function(x){return x.displayName.toLowerCase()===t.section.toLowerCase();}):[];if(!pick.length)pick=secs.slice(0,2);
+     if(!pick.length)throw {code:'empty',message:'TaskM couldn’t find any sections in that notebook.'};
+     return Promise.all(pick.map(function(sec){return getJSON(base+'sections/'+sec.id+'/pages?$select=id,title,lastModifiedDateTime&$orderby=lastModifiedDateTime desc&$top=3',tok).then(function(p){return (p.value||[]).map(function(pg){pg.section=sec.displayName;return pg;});});}))
+      .then(function(lists){var pages=[].concat.apply([],lists).sort(function(a,b){return a.lastModifiedDateTime<b.lastModifiedDateTime?1:-1;}).slice(0,4);
+       return Promise.all(pages.map(function(pg){return graphText(base+'pages/'+pg.id+'/content',tok).then(function(h){return '## '+pg.section+' / '+(pg.title||'Untitled')+'\n'+pageText(h);});}));})
+      .then(function(texts){return {text:texts.join('\n\n').slice(0,190000),label:src.label||(t.section?t.section+' (OneNote)':'OneNote'),name:pick.map(function(x){return x.displayName;}).join(', ')};});});});});}
+ var ONK='taskm-onenote';
+ function syncOneNote(id,silent,force){var src=aiSrc[id];if(!src||src.kind!=='onenote')return Promise.resolve(null);
+  return readOneNote(src,silent).then(function(r){var seen=jl(ONK,{}),h=r.text.length+':'+r.text.slice(0,4000).split('').reduce(function(a,c){return (a*31+c.charCodeAt(0))|0;},0)+':'+r.text.slice(-2000).length;
+    var up={checked:new Date().toISOString(),error:null};
+    if(!force&&seen[id]===h){if(!src._new)db('users/'+A.uid+'/sources/'+id,{method:'PATCH',body:up}).catch(function(){});Object.assign(src,up);paintSources();return {count:src.count||0,unchanged:true};}
+    return callFn('aiAdd',{text:r.text,key:id,label:r.label,hint:'This is a teacher’s class OneNote notebook. A date written next to homework is the day it was assigned, not the due date.'}).then(function(res){
+     seen[id]=h;js(ONK,seen);up.count=res.count||0;up.at=up.checked;Object.assign(src,up);if(!src._new)db('users/'+A.uid+'/sources/'+id,{method:'PATCH',body:up}).catch(function(){});paintSources();return pullAI().then(function(){return res;});});})
+   .catch(function(e){if(!src._new&&(silent||e.code!=='login')){src.error=e.message;db('users/'+A.uid+'/sources/'+id,{method:'PATCH',body:{error:e.message,checked:new Date().toISOString()}}).catch(function(){});paintSources();}throw e;});}
+ A.addOneNote=function(url){if(A.demo||!A.uid)return fail('demo','OneNote needs a real account (not the demo).');var t=oneNoteTarget(url);if(!t)return fail('link','That doesn’t look like a OneNote link from your school. Open the notebook in your browser and copy the address bar.');
+  var same=Object.keys(aiSrc).filter(function(k){return aiSrc[k].url===url;})[0],id=same||('on'+Date.now().toString(36));
+  if(!same){aiSrc[id]={url:url,kind:'onenote',label:t.section?t.section+' (OneNote)':'OneNote',added:Date.now(),_new:true};}
+  return syncOneNote(id,false,true).then(function(r){delete aiSrc[id]._new;return db('users/'+A.uid+'/sources/'+id,{method:'PATCH',body:aiSrc[id]}).then(function(){return r;});},function(e){if(!same){delete aiSrc[id];paintSources();}throw e;});};
+ function syncAllOneNote(silent){return Object.keys(aiSrc).filter(function(k){return aiSrc[k].kind==='onenote';}).reduce(function(p,k){return p.then(function(){return syncOneNote(k,silent).catch(function(){});});},Promise.resolve());}
  A.aiRemoveSource=function(id){return callFn('aiRemoveSource',{id:id}).then(function(){delete aiSrc[id];paintSources();return pullAI();});};
  A.aiSources=function(){return aiSrc;};
  function runImport(k){if(k==='ai')return pullAI();var fn=k==='classroom'?importClassroom:k==='teams'?importTeams:null;if(!fn)return fail('unknown','That source can’t import yet.');
@@ -4060,7 +4101,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  A.linkPlatform=function(k,data){if(k!=='classroom'&&k!=='teams')return origLink(k,data);
   return runImport(k).then(function(r){return origLink(k,Object.assign({},data||{},{count:r.count,at:r.at})).then(function(){toast('Added '+r.count+' tasks from '+(k==='teams'?'Teams':'Google Classroom'));return r;});});};
  A.unlinkPlatform=function(k){var im=imports();delete im[k];js(IK,im);apply();db('users/'+A.uid+'/imported/'+k,{method:'DELETE'}).catch(function(){});return origUnlink(k);};
- A.refreshImports=function(){var ks=Object.keys(imports());return ks.reduce(function(p,k){return p.then(function(){return runImport(k).catch(function(e){toast(e.message);});});},Promise.resolve()).then(function(){if(ks.length)toast('Homework is up to date');});};
+ A.refreshImports=function(){var ks=Object.keys(imports());return syncAllOneNote(false).then(function(){return ks.reduce(function(p,k){return p.then(function(){return runImport(k).catch(function(e){toast(e.message);});});},Promise.resolve());}).then(function(){if(ks.length)toast('Homework is up to date');});};
 
  // ---- grades: from imports, plus any the student types in (for Aeries and others with no connection yet)
  function grades(){var out=[],im=imports();Object.keys(im).forEach(function(k){(im[k].grades||[]).forEach(function(g){out.push(g);});});
@@ -4159,7 +4200,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     return (j.value||[]).map(function(m){return {id:'o-'+m.id,from:(m.from&&m.from.emailAddress&&(m.from.emailAddress.name+' <'+m.from.emailAddress.address+'>'))||a,subject:m.subject,date:Date.parse(m.receivedDateTime),preview:m.bodyPreview,due:dueHint(m.subject+' '+m.bodyPreview),link:m.webLink};});},function(){return [];});}))
    .then(function(r){return [].concat.apply([],r);});});}
  function srcRow(id){var x=aiSrc[id]||{},host='';try{host=new URL(x.url).hostname.replace(/^www\./,'');}catch(e){}
-  var meta=x.error?'<small class="tc-err-t">'+esc(x.error)+'</small>':'<small>'+(x.count||0)+' task'+(x.count===1?'':'s')+(x.checked||x.at?' · checked '+esc(shortDay(x.checked||x.at)):'')+'</small>';
+  var meta=x.error?'<small class="tc-err-t">'+esc(x.error)+'</small>':'<small>'+(x.count||0)+' task'+(x.count===1?'':'s')+(x.checked||x.at?' · checked '+esc(shortDay(x.checked||x.at)):'')+(x.kind==='onenote'?' · updates when you open TaskM':'')+'</small>';
   return '<li><i class="tc-lg tc-lsrc'+(x.error?' bad':'')+'" aria-hidden="true">'+ico(x.error?'alert':'link')+'</i><span><b>'+esc(x.label||host||'Saved link')+'</b>'+meta+'</span><button type="button" class="tc-x" data-delsrc="'+esc(id)+'" aria-label="Stop checking '+esc(x.label||host)+'">'+ico('x')+'</button></li>';}
  function paintSources(){var el=document.querySelector('#aiPanel .tc-srcs');if(!el)return;var ids=Object.keys(aiSrc);
   el.innerHTML=ids.length?'<h4>Checked every morning</h4><ul class="tc-grades">'+ids.map(srcRow).join('')+'</ul>':'';}
@@ -4180,7 +4221,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  document.addEventListener('submit',function(e){var f=e.target.closest('form[data-tc]');if(!f)return;e.preventDefault();var t=f.dataset.tc,ins=f.querySelectorAll('input');
   if(t==='ai'){var ta=f.querySelector('textarea'),v=ta.value.trim(),btn=f.querySelector('button[type=submit]');formErr(f,'');if(!v){formErr(f,'Paste some text or a link first.');return;}
    var link=/^(https?|webcal):\/\/\S+$/i.test(v),d=link?{url:v,save:!!(ins[0]&&ins[0].checked)}:{text:v};btn.disabled=true;btn.textContent='Reading…';
-   A.aiAdd(d).then(function(r){ta.value='';toast(r.count?'Added '+r.count+' task'+(r.count===1?'':'s'):'No homework found in that');},function(x){formErr(f,x.message);})
+   (link&&isOneNote(v)?A.addOneNote(v):A.aiAdd(d)).then(function(r){ta.value='';toast(r.count?'Added '+r.count+' task'+(r.count===1?'':'s'):'No homework found in that');},function(x){formErr(f,x.message);})
     .then(function(){btn.disabled=false;btn.textContent='Find homework';});return;}
   if(t==='addmail'){var v=ins[0].value.trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(v)){toast('That email doesn’t look right');return;}var w=(A.profile.watchEmails||[]).slice();if(w.indexOf(v)<0)w.push(v);
    A.saveProfile({watchEmails:w}).then(paintStudent);}
@@ -4244,7 +4285,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(parent){if(!document.documentElement.classList.contains('taskm-parent'))startParent();return;}
   if(started){paintStudent();return;}started=true;
   db('users/'+A.uid+'/imported').then(function(v){if(v&&typeof v==='object'){var im=imports();Object.keys(v).forEach(function(k){if(!im[k]||im[k].at<v[k].at)im[k]=v[k];});js(IK,im);}apply();},function(){apply();});
-  loadSources();paintStudent();});
+  loadSources().then(quietOneNote);paintStudent();});
 })();
 
 </script>
