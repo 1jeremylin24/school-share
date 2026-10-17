@@ -23,6 +23,7 @@ async function sendTab(tab) {
   if (!tab.id) return;
   if (!/^https?:/.test(tab.url || '')) return badge(tab.id, '!', 'Open a school page first, then click the TaskM button.');
   if (tab.url.startsWith(TASKM)) return badge(tab.id, '!', 'This is TaskM. Open a school page, like your class OneNote, and click the button there.');
+  if (isTeams(tab.url)) return sendTeams(tab);
   badge(tab.id, '…', 'Reading this page…', 0);
   const text = await readTab(tab.id);
   if (text === null) return badge(tab.id, '!', 'TaskM can’t read this page. Copy the text and paste it into TaskM instead.');
@@ -60,6 +61,59 @@ async function readMail(tabId, url, title) {
   tell({ type: 'taskm-read-result', ok, url });
 }
 
+// ---- Teams: a click anywhere in Teams opens the Assignments app (every class) and reads that instead
+const ASSIGNMENTS_APP = '66aeee93-507d-479a-a3ef-8f494af43945';
+const ASSIGN_FRAME = /(^|\.)assignments\.onenote\.com$/i;
+function isTeams(u) { try { return /^teams\.(microsoft\.com|cloud\.microsoft)$/i.test(new URL(u).hostname); } catch (e) { return false; } }
+function assignmentsUrl(u) { return new URL(u).origin + '/l/app/' + ASSIGNMENTS_APP; }
+async function sendTeams(tab) {
+  badge(tab.id, '…', 'Finding your Teams assignments…', 0);
+  const url = assignmentsUrl(tab.url);
+  let r;
+  try { r = await readInWindow(url); } catch (e) { r = {}; }
+  if (r.signin) return badge(tab.id, '!', 'Sign in to Teams again, then click the TaskM button.');
+  if (!r.text || r.text.length < 40) {
+    // the Assignments app didn't open: send whatever this Teams page shows
+    const text = await readTab(tab.id);
+    if (!text || text.length < 40) return badge(tab.id, '!', 'TaskM couldn’t open your Teams assignments. Open Assignments in Teams and click the button there.');
+    r = { text, title: tab.title, own: true };
+  }
+  const clip = { type: 'taskm-clip', v: 2, url: r.own ? tab.url : url, title: r.own ? tab.title || '' : 'Teams assignments', text: r.text };
+  await remember(clip);
+  try {
+    const ok = await deliver(await openTaskM(tab), clip);
+    badge(tab.id, ok ? '✓' : '!', ok ? 'Sent your Teams assignments to TaskM. It will keep them updated.' : 'TaskM didn’t open in time. Click the button again.');
+  } catch (e) { badge(tab.id, '!', 'Couldn’t open TaskM. Click the button again.'); }
+}
+// Teams loads Assignments in a frame after a while; keep checking for it (and get past Teams' "open in the app?" page)
+async function readTeamsAssignments(tabId) {
+  let clicked = false;
+  for (let i = 0; i < 20; i++) {
+    await wait(2500);
+    let frames;
+    try { frames = await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, func: readFrame }); } catch (e) { continue; }
+    const hits = frames.filter((f) => { try { return ASSIGN_FRAME.test(new URL(f.result.url).hostname) && f.result.text.trim().length > 80; } catch (e) { return false; } });
+    if (hits.length) {
+      await wait(3000);   // let the list finish filling in
+      frames = await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, func: readFrame }).catch(() => frames);
+      return joinFrames(frames.filter((f) => { try { return ASSIGN_FRAME.test(new URL(f.result.url).hostname); } catch (e) { return false; } }));
+    }
+    if (i === 8 && !clicked) {
+      clicked = true;   // the link didn't open the app: click Assignments in Teams' app bar
+      await chrome.scripting.executeScript({ target: { tabId }, func: () => {
+        const b = [...document.querySelectorAll('button,a,[role="button"],[role="menuitem"]')].find((e) => /^assignments\b/i.test((e.getAttribute('aria-label') || e.title || e.textContent || '').trim()));
+        if (b) b.click();
+      } }).catch(() => {});
+    } else {
+      await chrome.scripting.executeScript({ target: { tabId }, func: () => {
+        const b = [...document.querySelectorAll('a,button')].find((e) => /use the web app instead|continue on this browser|use the web app/i.test(e.textContent || ''));
+        if (b) b.click();
+      } }).catch(() => {});
+    }
+  }
+  return null;
+}
+
 // ---- saved pages: { [pageKey]: { url, title, hash, at } } in chrome.storage.local
 function pageKey(u) { try { const x = new URL(u); return x.origin + x.pathname + x.search; } catch (e) { return null; } }
 async function getPages() { return (await chrome.storage.local.get('pages')).pages || {}; }
@@ -78,6 +132,8 @@ async function onTabUpdated(tabId, info, tab) {
   if (refreshing.has(tabId)) return;
   const pages = await getPages(), k = pageKey(tab.url), p = k && pages[k];
   if (!p || Date.now() - p.at < VISIT_GAP_MIN * 60000) return;
+  if (MAIL_HOSTS.test(new URL(tab.url).hostname) && tab.url !== p.url) return;
+  if (p.url.includes('/l/app/' + ASSIGNMENTS_APP)) return;   // Teams assignments refresh in the background
   setTimeout(async () => {
     const t = await chrome.tabs.get(tabId).catch(() => null);
     if (!t || pageKey(t.url) !== k) return;
@@ -115,6 +171,12 @@ async function readInWindow(url) {
     await wait(6000);
     let t = await chrome.tabs.get(tabId);
     if (needsSignIn(url, t.url)) return { signin: true };
+    if (url.includes('/l/app/' + ASSIGNMENTS_APP)) {
+      const text = await readTeamsAssignments(tabId);
+      t = await chrome.tabs.get(tabId).catch(() => t);
+      if (!text && needsSignIn(url, t.url)) return { signin: true };
+      return { text, title: 'Teams assignments' };
+    }
     let text = await readTab(tabId);
     if (!text || text.length < 200) { await wait(6000); text = await readTab(tabId); t = await chrome.tabs.get(tabId); }
     if (needsSignIn(url, t.url)) return { signin: true };
@@ -203,10 +265,44 @@ async function syncWithTaskM(tabId) {
 
 // ---- reading a tab: every frame's text (OneNote shows the page inside a frame, with menus in the outer page)
 async function readTab(tabId) {
+  const tab = await chrome.tabs.get(tabId).catch(() => null);
+  if (tab && /^https:\/\/mail\.google\.com\//.test(tab.url || '')) {
+    const mail = await readGmail(tabId);
+    if (mail && mail.length >= 200) return mail;
+  }
   try {
     const frames = await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, func: readFrame });
     return joinFrames(frames);
   } catch (e) { return null; }
+}
+// Gmail shows only a preview of each email in the list, so open each one's print view (same sign-in) and read it all
+async function readGmail(tabId) {
+  try {
+    const [r] = await chrome.scripting.executeScript({ target: { tabId }, world: 'MAIN', func: gmailThreads, args: [25, 3500] });
+    return r && r.result ? String(r.result).slice(0, MAX_TEXT) : null;
+  } catch (e) { return null; }
+}
+async function gmailThreads(max, per) {
+  const ik = window.GLOBALS && window.GLOBALS[9];
+  const all = [...document.querySelectorAll('[data-legacy-thread-id]')];
+  const shown = all.filter((e) => e.offsetParent !== null);
+  const ids = [...new Set((shown.length ? shown : all).map((e) => e.getAttribute('data-legacy-thread-id')))].filter((x) => /^[0-9a-f]+$/i.test(x)).slice(0, max);
+  if (!ik || !ids.length) return null;
+  const base = location.pathname.replace(/\/+$/, '') + '/';
+  const parts = [];
+  for (const id of ids) {
+    try {
+      const res = await fetch(base + '?ik=' + encodeURIComponent(ik) + '&view=pt&search=all&th=' + id, { credentials: 'include' });
+      if (!res.ok) continue;
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      doc.querySelectorAll('script,style').forEach((e) => e.remove());
+      doc.querySelectorAll('td,th').forEach((e) => e.append(' '));
+      doc.querySelectorAll('br,p,div,tr,li,h1,h2,h3,table').forEach((e) => e.append('\n'));
+      const t = (doc.body ? doc.body.textContent : '').replace(/[ \t\u00a0]+/g, ' ').replace(/\n\s*\n\s*/g, '\n').trim();
+      if (t.length > 40) parts.push('=== Email ===\n' + t.slice(0, per));
+    } catch (e) { /* skip this one */ }
+  }
+  return parts.length ? parts.join('\n\n') : null;
 }
 function readFrame() {
   const b = document.body;
