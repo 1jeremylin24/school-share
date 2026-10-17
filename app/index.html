@@ -3920,12 +3920,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    - Email debriefs: senders the student types in; TaskM pulls their recent mail from Gmail or Outlook into a panel on the Email tab.
    - Parents: a student makes an invite code; a parent account enters it. The student's /users/<uid>/shared summary
      (tasks, done marks, grades) is readable by linked parents only (see database.rules.json).
-   Without a server these run when the student opens TaskM and taps Refresh; the 7 AM automatic run needs the server step. */
+   - AI importer (functions/ in the school-share repo): the student pastes an email or teacher post, or a link to a class page,
+     calendar or PDF; the server has Claude pull out homework and dates into /users/<uid>/imported/ai. Saved links are re-read
+     every morning at 5:30 AM Pacific. Classroom and Teams still import when the student opens TaskM and taps Refresh. */
 (function(){
  var A=window.TaskMAccount,X=window.TaskMTools;if(!A)return;
  var GID=window.TASKM_GOOGLE_CLIENT_ID||'',MID=window.TASKM_MS_CLIENT_ID||'',
      DB=((window.TASKM_FIREBASE_CONFIG||{}).databaseURL||'https://taskm-sync-d6861-default-rtdb.firebaseio.com').replace(/\/+$/,''),
      IK='taskm-import',EK='taskm-debriefs',GK='taskm-grades-manual',DAY=864e5,
+     FN='https://us-central1-'+((window.TASKM_FIREBASE_CONFIG||{}).projectId||'taskm-sync-d6861')+'.cloudfunctions.net/',
      orgEl=document.getElementById('orgData'),baseItems=[];
  try{baseItems=JSON.parse(orgEl&&orgEl.getAttribute('data-base')||'[]');}catch(e){}
  function jl(k,d){try{var o=JSON.parse(localStorage.getItem(k)||'null');return o==null?d:o;}catch(e){return d;}}
@@ -4019,7 +4022,19 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function apply(){var all=baseItems.slice(),seen={};all.forEach(function(i){seen[i.id]=1;});var im=imports();
   Object.keys(im).forEach(function(k){(im[k].items||[]).forEach(function(i){if(!seen[i.id]){seen[i.id]=1;all.push(i);}});});
   var txt=JSON.stringify(all);if(orgEl&&orgEl.textContent!==txt){orgEl.textContent=txt;if(X&&X.reload)X.reload();}publishSoon();}
- function runImport(k){var fn=k==='classroom'?importClassroom:k==='teams'?importTeams:null;if(!fn)return fail('unknown','That source can’t import yet.');
+ // ---- AI importer (server): Claude reads pasted text and saved links; results land in /users/<uid>/imported/ai
+ function callFn(name,data){if(A.demo||!A.uid)return fail('demo','Adding homework with AI needs a real account (not the demo).');
+  return fetch(FN+name,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+A.token},body:JSON.stringify({data:data||{}})})
+   .then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(!r.ok||j.error)throw {code:'fn',message:(j.error&&j.error.message)||'TaskM’s server didn’t answer. Try again in a minute.'};return j.result||{};});},
+    function(){throw {code:'net',message:'Couldn’t reach TaskM’s server. Check your connection.'};});}
+ function pullAI(){return db('users/'+A.uid+'/imported/ai').then(function(v){var im=imports();if(v&&v.items)im.ai=v;else delete im.ai;js(IK,im);apply();
+  return {status:'connected',count:v&&v.items?v.items.length:0,at:v&&v.at};});}
+ var aiSrc={};
+ function loadSources(){return db('users/'+A.uid+'/sources').then(function(v){aiSrc=v||{};paintSources();},function(){});}
+ A.aiAdd=function(d){return callFn('aiAdd',d).then(function(r){return pullAI().then(function(){if(d&&d.save)loadSources();return r;});});};
+ A.aiRemoveSource=function(id){return callFn('aiRemoveSource',{id:id}).then(function(){delete aiSrc[id];paintSources();return pullAI();});};
+ A.aiSources=function(){return aiSrc;};
+ function runImport(k){if(k==='ai')return pullAI();var fn=k==='classroom'?importClassroom:k==='teams'?importTeams:null;if(!fn)return fail('unknown','That source can’t import yet.');
   return fn().then(function(r){var im=imports();im[k]={at:new Date().toISOString(),items:r.items,grades:r.grades};js(IK,im);apply();
    db('users/'+A.uid+'/imported/'+k,{method:'PUT',body:im[k]}).catch(function(){});return {status:'connected',count:r.items.length,at:im[k].at};});}
  var origLink=A.linkPlatform,origUnlink=A.unlinkPlatform;
@@ -4124,17 +4139,39 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    return Promise.all(w.map(function(a){return getJSON(G+"me/messages?$top=10&$select=subject,from,receivedDateTime,bodyPreview,webLink&$search="+encodeURIComponent('"from:'+a+'"'),t).then(function(j){
     return (j.value||[]).map(function(m){return {id:'o-'+m.id,from:(m.from&&m.from.emailAddress&&(m.from.emailAddress.name+' <'+m.from.emailAddress.address+'>'))||a,subject:m.subject,date:Date.parse(m.receivedDateTime),preview:m.bodyPreview,due:dueHint(m.subject+' '+m.bodyPreview),link:m.webLink};});},function(){return [];});}))
    .then(function(r){return [].concat.apply([],r);});});}
+ function srcRow(id){var x=aiSrc[id]||{},host='';try{host=new URL(x.url).hostname.replace(/^www\./,'');}catch(e){}
+  var meta=x.error?'<small class="tc-err-t">'+esc(x.error)+'</small>':'<small>'+(x.count||0)+' task'+(x.count===1?'':'s')+(x.checked||x.at?' · checked '+esc(shortDay(x.checked||x.at)):'')+'</small>';
+  return '<li><span><b>'+esc(x.label||host||'Saved link')+'</b>'+meta+'</span><button type="button" class="tc-x" data-delsrc="'+esc(id)+'" aria-label="Stop checking '+esc(x.label||host)+'">'+ico('x')+'</button></li>';}
+ function paintSources(){var el=document.querySelector('#aiPanel .tc-srcs');if(!el)return;var ids=Object.keys(aiSrc);
+  el.innerHTML=ids.length?'<h4>Checked every morning</h4><ul class="tc-grades">'+ids.map(srcRow).join('')+'</ul>':'';}
+ function aiPanel(lv,before){var a=document.getElementById('aiPanel');if(a)return;a=document.createElement('section');a.id='aiPanel';a.className='panel tc-panel';
+  a.innerHTML=hd('Add homework with AI','Paste an email or a teacher’s post, or a link to a class page, calendar or PDF')+
+   '<form class="tc-ai" data-tc="ai"><textarea rows="3" placeholder="Paste text or a link" aria-label="Text or link to read"></textarea>'+
+   '<label class="tc-check"><input type="checkbox" checked> If it’s a link, check it again every morning</label>'+
+   '<button type="submit" class="tt-btn">Find homework</button></form><div class="tc-srcs"></div>';
+  if(!document.getElementById('tcAiCss')){var st=document.createElement('style');st.id='tcAiCss';st.textContent=AICSS;document.head.appendChild(st);}
+  lv.insertBefore(a,before);paintSources();}
+ // basic look until the design pass moves it into ui/auth.css
+ var AICSS='#aiPanel .tc-ai{display:grid;gap:10px;margin-top:10px}#aiPanel textarea{width:100%;box-sizing:border-box;min-height:84px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:16px;resize:vertical}'+
+  '#aiPanel .tc-check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}#aiPanel .tc-ai .tt-btn{justify-self:start}'+
+  '#aiPanel h4{margin:16px 0 2px;font:500 11.5px var(--ns-body,system-ui);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}#aiPanel .tc-err-t{color:var(--danger,#e5484d)}';
  function paintStudent(){var em=document.getElementById('emailView'),lv=document.getElementById('listView');
   if(em){var d=document.getElementById('debriefPanel');if(!d){d=document.createElement('section');d.id='debriefPanel';d.className='panel tc-panel';em.insertBefore(d,em.firstChild);}d.innerHTML=debriefs();}
   if(lv){var g=document.getElementById('gradesPanel');if(!g){g=document.createElement('section');g.id='gradesPanel';g.className='panel tc-panel';var nu=document.getElementById('nextUp');lv.insertBefore(g,nu?nu.nextSibling:lv.firstChild);}
+   aiPanel(lv,g);
    g.innerHTML=hd('Grades','From your connected classes')+gradeRows(grades(),true)+
     '<details class="tc-addg"><summary>'+ico('plus')+'Add a grade yourself</summary><form class="tc-row" data-tc="addgrade"><input type="text" placeholder="Class name" aria-label="Class" autocapitalize="words" enterkeyhint="next">'+
     '<input type="number" inputmode="decimal" min="0" max="120" step="0.1" placeholder="%" aria-label="Grade percent" class="tc-pctin" enterkeyhint="done"><button type="submit" class="tt-btn">Add</button></form>';}}
  document.addEventListener('submit',function(e){var f=e.target.closest('form[data-tc]');if(!f)return;e.preventDefault();var t=f.dataset.tc,ins=f.querySelectorAll('input');
+  if(t==='ai'){var ta=f.querySelector('textarea'),v=ta.value.trim(),btn=f.querySelector('button[type=submit]');formErr(f,'');if(!v){formErr(f,'Paste some text or a link first.');return;}
+   var link=/^(https?|webcal):\/\/\S+$/i.test(v),d=link?{url:v,save:!!(ins[0]&&ins[0].checked)}:{text:v};btn.disabled=true;btn.textContent='Reading…';
+   A.aiAdd(d).then(function(r){ta.value='';toast(r.count?'Added '+r.count+' task'+(r.count===1?'':'s'):'No homework found in that');},function(x){formErr(f,x.message);})
+    .then(function(){btn.disabled=false;btn.textContent='Find homework';});return;}
   if(t==='addmail'){var v=ins[0].value.trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(v)){toast('That email doesn’t look right');return;}var w=(A.profile.watchEmails||[]).slice();if(w.indexOf(v)<0)w.push(v);
    A.saveProfile({watchEmails:w}).then(paintStudent);}
   else if(t==='addgrade'){var c=ins[0].value.trim(),p=parseFloat(ins[1].value);if(!c||isNaN(p)){toast('Add a class and a percent');return;}var l=jl(GK,[]).filter(function(g){return g.course!==c;});l.push({course:c,pct:p});js(GK,l);paintStudent();publishSoon();}},true);
- document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-delmail],[data-delgrade],[data-tc="gmail"],[data-tc="outlook"]');if(!b)return;
+ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-delmail],[data-delgrade],[data-delsrc],[data-tc="gmail"],[data-tc="outlook"]');if(!b)return;
+  if(b.dataset.delsrc){b.disabled=true;A.aiRemoveSource(b.dataset.delsrc).catch(function(x){b.disabled=false;toast(x.message);});return;}
   if(b.dataset.delmail){A.saveProfile({watchEmails:(A.profile.watchEmails||[]).filter(function(x){return x!==b.dataset.delmail;})}).then(paintStudent);}
   else if(b.dataset.delgrade){js(GK,jl(GK,[]).filter(function(g){return g.course!==b.dataset.delgrade;}));paintStudent();publishSoon();}
   else{var w=A.profile.watchEmails||[];b.disabled=true;(b.dataset.tc==='gmail'?checkGmail(w):checkOutlook(w)).then(function(list){var c=jl(EK,{}),by={};(c.msgs||[]).concat(list).forEach(function(m){by[m.id]=m;});
@@ -4192,7 +4229,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(parent){if(!document.documentElement.classList.contains('taskm-parent'))startParent();return;}
   if(started){paintStudent();return;}started=true;
   db('users/'+A.uid+'/imported').then(function(v){if(v&&typeof v==='object'){var im=imports();Object.keys(v).forEach(function(k){if(!im[k]||im[k].at<v[k].at)im[k]=v[k];});js(IK,im);}apply();},function(){apply();});
-  paintStudent();});
+  loadSources();paintStudent();});
 })();
 
 </script>

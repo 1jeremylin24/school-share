@@ -2,7 +2,32 @@
   "hosting": {
     "site": "taskm-school",
     "public": "app",
-    "ignore": ["firebase.json", "**/.*"],
-    "headers": [{ "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }]
-  }
+    "ignore": [
+      "firebase.json",
+      "**/.*"
+    ],
+    "headers": [
+      {
+        "source": "/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        "test",
+        ".git",
+        "*.log"
+      ]
+    }
+  ]
 }
