@@ -143,6 +143,20 @@ function toGrade(g, source) {
   return { course: String(g.class_name).trim().slice(0, 80), pct: Math.round(pct * 10) / 10, source };
 }
 
+// An email the AI summarized (Gmail/Outlook read by the Chrome button) -> a row for the Email tab
+const MAIL_CATS = ['school', 'college', 'events', 'money', 'personal', 'other'];
+function toEmail(m) {
+  if (!m || !m.subject || !m.summary) return null;
+  const ymd = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : null);
+  const from = String(m.from || '').trim().slice(0, 80), subj = String(m.subject).trim().slice(0, 200), got = ymd(m.received);
+  return {
+    id: 'm' + hash([from.toLowerCase(), subj.toLowerCase(), got || ''].join('|')).slice(0, 14),
+    from, subj, got, sum: String(m.summary).trim().slice(0, 500),
+    cat: MAIL_CATS.includes(m.category) ? m.category : 'other',
+    act: !!m.needs_action, due: ymd(m.due_date),
+  };
+}
+
 // Newest grade per class across every source ({at, list} per source)
 function combineGrades(bySource) {
   const by = {};
@@ -197,7 +211,16 @@ function clipKey(u) {
 function clipLabel(title, url) {
   let host = '';
   try { host = new URL(url).hostname.replace(/^www\./, ''); } catch (e) { /* no host */ }
+  const t = String(title || '');
+  if (host === 'mail.google.com') {
+    const addr = t.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/);
+    return addr ? 'Gmail · ' + addr[0].slice(0, 60) : 'Gmail';
+  }
+  if (/^outlook\./.test(host)) {
+    const who = t.replace(/^(Mail|Inbox)\s*[-–—]\s*/i, '').replace(/\s*[-–—]\s*Outlook.*$/i, '').trim();
+    return (who && !/^(mail|inbox|outlook)$/i.test(who) ? 'Outlook · ' + who : 'Outlook').slice(0, 60);
+  }
   return (String(title || '').replace(/\s*[-|–—:]\s*(Microsoft\s+)?(OneNote|Teams|SharePoint|Outlook)(\s+(Online|for the web))?\s*$/i, '').trim() || host).slice(0, 60);
 }
 
-module.exports = { TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, officeText, clipKey, clipLabel };
+module.exports = { TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel };

@@ -77,3 +77,19 @@ test('Chrome button pages keep the id the app gave them', () => {
   assert.strictEqual(L.clipLabel('Ch 4.one - Microsoft OneNote Online', 'https://x.sharepoint.com/'), 'Ch 4.one');
   assert.strictEqual(L.clipLabel('', 'https://www.aeries.net/student/'), 'aeries.net');
 });
+
+test('emails become Email tab rows with a stable id', () => {
+  const m = { from: 'Caroline Lin', subject: 'AP exam registration', received: '2026-10-13', summary: 'Register by Fri Oct 23; $110 per exam.', category: 'school', needs_action: true, due_date: '2026-10-23' };
+  const a = L.toEmail(m), b = L.toEmail({ ...m, summary: 'different wording' });
+  assert.strictEqual(a.id, b.id);
+  assert.deepStrictEqual([a.from, a.cat, a.act, a.due, a.got], ['Caroline Lin', 'school', true, '2026-10-23', '2026-10-13']);
+  assert.strictEqual(L.toEmail({ ...m, category: 'spam', due_date: 'Friday' }).cat, 'other');
+  assert.strictEqual(L.toEmail({ ...m, due_date: 'Friday' }).due, null);
+  assert.strictEqual(L.toEmail({ subject: 'x' }), null);
+});
+
+test('email pages are named after the account', () => {
+  assert.strictEqual(L.clipLabel('Search results - linjeremy1124@gmail.com - Gmail', 'https://mail.google.com/mail/u/0/#search/x'), 'Gmail · linjeremy1124@gmail.com');
+  assert.strictEqual(L.clipLabel('Mail - Jeremy Lin - Outlook', 'https://outlook.office.com/mail/inbox'), 'Outlook · Jeremy Lin');
+  assert.strictEqual(L.clipLabel('Outlook', 'https://outlook.live.com/mail/0/'), 'Outlook');
+});
