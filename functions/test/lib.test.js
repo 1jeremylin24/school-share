@@ -49,3 +49,31 @@ test('combine dedupes and drops items more than three weeks old', () => {
   const old = { id: 'b', due: '2026-09-01', due_sort: '2026-09-01T23:59:00-07:00' };
   assert.deepStrictEqual(L.combine([[x, old], [{ ...x, title: 'new' }]], '2026-10-17'), [{ ...x, title: 'new' }]);
 });
+
+test('Word and PowerPoint files are read as text', () => {
+  const { execFileSync } = require('child_process');
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'docx-'));
+  fs.mkdirSync(path.join(dir, 'word'));
+  fs.writeFileSync(path.join(dir, 'word', 'document.xml'), '<w:document><w:body><w:p><w:r><w:t>Chem lab report due Friday &amp; bring goggles</w:t></w:r></w:p><w:p><w:r><w:t>Quiz 10/22</w:t></w:r></w:p></w:body></w:document>');
+  fs.writeFileSync(path.join(dir, '[Content_Types].xml'), '<Types/>');
+  execFileSync('python3', ['-c', 'import shutil,sys;shutil.make_archive(sys.argv[1],"zip",sys.argv[2])', path.join(dir, 'out'), dir]);
+  const text = L.officeText(fs.readFileSync(path.join(dir, 'out.zip')));
+  assert.strictEqual(text, 'Chem lab report due Friday & bring goggles\nQuiz 10/22');
+});
+
+test('grades keep the newest value per class', () => {
+  assert.deepStrictEqual(L.toGrade({ class_name: 'AP Biology', percent: 93.456 }, 'Aeries'), { course: 'AP Biology', pct: 93.5, source: 'Aeries' });
+  assert.strictEqual(L.toGrade({ class_name: 'Art', percent: null }, 'x'), null);
+  const g = L.combineGrades({
+    a: { at: '2026-10-10T00:00:00Z', list: [{ course: 'AP Biology', pct: 88, source: 'Aeries' }, { course: 'Calc BC', pct: 95, source: 'Aeries' }] },
+    b: { at: '2026-10-16T00:00:00Z', list: [{ course: 'ap biology', pct: 91, source: 'Aeries' }] },
+  });
+  assert.deepStrictEqual(g.map(x => [x.course, x.pct]), [['ap biology', 91], ['Calc BC', 95]]);
+});
+
+test('Chrome button pages keep the id the app gave them', () => {
+  assert.strictEqual(L.clipKey('https://pvpusd-my.sharepoint.com/personal/kimk_pvpusd_net/_layouts/15/Doc.aspx?sourcedoc={abc}&wd=target%28Ch%204.one%7Cx%2F4.3%7Cy%2F%29'), 'cp5ki9ijgq1im');
+  assert.strictEqual(L.clipLabel('Ch 4.one - Microsoft OneNote Online', 'https://x.sharepoint.com/'), 'Ch 4.one');
+  assert.strictEqual(L.clipLabel('', 'https://www.aeries.net/student/'), 'aeries.net');
+});

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TaskM privacy</title>
+<link rel="icon" href="icon-192-v2.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f6fb;--card:#fff;--text:#1d1d2b;--muted:#6b6b80;--line:#e4e4ee;--accent:#5550D0;--soft:#ecebfb}
+@media (prefers-color-scheme:dark){:root{--bg:#121219;--card:#1b1b25;--text:#ececf3;--muted:#9a9ab0;--line:#2c2c3a;--accent:#8b95ff;--soft:#24243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 "Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:640px;margin:0 auto;padding:48px 16px 64px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+header img{width:48px;height:48px;border-radius:12px}
+h1{font-size:28px;line-height:1.2;margin:0;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:12px 0 28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 14px}
+ol{margin:0;padding:0;list-style:none;counter-reset:s}
+ol li{counter-increment:s;position:relative;padding:0 0 14px 40px}
+ol li:last-child{padding-bottom:0}
+ol li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--soft);color:var(--accent);font-weight:700;font-size:13px;display:grid;place-items:center}
+.dl{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:12px;margin:2px 0 6px}
+.dl:hover{filter:brightness(1.08)}
+code{font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:2px 6px;border-radius:6px;user-select:all}
+kbd{font:600 13px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px}
+.note{color:var(--muted);font-size:14px;margin:0}
+h2+p,.card p{margin:0 0 10px}.card p:last-child,.card ul:last-child{margin-bottom:0}.card ul{margin:0 0 10px;padding-left:20px}.card li{margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+  <header><img src="icon-192-v2.png" alt=""><h1>TaskM privacy</h1></header>
+  <p class="lede">TaskM is a homework planner for high school students. This page explains what TaskM collects, why, and what it never does. Last updated October 17, 2026.</p>
+
+  <section class="card">
+    <h2>What TaskM keeps</h2>
+    <ul>
+      <li><b>Your account:</b> your name, email address, school, grade and the homework platforms you pick.</li>
+      <li><b>Your homework and grades:</b> the tasks, due dates and class grades TaskM finds, plus anything you add, check off or edit.</li>
+      <li><b>Your saved sources:</b> the addresses of pages and links you ask TaskM to keep updated.</li>
+    </ul>
+    <p>This is stored in Google Firebase and is visible only to you, and to a parent you link with an invite code.</p>
+  </section>
+
+  <section class="card">
+    <h2>How homework is found</h2>
+    <p>When you paste text, drop a file, or use the TaskM Chrome button, TaskM sends that content to Anthropic's Claude AI, which lists the homework, tests and grades in it. TaskM keeps the results, not the full text or file. Anthropic does not use this content to train its models.</p>
+  </section>
+
+  <section class="card">
+    <h2>The TaskM Chrome button</h2>
+    <ul>
+      <li>It reads a page only when you click it, or later when it refreshes a page you clicked it on before. It never reads other pages.</li>
+      <li>It keeps the list of those pages on your computer, plus a limited key that can only add pages to your TaskM account. The key expires after 90 days.</li>
+      <li>It never sees, asks for or stores your school passwords. It uses the sign-in you already have in Chrome.</li>
+      <li>To stop it updating a page, remove that page under "Saved sources" in TaskM. To stop everything, remove the extension from Chrome.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>What TaskM never does</h2>
+    <ul>
+      <li>It never sells your data or shows ads.</li>
+      <li>It never shares your data except with the services that run TaskM (Google Firebase for storage, Anthropic for reading homework).</li>
+      <li>It never asks for or stores school passwords.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Age and your data</h2>
+    <p>TaskM is for students 13 and older. You can remove any saved source, task or grade at any time.</p>
+  </section>
+</main>
+</body>
+</html>
