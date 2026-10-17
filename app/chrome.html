@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TaskM Chrome button</title>
+<link rel="icon" href="icon-192-v2.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f6fb;--card:#fff;--text:#1d1d2b;--muted:#6b6b80;--line:#e4e4ee;--accent:#5550D0;--soft:#ecebfb}
+@media (prefers-color-scheme:dark){:root{--bg:#121219;--card:#1b1b25;--text:#ececf3;--muted:#9a9ab0;--line:#2c2c3a;--accent:#8b95ff;--soft:#24243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 "Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:640px;margin:0 auto;padding:48px 16px 64px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+header img{width:48px;height:48px;border-radius:12px}
+h1{font-size:28px;line-height:1.2;margin:0;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:12px 0 28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 14px}
+ol{margin:0;padding:0;list-style:none;counter-reset:s}
+ol li{counter-increment:s;position:relative;padding:0 0 14px 40px}
+ol li:last-child{padding-bottom:0}
+ol li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--soft);color:var(--accent);font-weight:700;font-size:13px;display:grid;place-items:center}
+.dl{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:12px;margin:2px 0 6px}
+.dl:hover{filter:brightness(1.08)}
+code{font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:2px 6px;border-radius:6px;user-select:all}
+kbd{font:600 13px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px}
+.note{color:var(--muted);font-size:14px;margin:0}
+</style>
+</head>
+<body>
+<main>
+  <header><img src="icon-192-v2.png" alt=""><h1>TaskM Chrome button</h1></header>
+  <p class="lede">Some homework lives on pages that need your school sign-in, like a class OneNote or Teams. Open the page, click the TaskM button, and TaskM finds the homework on it. You stay signed in to your school as usual. TaskM never sees your school password.</p>
+
+  <section class="card">
+    <h2>Install it (computer, Chrome)</h2>
+    <ol>
+      <li><a class="dl" href="taskm-chrome.zip" download>Download TaskM Chrome</a><br>Open the downloaded file. You'll get a folder called <b>TaskM Chrome</b>.</li>
+      <li>In Chrome, go to <code>chrome://extensions</code> by copying it into the address bar.</li>
+      <li>Turn on <b>Developer mode</b> in the top right corner.</li>
+      <li>Click <b>Load unpacked</b> and choose the <b>TaskM Chrome</b> folder.</li>
+      <li>Click the puzzle piece next to the address bar, then the pin next to <b>TaskM</b>, so the button stays visible.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>Use it</h2>
+    <ol>
+      <li>Open the page with your homework, like your teacher's OneNote page, and wait for it to load.</li>
+      <li>Click the TaskM button, or press <kbd>Option</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> on a Mac (<kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> on Windows).</li>
+      <li>TaskM opens and adds the homework it finds. Click the button again whenever your teacher posts something new.</li>
+    </ol>
+  </section>
+
+  <p class="note">The button only reads the page you click it on, and only when you click it. Keep the TaskM Chrome folder where it is, since Chrome loads the button from it.</p>
+</main>
+</body>
+</html>
