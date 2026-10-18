@@ -1,6 +1,7 @@
 /* Runs on TaskM itself. It tells TaskM the button is installed, and passes along TaskM's
    "link my email" requests, so the student can link Gmail or Outlook from TaskM's Email view. */
 document.documentElement.setAttribute('data-taskm-ext', '1');
+document.documentElement.setAttribute('data-taskm-ext-v', chrome.runtime.getManifest().version);   // TaskM says when the button is out of date
 window.addEventListener('message', (e) => {
   if (e.source !== window || e.origin !== location.origin) return;
   const d = e.data;

@@ -90,6 +90,6 @@ test('emails become Email tab rows with a stable id', () => {
 
 test('email pages are named after the account', () => {
   assert.strictEqual(L.clipLabel('Search results - linjeremy1124@gmail.com - Gmail', 'https://mail.google.com/mail/u/0/#search/x'), 'Gmail · linjeremy1124@gmail.com');
-  assert.strictEqual(L.clipLabel('Mail - Jeremy Lin - Outlook', 'https://outlook.office.com/mail/inbox'), 'Outlook · Jeremy Lin');
-  assert.strictEqual(L.clipLabel('Outlook', 'https://outlook.live.com/mail/0/'), 'Outlook');
+  assert.strictEqual(L.clipLabel('Mail - Jeremy Lin - Outlook', 'https://outlook.office.com/mail/inbox'), 'School Outlook · Jeremy Lin');
+  assert.strictEqual(L.clipLabel('Outlook', 'https://outlook.live.com/mail/0/'), 'Outlook.com');
 });
