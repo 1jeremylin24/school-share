@@ -93,3 +93,22 @@ test('email pages are named after the account', () => {
   assert.strictEqual(L.clipLabel('Mail - Jeremy Lin - Outlook', 'https://outlook.office.com/mail/inbox'), 'School Outlook · Jeremy Lin');
   assert.strictEqual(L.clipLabel('Outlook', 'https://outlook.live.com/mail/0/'), 'Outlook.com');
 });
+
+test('the beta usage page counts visits and setup, and only the owner may open it', () => {
+  const now = Date.parse('2026-10-18T20:00:00Z');
+  const users = {
+    a: { profile: { name: 'Ana', role: 'student', school: 'PVHS', grade: '11' }, beta: { seen: now - 3600e3, ext: '1.3.2', days: { '2026-10-18': true, '2026-10-16': true, '2026-09-01': true } },
+      sources: { s1: {}, s2: {} }, aiItems: { s1: [{}, {}], s2: [{}] }, aiMail: { m: {} } },
+    b: { profile: { name: 'Ben', role: 'parent' } },
+  };
+  const out = L.betaSummary(users, [{ uid: 'a', email: 'ana@x.com', created: 'Thu, 15 Oct 2026 10:00:00 GMT' }, { uid: 'c', email: 'cy@x.com' }],
+    { f1: { text: 'old', at: 1 }, f2: { text: 'new', at: 2 } }, now);
+  assert.strictEqual(out.rows[0].name, 'Ana');
+  assert.deepStrictEqual([out.rows[0].days7, out.rows[0].days30, out.rows[0].tasks, out.rows[0].sources, out.rows[0].inboxes], [2, 2, 3, 2, 1]);
+  assert.strictEqual(out.rows.find(r => r.email === 'cy@x.com').role, 'not set up');
+  assert.deepStrictEqual(out.totals, { people: 3, students: 1, parents: 1, today: 1, week: 1, button: 1, sources: 1, feedback: 2 });
+  assert.strictEqual(out.feedback[0].text, 'new');
+  assert.strictEqual(L.isOwner({ email: 'LinJeremy1124@gmail.com', email_verified: true }), true);
+  assert.strictEqual(L.isOwner({ email: 'linjeremy1124@gmail.com', email_verified: false }), false);
+  assert.strictEqual(L.isOwner({ email: 'someone@gmail.com', email_verified: true }), false);
+});

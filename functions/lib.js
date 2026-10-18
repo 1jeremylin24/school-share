@@ -224,4 +224,39 @@ function clipLabel(title, url) {
   return (String(title || '').replace(/\s*[-|–—:]\s*(Microsoft\s+)?(OneNote|Teams|SharePoint|Outlook)(\s+(Online|for the web))?\s*$/i, '').trim() || host).slice(0, 60);
 }
 
-module.exports = { TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel };
+// ---- Friends beta: who signed up, who keeps coming back, and how far each person got with setup (counts only, no homework)
+const OWNER_HASHES = ['5fe6295b85aa4d852546936626db9190bb8a9eb26e955930b605d9a26ec9dd91', '03e02d55ad4902955526cf9abc17820179d63d68b620e457374c96b209bf2a8c'];
+function isOwner(token) {
+  return !!(token && token.email && token.email_verified && OWNER_HASHES.includes(hash(String(token.email).toLowerCase())));
+}
+const count = o => (o && typeof o === 'object' ? Object.keys(o).length : 0);
+function betaSummary(users, authUsers, feedback, now) {
+  const last = n => Array.from({ length: n }, (_, i) => ymdIn(new Date(now - i * DAY)));
+  const d7 = last(7), d30 = last(30), today = d7[0];
+  const byUid = {};
+  (authUsers || []).forEach(a => { byUid[a.uid] = a; });
+  const uids = [...new Set([...Object.keys(byUid), ...Object.keys(users || {})])];
+  const rows = uids.map(uid => {
+    const u = (users || {})[uid] || {}, a = byUid[uid] || {}, p = u.profile || {}, b = u.beta || {}, days = b.days || {};
+    const tasks = Object.values(u.aiItems || {}).reduce((n, l) => n + (Array.isArray(l) ? l.length : count(l)), 0);
+    const seen = Math.max(+b.seen || 0, Date.parse(a.lastSignIn || '') || 0) || null;
+    return {
+      name: String(p.name || a.name || '').slice(0, 80), email: a.email || '', role: p.role || (p.school ? 'student' : 'not set up'),
+      school: p.school || '', grade: p.grade || '', joined: Date.parse(a.created || p.created || '') || null, seen,
+      days7: d7.filter(d => days[d]).length, week: d7.map(d => !!days[d]).reverse(), days30: d30.filter(d => days[d]).length,
+      button: b.ext || null, sources: count(u.sources), tasks, inboxes: count(u.aiMail), grades: count(u.aiGrades), parents: count(u.parents),
+    };
+  }).sort((x, y) => (y.seen || 0) - (x.seen || 0));
+  const fb = Object.entries(feedback || {}).map(([id, f]) => ({ id, ...f })).sort((x, y) => (y.at || 0) - (x.at || 0));
+  return {
+    at: now,
+    totals: {
+      people: rows.length, students: rows.filter(r => r.role === 'student').length, parents: rows.filter(r => r.role === 'parent').length,
+      today: rows.filter(r => r.seen && ymdIn(new Date(r.seen)) === today).length, week: rows.filter(r => r.days7 > 0 || (r.seen && now - r.seen < 7 * DAY)).length,
+      button: rows.filter(r => r.button).length, sources: rows.filter(r => r.sources).length, feedback: fb.length,
+    },
+    rows, feedback: fb,
+  };
+}
+
+module.exports = { isOwner, betaSummary, TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel };

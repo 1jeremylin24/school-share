@@ -6,12 +6,14 @@
      Links can be saved so they are checked again every morning.
    - aiRemoveSource: stop checking a saved link and drop its tasks.
    - aiDaily (5:30 AM Pacific): re-reads every saved link that changed and refreshes each student's AI tasks.
+   - betaFeedback / betaStats: feedback from the app, and the owner-only usage page (app/beta.html).
    The Claude API key lives in Secret Manager as ANTHROPIC_API_KEY; it never reaches the website. */
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { defineSecret } = require('firebase-functions/params');
 const logger = require('firebase-functions/logger');
 const { initializeApp } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
 const { getDatabase, ServerValue } = require('firebase-admin/database');
 const Anthropic = require('@anthropic-ai/sdk');
 const { z } = require('zod');
@@ -316,6 +318,38 @@ exports.aiRemoveSource = onCall({ cors: ORIGINS }, async (req) => {
   if (!left) await db.ref(`aiIndex/${uid}`).remove();
   const items = await rebuild(uid);
   return { count: items.length };
+});
+
+// ---- Friends beta: feedback from the app goes to /feedback, which only the server and the owner's usage page read
+const FEEDBACK_KINDS = ['bug', 'idea', 'love'];
+exports.betaFeedback = onCall({ cors: ORIGINS }, async (req) => {
+  const uid = signedIn(req);
+  const d = req.data || {};
+  const text = String(d.text || '').trim().slice(0, 3000);
+  if (text.length < 2) throw new HttpsError('invalid-argument', 'Write a few words first.');
+  const r = await db.ref(`feedbackCount/${uid}/${L.ymdIn(new Date())}`).transaction(n => (n || 0) + 1);
+  if (r.snapshot.val() > 20) throw new HttpsError('resource-exhausted', 'That’s a lot of feedback for one day. Thank you! Send more tomorrow.');
+  const p = (await db.ref(`users/${uid}/profile`).once('value')).val() || {};
+  await db.ref('feedback').push({
+    uid, name: String(p.name || req.auth.token.name || '').slice(0, 80), email: req.auth.token.email || null, school: p.school || null,
+    kind: FEEDBACK_KINDS.includes(d.kind) ? d.kind : 'idea', text, page: String(d.page || '').slice(0, 40) || null,
+    ext: String(d.ext || '').slice(0, 20) || null, ua: String(d.ua || '').slice(0, 200) || null, at: ServerValue.TIMESTAMP,
+  });
+  return { ok: true };
+});
+
+// The owner's usage page: sign-ups, who came back this week, how far each person got with setup, and all feedback
+exports.betaStats = onCall({ cors: ORIGINS, memory: '512MiB' }, async (req) => {
+  signedIn(req);
+  if (!L.isOwner(req.auth.token)) throw new HttpsError('permission-denied', 'This page is only for TaskM’s owner.');
+  const authUsers = [];
+  let page;
+  do {
+    page = await getAuth().listUsers(1000, page && page.pageToken);
+    page.users.forEach(u => authUsers.push({ uid: u.uid, email: u.email, name: u.displayName, created: u.metadata.creationTime, lastSignIn: u.metadata.lastSignInTime }));
+  } while (page.pageToken);
+  const [users, feedback] = await Promise.all([db.ref('users').once('value'), db.ref('feedback').orderByChild('at').limitToLast(300).once('value')]);
+  return L.betaSummary(users.val() || {}, authUsers, feedback.val() || {}, Date.now());
 });
 
 // Every morning: re-read saved links that changed since yesterday
