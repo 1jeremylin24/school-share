@@ -146,7 +146,9 @@
   var el=d.querySelector('#calView .cx-legend');if(!el){el=d.createElement('div');el.className='cx-legend';lg.parentNode.insertBefore(el,lg);}
   if(el.innerHTML!==h)el.innerHTML=h;
   // the old importance legend: keep its hints (checked, faded, overdue, heavy day), drop the High/Medium/Low swatches it shared with chips
-  lg.querySelectorAll('.sw').forEach(function(s){var p=s.parentNode;if(p&&p.parentNode===lg)p.hidden=true;});}
+  lg.querySelectorAll('.sw').forEach(function(s){var p=s.parentNode;if(p&&p.parentNode===lg)p.hidden=true;});
+  // the Show checked toggle is gone (Done/All in the sidebar, the Done group on phones), so drop it from the hint
+  [].forEach.call(lg.children,function(s){if(/with Show checked/.test(s.textContent))s.textContent='checked off';});}
 
  function start(){body=d.getElementById('calBody');if(!body||!T())return;
   function mine(n){return n.nodeType===1&&/(^| )cx-/.test(n.className||'');}

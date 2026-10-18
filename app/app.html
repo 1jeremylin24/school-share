@@ -4283,7 +4283,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   return fetch(FN+name,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+A.token},body:JSON.stringify({data:data||{}})})
    .then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(!r.ok||j.error)throw {code:'fn',message:(j.error&&j.error.message)||'TaskM’s server didn’t answer. Try again in a minute.'};return j.result||{};});},
     function(){throw {code:'net',message:'Couldn’t reach TaskM’s server. Check your connection.'};});}
- function pullAI(){return db('users/'+A.uid+'/imported/ai').then(function(v){var im=imports();if(v&&v.items)im.ai=v;else delete im.ai;js(IK,im);apply();paintMail();
+ function pullAI(){return db('users/'+A.uid+'/imported/ai').then(function(v){var im=imports();if(v&&(v.items||v.mail||v.grades))im.ai=v;else delete im.ai;js(IK,im);apply();paintMail();
   return {status:'connected',count:v&&v.items?v.items.length:0,at:v&&v.at};});}
  var aiSrc={},srcLoaded=false;
  function loadSources(){return db('users/'+A.uid+'/sources').then(function(v){aiSrc=v||{};srcLoaded=true;paintSources();},function(){});}
