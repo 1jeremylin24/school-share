@@ -4473,19 +4473,31 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     return pause(3000).then(function(){return SP.frames();}).then(function(g){return joinTexts((g.frames||[]).filter(function(x){return isAssignFrame(x.url);}));});
    return SP.run({code:i===9?CLICK_ASSIGN:CLICK_WEBAPP}).catch(function(){}).then(step);});}
   return step();}
+ // TaskM's page reader (crawl.js, shipped inside the app) clicks through the hidden reader's site: the notebook's other
+ // sections, each Teams channel, the school site's grade pages. An older app without it just reads the one page.
+ function crawlHidden(){var out=[],n=0;
+  function step(){return SP.crawlStep().then(function(r){var more=false;(r&&r.results||[]).forEach(function(x){var v;try{v=JSON.parse(x.value);}catch(e){return;}
+    if(v&&v.text)out.push(v.text);if(v&&!v.done)more=true;});return more&&++n<10?step():out.join('\n\n');},function(){return out.join('\n\n');});}
+  return step();}
+ function withCrawl(x){if(!x.text)return x;return crawlHidden().then(function(m){return m?{text:(x.text+'\n\n'+m).slice(0,150000),title:x.title}:x;});}
  // read a page in the hidden reader: {text,title} or {signin:true}
  function readHidden(url){var teams=url.indexOf('/l/app/'+ASSIGN_APP)>=0;
   return SP.visit({url:url}).then(function(){return pause(6000);}).then(function(){return SP.frames();}).then(function(f){
    if(signinPage(url,f.url))return {signin:true};
-   if(teams)return teamsAssignments().then(function(t){return t?{text:t,title:'Teams assignments'}:SP.frames().then(function(g){return signinPage(url,g.url)?{signin:true}:{};});});
-   var t=joinTexts(f.frames);if(t.length>=200)return {text:t,title:f.title};
-   return pause(6000).then(function(){return SP.frames();}).then(function(g){return signinPage(url,g.url)?{signin:true}:{text:joinTexts(g.frames),title:g.title};});});}
+   // Teams: the Assignments app, then the activity feed, chats and each class team's channels
+   if(teams)return teamsAssignments().then(function(t){if(!t)return SP.frames().then(function(g){return signinPage(url,g.url)?{signin:true}:{};});
+     return SP.visit({url:new URL(url).origin+'/'}).then(function(){return pause(12000);}).then(function(){return withCrawl({text:t,title:'Teams assignments'});},function(){return {text:t,title:'Teams assignments'};});});
+   var t=joinTexts(f.frames);if(t.length>=200)return withCrawl({text:t,title:f.title});
+   return pause(6000).then(function(){return SP.frames();}).then(function(g){return signinPage(url,g.url)?{signin:true}:withCrawl({text:joinTexts(g.frames),title:g.title});});});}
  // the student tapped Add to TaskM. In Teams, TaskM opens the Assignments app (every class) and reads that instead.
  function schoolOpen(url){if(!SP)return;if(A.demo||!A.uid){toast('Adding school pages needs a real account (not the demo).');return;}
   SP.open({url:url||''}).then(function(r){if(!r||r.action!=='add')return;
    if(!isTeamsUrl(r.url)){var text=joinTexts(r.frames);
     if(text.length<40){toast('TaskM didn’t find any text on that page. Wait for it to finish loading, then tap Add to TaskM again.');return;}
-    notePhonePage(r.url);clipPost({url:r.url,title:r.title,text:text});return;}
+    notePhonePage(r.url);clipPost({url:r.url,title:r.title,text:text});
+    // then read it again out of sight, clicking through the rest of the site, and replace the quick read
+    phoneBusy=true;return pause(4000).then(function(){return readHidden(r.url);}).then(function(x){if(x.text&&x.text.length>text.length)clipPost({url:r.url,title:x.title||r.title,text:x.text,quiet:true});})
+     .then(function(){phoneBusy=false;SP.closeReader().catch(function(){});},function(){phoneBusy=false;SP.closeReader().catch(function(){});});}
    var au=new URL(r.url).origin+'/l/app/'+ASSIGN_APP;phoneBusy=true;clipNote('Finding your Teams assignments… this takes about a minute.');
    return readHidden(au).then(function(x){if(x.text&&x.text.length>=40){notePhonePage(au);clipPost({url:au,title:'Teams assignments',text:x.text});return;}
      var own=joinTexts(r.frames);if(own.length>=40){notePhonePage(r.url);clipPost({url:r.url,title:r.title,text:own});return;}
@@ -4511,14 +4523,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function mailSources(){return Object.keys(aiSrc).filter(function(k){var x=aiSrc[k],h='';try{h=new URL(x.url).hostname;}catch(e){}return x.kind==='clip'&&MAILHOST.test(h);});}
  function hasButton(){return document.documentElement.getAttribute('data-taskm-ext')==='1';}
  // The newest TaskM button. An older copy keeps working but misses fixes, so TaskM says so until it's updated.
- var EXT_V='1.3.2';
+ var EXT_V='1.4.0';
  function vNum(v){return String(v||'0').split('.').reduce(function(n,x){return n*1000+(+x||0);},0);}
  function buttonOld(){var v=document.documentElement.getAttribute('data-taskm-ext-v');return hasButton()?vNum(v||'1.2.0')<vNum(EXT_V):btnSeen;}
  function btnBanner(){var a=document.getElementById('aiPanel'),el=document.getElementById('btnUpdate');if(!a)return;
   if(!buttonOld()){if(el)el.remove();return;}
   if(!el){el=document.createElement('div');el.id='btnUpdate';el.className='tc-update';el.setAttribute('role','status');a.parentNode.insertBefore(el,a);}
   var v=document.documentElement.getAttribute('data-taskm-ext-v');
-  el.innerHTML=ico('alert',16)+'<span><b>Update your TaskM button</b> You have '+(v?'version '+esc(v):'an older version')+'. The new one ('+EXT_V+') fixes bugs, like the screen going black while it reads a page.</span><a class="tt-btn" href="chrome.html#update" target="_blank" rel="noopener">How to update</a>';}
+  el.innerHTML=ico('alert',16)+'<span><b>Update your TaskM button</b> You have '+(v?'version '+esc(v):'an older version')+'. The new one ('+EXT_V+') reads every notebook section, Teams channel and grades page, not just the one you clicked.</span><a class="tt-btn" href="chrome.html#update" target="_blank" rel="noopener">How to update</a>';}
  // Gmail: the last two weeks of Primary and Updates (no promotions or social), plus anyone on the always-include list
  function mailUrl(kind,w,n){if(kind==='outlook')return 'https://outlook.office.com/mail/inbox';if(kind==='outlook2')return 'https://outlook.live.com/mail/0/inbox';
   var qy='newer_than:14d (category:primary OR category:updates'+(w.length?' OR from:('+w.join(' OR ')+')':'')+')';

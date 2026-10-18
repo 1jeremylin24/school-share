@@ -137,9 +137,9 @@ function checkText(text) {
   if (text.length > MAX_TEXT) throw new HttpsError('invalid-argument', 'That’s too long for TaskM to read at once. Split it into a few smaller pieces.');
 }
 
-const ONENOTE_HINT = 'This is a teacher’s class OneNote notebook. A date written next to homework is the day it was assigned, not the due date.';
+const ONENOTE_HINT = 'This is a teacher’s class OneNote notebook. A date written next to homework is the day it was assigned, not the due date. TaskM may have opened several sections and pages of it; each starts with a === line naming it, and the same homework can appear in more than one, so list it once.';
 const MAIL_HINT = 'This is the student’s email inbox or an open email (sender, subject, preview, date received). It can include personal email. A date shown next to a message in a list is when it arrived, not a due date. Separate emails are marked with === lines when TaskM read them one by one.';
-const TEAMS_HINT = 'This is the student’s Microsoft Teams Assignments list for all their classes (class, assignment, due date and time). Use the due dates shown. Skip assignments marked turned in, returned or graded.';
+const TEAMS_HINT = 'This is the student’s Microsoft Teams Assignments list for all their classes (class, assignment, due date and time). Use the due dates shown. Skip assignments marked turned in, returned or graded. After the list, TaskM may add the activity feed, recent chats and posts from each class team’s channels, each starting with a === line naming the team and channel. From those, add tests, events, important dates and anything a teacher or club asks students to do or sign up for, with the date the post gives. A chat or mention that asks the student something becomes a task to reply. Skip ordinary chatter, files with nothing to do, and posts more than two weeks old.';
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 // A dropped file -> the same shape download() returns
 function fromFile(f) {
@@ -230,7 +230,7 @@ async function addForUser(uid, d) {
   const isOneNote = clip && /\.sharepoint\.com$|onenote/i.test(new URL(clip.url).hostname);
   const label = clip ? L.clipLabel(clip.title, clip.url) : String(d.label || '').trim().slice(0, 60) || null;
   const isMail = clip && /^(mail\.google\.com|outlook\.(office|office365|live)\.com)$/i.test(new URL(clip.url).hostname);
-  const hint = clip ? (isOneNote ? ONENOTE_HINT : isMail ? MAIL_HINT : /\/l\/app\//.test(clip.url) && /^teams\./i.test(new URL(clip.url).hostname) ? TEAMS_HINT : `The student sent this from a school page they were signed in to (${new URL(clip.url).hostname}).`) : String(d.hint || '').trim().slice(0, 300) || null;
+  const hint = clip ? (isOneNote ? ONENOTE_HINT : isMail ? MAIL_HINT : /\/l\/app\//.test(clip.url) && /^teams\./i.test(new URL(clip.url).hostname) ? TEAMS_HINT : `The student sent this from a school page they were signed in to (${new URL(clip.url).hostname}). TaskM may have also opened other pages on the same site, each starting with a === line naming it.`) : String(d.hint || '').trim().slice(0, 300) || null;
   const key = clip ? clipId : /^[-\w]{1,40}$/.test(String(d.key || '')) && !/^p/.test(d.key) ? String(d.key) : null; // a source the app reads itself (OneNote, Chrome button)
   const link = clip ? clip.url : d.link ? L.safeUrl(String(d.link).slice(0, 2000)) : null; // the page pasted text came from, so tasks open it
   const clipRec = async (count) => {

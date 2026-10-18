@@ -43,6 +43,7 @@ final class FrameCollector: NSObject, WKScriptMessageHandler {
     }
 
     func reset() { frames = [:] }
+    func all() -> [WKFrameInfo] { Array(frames.values) }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         let f = message.frameInfo
@@ -101,6 +102,7 @@ public class SchoolPagePlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegate
         CAPPluginMethod(name: "visit", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "frames", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "run", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "crawlStep", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "closeReader", returnType: CAPPluginReturnPromise),
     ]
 
@@ -162,6 +164,34 @@ public class SchoolPagePlugin: CAPPlugin, CAPBridgedPlugin, WKNavigationDelegate
         DispatchQueue.main.async {
             guard let wv = self.reader else { call.resolve(); return }
             wv.evaluateJavaScript(code) { _, _ in call.resolve() }
+        }
+    }
+
+    /// One step of TaskM's page reader (crawl.js, shipped inside the app) in the hidden reader's page and every frame in
+    /// it, since OneNote's notebook is a frame from another site. It clicks through notebook sections and Teams channels.
+    /// Only that bundled file runs here. Resolves {results: [{url, value}]}, each value the JSON from TaskMCrawl.step().
+    private lazy var crawlSource: String? = Bundle.main.url(forResource: "crawl", withExtension: "js", subdirectory: "public")
+        .flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+    @objc func crawlStep(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let wv = self.reader, let src = self.crawlSource else { call.resolve(["results": []]); return }
+            let code = src + "\nreturn JSON.stringify(await window.TaskMCrawl.step());"
+            let targets: [WKFrameInfo?] = [nil] + self.collector.all().map { Optional($0) }
+            var out: [[String: String]] = []
+            var finished = false
+            let group = DispatchGroup()
+            for f in targets {
+                group.enter()
+                wv.callAsyncJavaScript(code, arguments: [:], in: f, in: .page) { result in
+                    if case .success(let v) = result, let s = v as? String {
+                        out.append(["url": f?.request.url?.absoluteString ?? wv.url?.absoluteString ?? "", "value": s])
+                    }
+                    group.leave()
+                }
+            }
+            func finish() { if finished { return }; finished = true; call.resolve(["results": out]) }
+            group.notify(queue: .main) { finish() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 90) { finish() }   // a frame that went away never answers
         }
     }
 
