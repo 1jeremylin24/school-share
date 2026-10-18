@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TaskM",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "description": "Click once on a school page, like Teams, a class OneNote, Aeries grades or your email, and TaskM keeps your homework, grades and emails updated from it.",
   "icons": {
     "16": "icons/icon16.png",

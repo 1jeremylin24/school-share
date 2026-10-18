@@ -33,9 +33,16 @@ async function sendTab(tab) {
   try {
     const ok = await deliver(await openTaskM(tab), clip);
     badge(tab.id, ok ? '✓' : '!', ok ? 'Sent to TaskM. It will keep this page updated.' : 'TaskM didn’t open in time. Click the button again.');
+    if (ok) deepRead(clip.url);
   } catch (e) {
     badge(tab.id, '!', 'Couldn’t open TaskM. Click the button again.');
   }
+}
+// Right after a click, read the page again in the reader tab, this time clicking through the rest of the site
+// (crawl.js), so TaskM gets every notebook section, Teams channel or Aeries class, not just the open page.
+async function deepRead(url) {
+  const k = pageKey(url), p = k && (await getPages())[k];
+  if (p) setTimeout(() => refreshOne(k, p).catch(() => {}), 3000);
 }
 
 // ---- "Link Gmail" / "Link school Outlook" in TaskM's Email view: read the inbox without leaving TaskM
@@ -83,6 +90,7 @@ async function sendTeams(tab) {
   try {
     const ok = await deliver(await openTaskM(tab), clip);
     badge(tab.id, ok ? '✓' : '!', ok ? 'Sent your Teams assignments to TaskM. It will keep them updated.' : 'TaskM didn’t open in time. Click the button again.');
+    if (ok && !r.own) deepRead(clip.url);
   } catch (e) { badge(tab.id, '!', 'Couldn’t open TaskM. Click the button again.'); }
 }
 // Teams loads Assignments in a frame after a while; keep checking for it (and get past Teams' "open in the app?" page)
@@ -134,6 +142,9 @@ async function onTabUpdated(tabId, info, tab) {
   if (!p || Date.now() - p.at < VISIT_GAP_MIN * 60000) return;
   if (MAIL_HOSTS.test(new URL(tab.url).hostname) && tab.url !== p.url) return;
   if (p.url.includes('/l/app/' + ASSIGNMENTS_APP)) return;   // Teams assignments refresh in the background
+  // a mail page is read where it is; anything else again in the reader tab, clicking through the site like the daily
+  // refresh, so a quick read of one page never replaces a full one
+  if (!MAIL_HOSTS.test(new URL(tab.url).hostname)) { p.at = Date.now(); await setPages({ ...pages, [k]: p }); return refreshOne(k, p).catch(() => {}); }
   setTimeout(async () => {
     const t = await chrome.tabs.get(tabId).catch(() => null);
     if (!t || pageKey(t.url) !== k) return;
@@ -178,7 +189,7 @@ async function openReader(url) {
   const nw = await chrome.windows.create({ url, state: 'minimized', focused: false });   // Chrome open with no windows
   return { tabId: nw.tabs[0].id, close: () => chrome.windows.remove(nw.id).catch(() => {}) };
 }
-async function readInWindow(url) {
+async function readInWindow(url, deep = true) {
   const reader = await openReader(url);
   const tabId = reader.tabId;
   refreshing.add(tabId);
@@ -191,12 +202,19 @@ async function readInWindow(url) {
       const text = await readTeamsAssignments(tabId);
       t = await chrome.tabs.get(tabId).catch(() => t);
       if (!text && needsSignIn(url, t.url)) return { signin: true };
-      return { text, title: 'Teams assignments' };
+      if (!deep || !text) return { text, title: 'Teams assignments' };
+      // then the activity feed, chats and each class team's channels
+      await chrome.tabs.update(tabId, { url: new URL(url).origin + '/' });
+      await loaded(tabId);
+      await wait(12000);
+      const more = await crawlTab(tabId);
+      return { text: more ? (text + '\n\n' + more).slice(0, MAX_TEXT) : text, title: 'Teams assignments' };
     }
     let text = await readTab(tabId);
     if (!text || text.length < 200) { await wait(6000); text = await readTab(tabId); t = await chrome.tabs.get(tabId); }
     if (needsSignIn(url, t.url)) return { signin: true };
-    return { text, title: t.title || '' };
+    const more = deep && text ? await crawlTab(tabId) : '';
+    return { text: more ? (text + '\n\n' + more).slice(0, MAX_TEXT) : text, title: t.title || '' };
   } finally {
     refreshing.delete(tabId);
     reader.close();
@@ -324,6 +342,20 @@ async function gmailThreads(max, per) {
     } catch (e) { /* skip this one */ }
   }
   return parts.length ? parts.join('\n\n') : null;
+}
+// Clicks through the page's notebook sections, Teams channels or school site (crawl.js) and returns what it found, or ''.
+// Each step works under a minute so Chrome doesn't stop waiting; a frame with nothing to do answers done at once.
+async function crawlTab(tabId) {
+  try { await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['crawl.js'] }); } catch (e) { return ''; }
+  const out = [];
+  for (let n = 0; n < 10; n++) {
+    let res;
+    try { res = await chrome.scripting.executeScript({ target: { tabId, allFrames: true }, func: () => (window.TaskMCrawl ? window.TaskMCrawl.step() : { done: true }) }); } catch (e) { break; }
+    let more = false;
+    for (const f of res || []) { const v = f.result; if (!v) continue; if (v.text) out.push(v.text); if (!v.done) more = true; }
+    if (!more) break;
+  }
+  return out.join('\n\n').slice(0, MAX_TEXT);
 }
 function readFrame() {
   const b = document.body;

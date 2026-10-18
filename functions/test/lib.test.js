@@ -115,3 +115,33 @@ test('the beta usage page counts visits and setup, and only the owner may open i
   assert.strictEqual(L.isOwner({ email: 'linjeremy1124@gmail.com', email_verified: false }), false);
   assert.strictEqual(L.isOwner({ email: 'someone@gmail.com', email_verified: true }), false);
 });
+
+test('school calendars: Pacific times, HTML descriptions cleaned, master calendar minus games, practices and repeats', () => {
+  const ics = 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART:20261023T153000Z\r\nSUMMARY:Disaster Drill\r\nDESCRIPTION:<p>Fire evacuation&#160;drill</p>\r\nEND:VEVENT\r\n' +
+    'BEGIN:VEVENT\r\nDTSTART;VALUE=DATE:20261111\r\nSUMMARY:No School\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nDTSTART:20250101\r\nSUMMARY:Old\r\nEND:VEVENT\r\nEND:VCALENDAR';
+  const cur = L.icsEvents(ics, '2026-10-18');
+  assert.deepStrictEqual(cur.map(e => [e.date, e.time, e.title]), [['2026-10-23', '08:30', 'Disaster Drill'], ['2026-11-11', null, 'No School']]);
+  assert.strictEqual(cur[0].details, 'Fire evacuation drill');
+  const master = [{ date: '2026-10-23', time: null, title: 'Disaster drill' }, { date: '2026-10-20', time: null, title: 'Football Practice-Field' },
+    { date: '2026-10-20', time: null, title: 'Tennis, Girls VR vs Palos Verdes' }, { date: '2026-11-03', time: '08:00', title: 'Mandated 11th Grade Hearing Screening' }];
+  assert.deepStrictEqual(L.schoolEvents(cur, master).map(e => [e.title, e.cal]),
+    [['Disaster Drill', 'school'], ['Mandated 11th Grade Hearing Screening', 'master'], ['No School', 'school']]);
+});
+
+test('school items: grade tags, everyone when all four grades, past items dropped, undated info last', () => {
+  const t = '2026-10-18';
+  const a = L.toSchoolItem({ title: 'Senior meeting', kind: 'counseling', date: '2026-10-19', grades: [12, 12, 7], importance: 'high', summary: 'x', link: 'javascript:alert(1)' }, t);
+  assert.deepStrictEqual([a.grades, a.importance, a.link, a.audience], [[12], 'high', null, 'everyone']);
+  assert.deepStrictEqual(L.toSchoolItem({ title: 'Pep rally', kind: 'event', date: '2026-10-29', grades: [9, 10, 11, 12] }, t).grades, []);
+  assert.strictEqual(L.toSchoolItem({ title: 'Old', kind: 'event', date: '2026-10-01' }, t), null);
+  assert.strictEqual(L.toSchoolItem({ title: 'x', kind: 'party', date: '2026-10-20' }, t), null);
+  assert.ok(L.toSchoolItem({ title: 'AP week', kind: 'deadline', date: '2026-10-15', end_date: '2026-10-23' }, t), 'still running');
+  const info = L.toSchoolItem({ title: 'Counselor directory', kind: 'counseling', date: null }, t);
+  const s = L.sortSchool([info, a, a]);
+  assert.deepStrictEqual(s.map(x => x.title), ['Senior meeting', 'Counselor directory']);
+});
+
+test('only the page content of an Edlio school page is kept', () => {
+  const html = '<nav>Home | School Info | lots of menu</nav><div id="content_main" class="x"><h1>AP Exams</h1><p>Register by Oct 23</p></div><footer id="footer_main">Address</footer>';
+  assert.strictEqual(L.htmlToText(L.edlioMain(html)), 'AP Exams\nRegister by Oct 23');
+});
