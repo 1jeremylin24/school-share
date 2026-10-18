@@ -25,6 +25,8 @@ private func schoolWebView(_ frames: FrameCollector) -> WKWebView {
     frames.install(in: config)
     let wv = WKWebView(frame: .zero, configuration: config)
     wv.allowsBackForwardNavigationGestures = true
+    // An app web view leaves "Version/… Safari/…" out of its user agent, and Teams then calls the browser unsupported
+    wv.customUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15"
     return wv
 }
 
