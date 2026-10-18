@@ -13,18 +13,22 @@
   return 'home';}
  var LINKS=[['home','Home','/'],['app','My TaskM','/app'],['parent','Parent view','/app?parent-preview'],['admin','Admin','/admin.html']];
  function paint(){
+  var h=document.documentElement;h.classList.toggle('tm-ob-on',on());h.classList.toggle('tm-ob-tabs',page()!=='home'&&page()!=='admin');
   if(!on()){if(bar){bar.remove();bar=null;}return;}
   if(!bar){
+   // z-index 940: under the app's sheets and menus (account sheet 1100, search 1000), so they always cover the bar
    var st=document.createElement('style');
-   st.textContent='.tm-ob{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483000;display:flex;gap:2px;padding:4px;border-radius:999px;'+
+   st.textContent='.tm-ob{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:940;display:flex;gap:2px;padding:4px;border-radius:999px;'+
     'background:rgba(14,16,32,.88);border:1px solid rgba(190,192,255,.22);box-shadow:0 10px 30px -8px rgba(0,0,0,.6);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font:600 13px/1 "Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}'+
     '.tm-ob a{display:inline-flex;align-items:center;height:32px;padding:0 13px;border-radius:999px;color:#c9cbe6;text-decoration:none;white-space:nowrap;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:background-color 150ms ease,color 150ms ease}'+
     '.tm-ob a[aria-current=page]{background:#eeeef8;color:#0b0c18}'+
     '.tm-ob a:active{transform:scale(.97)}'+
     '@media (hover:hover) and (pointer:fine){.tm-ob a:not([aria-current]):hover{background:rgba(255,255,255,.08);color:#fff}}'+
-    '@media (max-width:700px){.tm-ob{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.tm-ob a{padding:0 10px}}'+
+    '@media (max-width:700px){html.tm-ob-tabs .tm-ob{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.tm-ob a{padding:0 10px}}'+   // above the app's phone tab bar
     'html.taskm-parent #tmOwnerBar#tmOwnerBar#tmOwnerBar{display:flex!important}'+   // the parent view hides everything else in <body>
-    'html.au-open .tm-ob{display:none!important}'+   // never over the log in / sign up page
+    'html.au-open .tm-ob{display:none!important}'+
+    'html.tm-ob-on body{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}'+   // so the bottom of every page can scroll above the bar
+    '@media (max-width:700px){html.tm-ob-on.tm-ob-tabs body{padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}}'+   // never over the log in / sign up page
     '@media print{.tm-ob{display:none}}';
    document.head.appendChild(st);
    bar=document.createElement('nav');bar.className='tm-ob';bar.id='tmOwnerBar';bar.setAttribute('aria-label','Owner pages');
