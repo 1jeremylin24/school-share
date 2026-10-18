@@ -27,6 +27,9 @@
     '@media (max-width:700px){html.tm-ob-tabs .tm-ob{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.tm-ob a{padding:0 10px}}'+   // above the app's phone tab bar
     'html.taskm-parent #tmOwnerBar#tmOwnerBar#tmOwnerBar{display:flex!important}'+   // the parent view hides everything else in <body>
     'html.au-open .tm-ob{display:none!important}'+
+    // the app's little "Added … / Undo" messages sit just above the bar instead of under it
+    'html.tm-ob-on .tt-toast,html.tm-ob-on .ns-toast,html.tm-ob-on #toast.toast{bottom:calc(68px + env(safe-area-inset-bottom,0px))!important}'+
+    '@media (max-width:700px){html.tm-ob-on.tm-ob-tabs .tt-toast,html.tm-ob-on.tm-ob-tabs .ns-toast{bottom:calc(136px + env(safe-area-inset-bottom,0px))!important}}'+
     'html.tm-ob-on body{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}'+   // so the bottom of every page can scroll above the bar
     '@media (max-width:700px){html.tm-ob-on.tm-ob-tabs body{padding-bottom:calc(140px + env(safe-area-inset-bottom,0px))}}'+   // never over the log in / sign up page
     '@media print{.tm-ob{display:none}}';
@@ -45,4 +48,12 @@
  // signing out in another tab, or coming back to this page with Back, updates the bar right away
  addEventListener('storage',function(e){if(!e.key||e.key===KEY||e.key==='taskm-acct-uid')paint();});
  addEventListener('pageshow',paint);
+ // Parent view from another page (/app?parent-preview): open the sample parent view as soon as the student account is ready.
+ // owner.js also does this, but only after a verified-email owner check, which a student ID sign-in doesn't pass.
+ if(/[?&]parent-preview\b/.test(location.search)&&page()==='app'){
+  var go=function(acc){var A=window.TaskMAccount;if(!go||!on()||!acc||!acc.profile||acc.profile.role==='parent'||!A.previewParent)return;go=null;
+   try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
+   setTimeout(function(){if(!document.documentElement.classList.contains('taskm-parent'))A.previewParent(true);mark();},300);};
+  var hook=function(){var A=window.TaskMAccount;if(A&&A.onReady)A.onReady(function(acc){if(go)go(acc);});};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();}
 })();

@@ -1888,6 +1888,14 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
 #debriefPanel .tc-mailmsg[hidden]{display:none}
 #debriefPanel .tc-mailmsg a{color:var(--accent);font-weight:600}
 #debriefPanel .tc-sub{margin:16px 0 6px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+#debriefPanel .tc-mailtop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+#debriefPanel .tc-mailtop .tc-check{margin-top:0}
+#debriefPanel .tc-mailset{margin-top:12px;border-top:1px solid var(--line,rgba(255,255,255,.08));padding-top:10px}
+#debriefPanel .tc-mailset>summary{cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);list-style:none;padding:4px 0}
+#debriefPanel .tc-mailset>summary::-webkit-details-marker{display:none}
+#debriefPanel .tc-mailset>summary span{font-weight:500;opacity:.75}
+#debriefPanel .tc-mailset>summary span::before{content:'·';margin-right:8px}
+#debriefPanel .tc-mailset .tc-check{margin-top:8px}
 /* Set up TaskM v2: one slim bar; the full list opens on request */
 #setupPanel{padding:10px 14px}
 #setupPanel .tc-sbar{display:flex;align-items:center;gap:12px;min-height:36px;flex-wrap:wrap}
@@ -2035,6 +2043,7 @@ html.tt-kbup .tt-sheetbox{padding-bottom:12px}
 .tm-sample{position:fixed;z-index:950;left:16px;bottom:calc(var(--tt-nav,0px) + 16px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 104px);display:flex;align-items:center;gap:8px;
  padding:6px 6px 6px 14px;border-radius:999px;background:var(--text);color:var(--bg);font-size:13px;box-shadow:0 10px 24px -8px rgba(0,0,0,.35)}
 .tm-sample>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-sample .tm-sl{font-style:normal}@media (max-width:600px){.tm-sample .tm-sl{display:none}}
 .tm-sample button[data-tmconnect]{flex:none;min-height:32px;padding:0 12px;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent,#fff);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .tm-sample .tm-sx{flex:none;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:inherit;opacity:.7;cursor:pointer}
 @media (min-width:601px){.tm-sample{left:auto;right:24px;bottom:24px;max-width:none}}
@@ -4430,6 +4439,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   lock:'<rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',pen:'<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',alert:'<path d="M12 4.5 21 19.5H3z"/><path d="M12 10v4M12 17h.01"/>',
   link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'};
  IC.clip='<path d="M20.5 11.5l-8.3 8.3a5 5 0 0 1-7.1-7.1l8.3-8.3a3.3 3.3 0 0 1 4.7 4.7l-8.3 8.3a1.7 1.7 0 0 1-2.4-2.4l7.6-7.6"/>';IC.file='<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>';IC.up='<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>';
+ IC.gear='<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>';
  IC.chat='<path d="M20 12a7.5 7.5 0 0 1-11 6.6L4 20l1.4-4.5A7.5 7.5 0 1 1 20 12z"/>';
  function ico(n,z){z=z||16;return '<svg class="tc-i" width="'+z+'" height="'+z+'" viewBox="0 0 24 24" '+SW+' aria-hidden="true">'+IC[n]+'</svg>';}
  function hd(t,sub){return '<div class="tc-hd"><h3>'+t+'</h3>'+(sub?'<small>'+sub+'</small>':'')+'</div>';}
@@ -4581,7 +4591,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function mailSources(){return Object.keys(aiSrc).filter(function(k){var x=aiSrc[k],h='';try{h=new URL(x.url).hostname;}catch(e){}return x.kind==='clip'&&MAILHOST.test(h);});}
  function hasButton(){return document.documentElement.getAttribute('data-taskm-ext')==='1';}
  // The newest TaskM button. An older copy keeps working but misses fixes, so TaskM says so until it's updated.
- var EXT_V='1.4.1';
+ var EXT_V='1.4.2';
  function vNum(v){return String(v||'0').split('.').reduce(function(n,x){return n*1000+(+x||0);},0);}
  function buttonOld(){var v=document.documentElement.getAttribute('data-taskm-ext-v');return hasButton()?vNum(v||'1.2.0')<vNum(EXT_V):btnSeen;}
  function btnBanner(){var a=document.getElementById('aiPanel'),el=document.getElementById('btnUpdate');if(!a)return;
@@ -4596,17 +4606,23 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function gmailSlots(){return mailSources().map(function(k){var m=/mail\.google\.com\/mail\/u\/(\d+)/.exec(aiSrc[k].url||'');return m?+m[1]:null;}).filter(function(x){return x!==null;});}
  function debriefs(){var p=A.profile||{},w=p.watchEmails||[],linked=mailSources();
   var gs=gmailSlots(),hasO=linked.some(function(k){return /outlook\.office/.test(aiSrc[k].url);}),hasL=linked.some(function(k){return /outlook\.live/.test(aiSrc[k].url);});
-  return hd('Email','TaskM reads your school and personal email, sums up each one below, and adds anything due to your planner')+
-   '<form class="tc-row" data-tc="addmail"><input type="text" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Teacher email, or your school’s domain like pvpusd.net" aria-label="Sender email or domain" autocomplete="off"><button type="submit" class="tt-btn">'+ico('plus')+'Add</button></form>'+
+  var watch='<form class="tc-row" data-tc="addmail"><input type="text" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="Teacher email, or your school’s domain like pvpusd.net" aria-label="Sender email or domain" autocomplete="off"><button type="submit" class="tt-btn">'+ico('plus')+'Add</button></form>'+
    (w.length?'<div class="tc-chips">'+w.map(function(a){return '<span class="tc-chip"><span>'+esc(a)+'</span><button type="button" class="tc-x" data-delmail="'+esc(a)+'" aria-label="Stop watching '+esc(a)+'">'+ico('x',14)+'</button></span>';}).join('')+'</div>':
-    '<p class="tc-hint">Optional: add your teachers or your school’s domain so their emails are always included, even ones Gmail files under Promotions.</p>')+
-   '<div class="tc-row tc-check"><button type="button" class="tt-btn" data-tc="gmail">'+ico('mail')+(gs.length?'Check Gmail now':'Link Gmail')+'</button>'+
-    (gs.length?'<button type="button" class="tt-btn" data-tc="gmail2">'+ico('plus')+'Add another Gmail</button>':'')+
-    '<button type="button" class="tt-btn" data-tc="outlook">'+ico('mail')+(hasO?'Check school Outlook':'Link school Outlook')+'</button>'+
-    '<button type="button" class="tt-btn" data-tc="outlook2">'+ico('mail')+(hasL?'Check Outlook.com':'Link Outlook.com')+'</button></div>'+
-   '<p class="tc-mailmsg tc-hint" role="status"'+(mailMsg?'':' hidden')+'>'+mailMsg+'</p>'+
-   (linked.length?'<h4 class="tc-sub">Linked email</h4><ul class="tc-grades">'+linked.map(srcRow).join('')+'</ul>'+
-    '<p class="tc-hint">Each one updates by itself every day. Its emails are summed up below.</p>':'');}
+    '<p class="tc-hint">Optional: add your teachers or your school’s domain so their emails are always included, even ones Gmail files under Promotions.</p>'),
+   msg='<p class="tc-mailmsg tc-hint" role="status"'+(mailMsg?'':' hidden')+'>'+mailMsg+'</p>',
+   btn=function(k,i,t){return '<button type="button" class="tt-btn" data-tc="'+k+'">'+ico(i)+t+'</button>';};
+  // Nothing linked yet: show the whole setup. Once email is linked, the emails come first and setup folds away.
+  if(!linked.length)return hd('Email','TaskM reads your school and personal email, sums up each one below, and adds anything due to your planner')+watch+
+   '<div class="tc-row tc-check">'+btn('gmail','mail','Link Gmail')+btn('outlook','mail','Link school Outlook')+btn('outlook2','mail','Link Outlook.com')+'</div>'+msg;
+  var names=[];if(gs.length)names.push(gs.length>1?gs.length+' Gmail':'Gmail');if(hasO)names.push('school Outlook');if(hasL)names.push('Outlook.com');
+  var open=false;try{open=localStorage.getItem('taskm-mailset-open')==='1';}catch(e){}
+  return '<div class="tc-mailtop">'+hd('Email','Reading '+names.join(', ').replace(/, ([^,]*)$/,' and $1')+' every day')+
+   '<div class="tc-row tc-check">'+(gs.length?btn('gmail','refresh','Check Gmail'):'')+(hasO?btn('outlook','refresh','Check school Outlook'):'')+(hasL?btn('outlook2','refresh','Check Outlook.com'):'')+'</div></div>'+msg+
+   '<details class="tc-mailset"'+(open?' open':'')+'><summary>'+ico('gear',15)+'Email settings<span>'+linked.length+' linked</span></summary>'+
+    '<h4 class="tc-sub">Linked email</h4><ul class="tc-grades">'+linked.map(srcRow).join('')+'</ul>'+
+    '<div class="tc-row tc-check">'+btn('gmail2','plus',gs.length?'Add another Gmail':'Link Gmail')+(hasO?'':btn('outlook','plus','Link school Outlook'))+(hasL?'':btn('outlook2','plus','Link Outlook.com'))+'</div>'+
+    '<h4 class="tc-sub">Always include</h4>'+watch+'</details>';}
+ document.addEventListener('toggle',function(e){if(e.target.classList&&e.target.classList.contains('tc-mailset'))try{localStorage.setItem('taskm-mailset-open',e.target.open?'1':'0');}catch(x){}},true);
  var mailMsg='';
  function mailNote(m){mailMsg=m;var n=document.querySelector('#debriefPanel .tc-mailmsg');if(n){n.innerHTML=m;n.hidden=!m;}toast(m.replace(/<[^>]+>/g,''));}
  function linkMail(kind){var w=(A.profile&&A.profile.watchEmails)||[],gs=gmailSlots(),slot=kind==='gmail2'?Math.max.apply(null,gs.concat([-1]))+1:gs.length?Math.min.apply(null,gs):0,
@@ -4888,7 +4904,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function endSample(){var T=window.TaskM;if(!sampleOn)return;sampleOn=false;document.documentElement.classList.remove('tm-sampling');
   if(T&&T.items)for(var i=T.items.length-1;i>=0;i--)if(T.items[i].sample)T.items.splice(i,1);var b=document.getElementById('tmSample');if(b)b.remove();redraw();paintMail();}
  function sampleBar(){if(document.getElementById('tmSample'))return;var b=document.createElement('div');b.id='tmSample';b.className='tm-sample';b.setAttribute('role','status');
-  b.innerHTML='<span><b>Sample student</b> · this is TaskM once it’s connected</span><button type="button" data-tmconnect>Connect yours</button>'+
+  b.innerHTML='<span><b>Sample student</b><i class="tm-sl"> · this is TaskM once it’s connected</i></span><button type="button" data-tmconnect>Connect yours</button>'+
    '<button type="button" class="tm-sx" data-tmendsample aria-label="Hide the sample tasks">'+ico('x',14)+'</button>';document.body.appendChild(b);}
  function vis(sel){var l=document.querySelectorAll(sel);for(var i=0;i<l.length;i++){var r=l[i].getBoundingClientRect();if(r.width>0&&r.height>0)return l[i];}return null;}
  function view(v){var b=vis('#viewSeg button[data-view="'+v+'"]')||document.querySelector('#viewSeg button[data-view="'+v+'"]');if(b&&!b.classList.contains('on'))b.click();}
