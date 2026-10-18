@@ -32,6 +32,9 @@ button:active{transform:scale(.97)}
 button:disabled{opacity:.55;cursor:default}
 button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+a{color:var(--accent)}
+.links{display:flex;gap:6px}.links a{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:10px;font-size:14px;font-weight:550;text-decoration:none;touch-action:manipulation}
+@media (hover:hover) and (pointer:fine){.links a:hover{background:var(--soft)}}
 button.sm{min-height:30px;padding:0 10px;font-size:13px;border-radius:8px}
 @media (hover:hover) and (pointer:fine){button:not(:disabled):hover{background:var(--soft)}button.pri:not(:disabled):hover{background:var(--accent);filter:brightness(1.08)}}
 h2{font-size:15px;margin:0;font-weight:650;letter-spacing:-.005em}
@@ -141,6 +144,7 @@ td small{display:block;color:var(--muted)}
   <header>
     <img src="icon-192-v2.png" alt="">
     <div class="grow"><h1>TaskM Admin</h1><div class="sub" id="who">Loading…</div></div>
+    <nav class="links" id="links" hidden><a href="./">My TaskM</a><a href="./?parent-preview">Sample parent view</a></nav>
     <button type="button" id="reload" hidden>Refresh</button>
     <button type="button" id="out" hidden>Sign out</button>
   </header>
@@ -282,15 +286,15 @@ td small{display:block;color:var(--muted)}
    call('schoolRefresh').then(function(){toast('School website read again');load();},function(e){b.disabled=false;b.textContent='Read the school website now';toast(e.message);});}});
 
  // Local preview with sample numbers (screenshots only; never on the live site)
- if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&window.ADMIN_PREVIEW){$('who').setAttribute('data-email','Preview');paint(window.ADMIN_PREVIEW);return;}
+ if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&window.ADMIN_PREVIEW){$('who').setAttribute('data-email','Preview');$('links').hidden=false;$('reload').hidden=false;$('out').hidden=false;paint(window.ADMIN_PREVIEW);return;}
  if(typeof firebase==='undefined'){gate('Couldn’t load','Couldn’t load sign-in. Check your connection and reload.',false);return;}
  firebase.initializeApp(CFG);auth=firebase.auth();
  $('in').onclick=function(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(e){$('gateP').textContent=e.message;});};
  $('out').onclick=function(){auth.signOut();};
  $('reload').onclick=load;
  var rz;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){if(data)trend(data.trend||[]);},150);});
- auth.onAuthStateChanged(function(u){if(u){$('who').setAttribute('data-email','Signed in as '+(u.email||'you'));$('who').textContent='Signed in as '+(u.email||'you');$('out').hidden=false;$('reload').hidden=false;load();}
-  else{data=null;$('who').textContent='Only TaskM’s owner can open this page.';$('out').hidden=true;$('reload').hidden=true;gate('Sign in','Use the account you made TaskM with.',true);}});
+ auth.onAuthStateChanged(function(u){if(u){$('who').setAttribute('data-email','Signed in as '+(u.email||'you'));$('who').textContent='Signed in as '+(u.email||'you');$('out').hidden=false;$('reload').hidden=false;$('links').hidden=false;load();}
+  else{data=null;$('who').textContent='Only TaskM’s owner can open this page.';$('out').hidden=true;$('reload').hidden=true;$('links').hidden=true;gate('Sign in','Use the account you made TaskM with.',true);}});
 })();
 </script>
 </body>
