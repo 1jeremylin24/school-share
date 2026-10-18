@@ -4333,6 +4333,58 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    .catch(function(){});}
  if(LN){LN.addListener('localNotificationActionPerformed',function(){try{window.focus();}catch(e){}});
   var hookT=setInterval(function(){if(window.TaskM&&window.TaskM.on){clearInterval(hookT);window.TaskM.on(remindSoon);}},500);}
+ // ---- school pages inside the phone app (SchoolPage.swift): the phone version of the TaskM Chrome button. The student
+ // opens a school site in TaskM's browser, signs in there and taps Add to TaskM; the page goes through the same path as
+ // a page from the button. Pages added on this phone are read again quietly (hidden reader, same sign-in) when TaskM
+ // opens and the last read is 20+ hours old. Only this phone's own pages: one it isn't signed in to would be marked "sign in again".
+ var SP=NATIVE&&CAP.isPluginAvailable&&CAP.isPluginAvailable('SchoolPage')?(CAP.Plugins&&CAP.Plugins.SchoolPage)||(CAP.registerPlugin&&CAP.registerPlugin('SchoolPage')):null;
+ var NPK='taskm-phone-pages',ASSIGN_APP='66aeee93-507d-479a-a3ef-8f494af43945',phoneBusy=false;
+ function pause(ms){return new Promise(function(r){setTimeout(r,ms);});}
+ function pkey(u){try{var x=new URL(u);return x.origin+x.pathname+x.search;}catch(e){return '';}}
+ function joinTexts(fr){var seen={},parts=[];(fr||[]).forEach(function(f){var t=String((f&&f.text)||'').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+  if(t.length<20||seen[t])return;seen[t]=1;parts.push(t);});parts.sort(function(a,b){return b.length-a.length;});return parts.join('\n\n---\n\n').slice(0,150000);}
+ function isTeamsUrl(u){try{return /^teams\.(microsoft\.com|cloud\.microsoft)$/i.test(new URL(u).hostname);}catch(e){return false;}}
+ function isAssignFrame(u){try{return /(^|\.)assignments\.onenote\.com$/i.test(new URL(u).hostname);}catch(e){return false;}}
+ // the school sent the reader to a sign-in page instead of the saved one
+ function signinPage(saved,now){try{var a=new URL(saved),b=new URL(now);return a.hostname!==b.hostname&&/login|signin|sso|adfs|auth|accounts\.google|workspace\.google/i.test(b.hostname+b.pathname);}catch(e){return false;}}
+ function clipPost(c){window.postMessage({type:'taskm-clip',v:2,url:c.url,title:c.title||'',text:c.text||'',quiet:!!c.quiet,signin:!!c.signin},location.origin);}
+ function notePhonePage(u){var p=jl(NPK,{}),k=pkey(u);if(!k)return;p[k]={url:u,at:Date.now()};js(NPK,p);}
+ // Teams shows Assignments (every class) in a frame after a while; keep checking, and get past Teams' "open in the app?" page
+ var CLICK_WEBAPP='(function(){var b=[].slice.call(document.querySelectorAll("a,button")).filter(function(e){return /use the web app instead|continue on this browser|use the web app/i.test(e.textContent||"");})[0];if(b)b.click();return true;})()',
+  CLICK_ASSIGN='(function(){var b=[].slice.call(document.querySelectorAll("button,a,[role=button],[role=menuitem]")).filter(function(e){return /^assignments\\b/i.test((e.getAttribute("aria-label")||e.title||e.textContent||"").trim());})[0];if(b)b.click();return true;})()';
+ function teamsAssignments(){var i=0;
+  function step(){if(i++>=20)return Promise.resolve(null);return pause(2500).then(function(){return SP.frames();}).then(function(f){
+   if((f.frames||[]).some(function(x){return isAssignFrame(x.url)&&String(x.text||'').trim().length>80;}))
+    return pause(3000).then(function(){return SP.frames();}).then(function(g){return joinTexts((g.frames||[]).filter(function(x){return isAssignFrame(x.url);}));});
+   return SP.run({code:i===9?CLICK_ASSIGN:CLICK_WEBAPP}).catch(function(){}).then(step);});}
+  return step();}
+ // read a page in the hidden reader: {text,title} or {signin:true}
+ function readHidden(url){var teams=url.indexOf('/l/app/'+ASSIGN_APP)>=0;
+  return SP.visit({url:url}).then(function(){return pause(6000);}).then(function(){return SP.frames();}).then(function(f){
+   if(signinPage(url,f.url))return {signin:true};
+   if(teams)return teamsAssignments().then(function(t){return t?{text:t,title:'Teams assignments'}:SP.frames().then(function(g){return signinPage(url,g.url)?{signin:true}:{};});});
+   var t=joinTexts(f.frames);if(t.length>=200)return {text:t,title:f.title};
+   return pause(6000).then(function(){return SP.frames();}).then(function(g){return signinPage(url,g.url)?{signin:true}:{text:joinTexts(g.frames),title:g.title};});});}
+ // the student tapped Add to TaskM. In Teams, TaskM opens the Assignments app (every class) and reads that instead.
+ function schoolOpen(url){if(!SP)return;if(A.demo||!A.uid){toast('Adding school pages needs a real account (not the demo).');return;}
+  SP.open({url:url||''}).then(function(r){if(!r||r.action!=='add')return;
+   if(!isTeamsUrl(r.url)){var text=joinTexts(r.frames);
+    if(text.length<40){toast('TaskM didn’t find any text on that page. Wait for it to finish loading, then tap Add to TaskM again.');return;}
+    notePhonePage(r.url);clipPost({url:r.url,title:r.title,text:text});return;}
+   var au=new URL(r.url).origin+'/l/app/'+ASSIGN_APP;phoneBusy=true;clipNote('Finding your Teams assignments… this takes about a minute.');
+   return readHidden(au).then(function(x){if(x.text&&x.text.length>=40){notePhonePage(au);clipPost({url:au,title:'Teams assignments',text:x.text});return;}
+     var own=joinTexts(r.frames);if(own.length>=40){notePhonePage(r.url);clipPost({url:r.url,title:r.title,text:own});return;}
+     clipNote(x.signin?'Sign in to Teams in TaskM’s browser first, then tap Add to TaskM again.':'TaskM couldn’t open your Teams assignments. Open Assignments in Teams and tap Add to TaskM there.',true);})
+    .then(function(){phoneBusy=false;SP.closeReader().catch(function(){});},function(){phoneBusy=false;});}).catch(function(){});}
+ A.openSchoolPage=schoolOpen;
+ function phoneRefresh(){if(!SP||phoneBusy||!started||A.demo||!A.uid)return;var saved=window.TaskMClipPages&&window.TaskMClipPages();if(!saved)return;
+  var keep={},p=jl(NPK,{}),due=[];saved.forEach(function(u){keep[pkey(u)]=1;});
+  Object.keys(p).forEach(function(k){if(!keep[k]&&Date.now()-p[k].at>600000){delete p[k];return;}if(keep[k]&&Date.now()-p[k].at>20*3600e3)due.push(p[k].url);});js(NPK,p);
+  if(!due.length)return;phoneBusy=true;
+  due.reduce(function(pr,u){return pr.then(function(){return readHidden(u).then(function(r){var q=jl(NPK,{}),k=pkey(u);if(q[k]){q[k].at=Date.now();js(NPK,q);}
+    if(r.signin)clipPost({url:u,signin:true,quiet:true});else if(r.text&&r.text.length>=40)clipPost({url:u,title:r.title,text:r.text,quiet:true});},function(){});});},Promise.resolve())
+   .then(function(){phoneBusy=false;SP.closeReader().catch(function(){});});}
+ if(SP){setInterval(phoneRefresh,5*60000);document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(phoneRefresh,4000);});}
  function seenPing(){if(A.demo||!A.uid)return;var n=new Date(),d=ymd(n),v=document.documentElement.getAttribute('data-taskm-ext-v')||'',k='taskm-seen',mark=A.uid+'|'+d+'|'+n.getHours()+'|'+v;
   if(jl(k,'')===mark)return;var body={seen:{'.sv':'timestamp'},ext:v||null};body['days/'+d]=true;
   db('users/'+A.uid+'/beta',{method:'PATCH',body:body}).then(function(){js(k,mark);},function(){});}
@@ -4375,6 +4427,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function linkMail(kind){var w=(A.profile&&A.profile.watchEmails)||[],gs=gmailSlots(),slot=kind==='gmail2'?Math.max.apply(null,gs.concat([-1]))+1:gs.length?Math.min.apply(null,gs):0,
   url=mailUrl(kind,w,slot),name=/outlook/.test(kind)?'Outlook':'Gmail';
   if(A.demo||!A.uid){mailNote('Email needs a real account (not the demo).');return;}
+  if(!hasButton()&&SP){mailNote('Sign in to '+name+' if it asks, then tap Add to TaskM.');schoolOpen(url);return;}
   if(!hasButton()){window.open(url,'_blank','noopener');mailNote('To link '+name+', <a href="chrome.html" target="_blank" rel="noopener">get the TaskM Chrome button</a>, then click it on the '+name+' tab that just opened.');return;}
   mailNote('Reading your '+name+'… keep this tab open.');
   window.postMessage({type:'taskm-read',url:url,title:name},location.origin);}
@@ -4424,9 +4477,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  window.TaskMButtonSeen=function(){if(btnSeen)return;btnSeen=true;try{localStorage.setItem('taskm-button-seen','1');}catch(e){}setupPanel();};
  function setupSteps(){var p=(A.profile&&A.profile.platforms)||[],urls=Object.keys(aiSrc).map(function(k){return aiSrc[k].url||'';});
   var has=function(m){return urls.some(function(u){return m.test(u);});};
-  var steps=[{n:'Add the TaskM Chrome button',u:'chrome.html',t:'One click to install. Then use it on each page below.',done:btnSeen||hasButton()||urls.length>0,btn:'Get it'}];
-  SETUP.forEach(function(x){if(p.indexOf(x.k)>=0)steps.push({n:x.n,u:x.u,t:x.t&&/button/.test(x.t)?x.t:(x.t?x.t+' ':'')+'Click the TaskM button there once.',done:has(x.m),btn:'Open'});});
-  steps.push({n:'Your grades',u:null,t:'Open your grades page (like Aeries) and click the TaskM button. Your grades then stay updated here.',done:has(/aeries|grade|powerschool|infinitecampus|skyward|portal/i)});
+  // in the phone app each step opens the page in TaskM's own browser instead (sp: true), so there's no button to get
+  var steps=SP?[]:[{n:'Add the TaskM Chrome button',u:'chrome.html',t:'One click to install. Then use it on each page below.',done:btnSeen||hasButton()||urls.length>0,btn:'Get it'}];
+  SETUP.forEach(function(x){if(p.indexOf(x.k)<0)return;var mail=x.k==='outlook';
+   steps.push({n:x.n,u:x.u,sp:SP&&!mail,t:SP&&mail?'In TaskM’s Email tab, tap Link school Outlook or Link Gmail, sign in, then tap Add to TaskM.':SP?(x.k==='teams'?'Sign in to Teams and tap Add to TaskM anywhere. TaskM finds every class’s assignments by itself.':(x.t?x.t+' ':'')+'Sign in if it asks, then tap Add to TaskM.'):x.t&&/button/.test(x.t)?x.t:(x.t?x.t+' ':'')+'Click the TaskM button there once.',done:has(x.m),btn:'Open'});});
+  steps.push({n:'Your grades',u:null,sp:!!SP,t:SP?'Open your grades page (like Aeries), sign in and tap Add to TaskM. Your grades then stay updated here.':'Open your grades page (like Aeries) and click the TaskM button. Your grades then stay updated here.',done:has(/aeries|grade|powerschool|infinitecampus|skyward|portal/i)});
   if(p.indexOf('website')>=0)steps.push({n:'School website or calendar',u:null,t:'Paste its link in the box below and leave “Check this link every morning” on.',done:Object.keys(aiSrc).some(function(k){return !aiSrc[k].kind;})});
   return steps;}
  function setupPanel(){btnBanner();var a=document.getElementById('aiPanel');if(!a||!srcLoaded)return;var el=document.getElementById('setupPanel'),hide=false,open=false;try{hide=localStorage.getItem('taskm-setup-hidden')==='1';open=localStorage.getItem('taskm-setup-open')==='1';}catch(e){}
@@ -4437,11 +4492,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   el.classList.toggle('open',open);
   el.innerHTML='<div class="tc-sbar"><b class="tc-st">Set up TaskM</b>'+
    '<span class="tc-prog" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="'+st.length+'" aria-valuenow="'+n+'"><i style="width:'+Math.round(n/st.length*100)+'%"></i></span><span class="tc-progt">'+n+' of '+st.length+'</span>'+
-   '<span class="tc-next" title="'+esc(next.t)+'">Next: <b>'+esc(next.n)+'</b></span>'+(next.u?'<a class="tt-btn" href="'+esc(next.u)+'" target="_blank" rel="noopener">'+(next.btn||'Open')+'</a>':'')+
+   '<span class="tc-next" title="'+esc(next.t)+'">Next: <b>'+esc(next.n)+'</b></span>'+stepBtn(next)+
    '<button type="button" class="tc-linkbtn" data-tc="setupmore" aria-expanded="'+open+'">'+(open?'Fewer':'All steps')+'</button>'+
    '<button type="button" class="tc-x" data-tc="hidesetup" aria-label="Hide setup">'+ico('x',14)+'</button></div>'+
-   (open?'<p class="tc-progt">Do this once'+(phone?', on a computer with Chrome':'')+'. After that, TaskM keeps your homework and grades updated by itself.</p><ol class="tc-steps">'+st.map(function(x,i){return '<li class="'+(x.done?'done':'')+'"><i class="tc-sn" aria-hidden="true">'+(x.done?ico('check',14):(i+1))+'</i><span><b>'+esc(x.n)+'</b><small>'+esc(x.t)+'</small></span>'+
-    (x.done?'<em class="tc-ok">Done</em>':x.u?'<a class="tt-btn" href="'+esc(x.u)+'" target="_blank" rel="noopener">'+(x.btn||'Open')+'</a>':'')+'</li>';}).join('')+'</ol>':'');}
+   (open?'<p class="tc-progt">'+(SP?'Do this once. Each page opens in TaskM’s browser: sign in there and tap Add to TaskM.':'Do this once'+(phone?', on a computer with Chrome':'')+'.')+' After that, TaskM keeps your homework and grades updated by itself.</p><ol class="tc-steps">'+st.map(function(x,i){return '<li class="'+(x.done?'done':'')+'"><i class="tc-sn" aria-hidden="true">'+(x.done?ico('check',14):(i+1))+'</i><span><b>'+esc(x.n)+'</b><small>'+esc(x.t)+'</small></span>'+
+    (x.done?'<em class="tc-ok">Done</em>':stepBtn(x))+'</li>';}).join('')+'</ol>':'');}
+ function stepBtn(x){if(x.sp)return '<button type="button" class="tt-btn" data-school="'+esc(x.u||'')+'">Open</button>';
+  return x.u?'<a class="tt-btn" href="'+esc(x.u)+'" target="_blank" rel="noopener">'+(x.btn||'Open')+'</a>':'';}
  function paintSources(){setupPanel();var dp=document.getElementById('debriefPanel');if(dp&&srcLoaded)dp.innerHTML=debriefs();var el=document.querySelector('#aiPanel .tc-srcs');if(!el)return;var ids=Object.keys(aiSrc);
   el.innerHTML=ids.length?'<h4>Saved sources</h4><ul class="tc-grades">'+ids.map(srcRow).join('')+'</ul>':'';}
  function aiPanel(lv,before){var a=document.getElementById('aiPanel');if(a)return;a=document.createElement('section');a.id='aiPanel';a.className='panel tc-panel';
@@ -4452,7 +4509,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    '<div class="tc-acts"><button type="button" class="tt-btn tc-attach" data-tc="attach">'+ico('clip')+'Add a file or photo</button>'+
    '<input type="file" class="tc-file" multiple hidden accept=".pdf,image/*,.docx,.pptx,.txt,.csv,.ics,.html,application/pdf">'+
    '<button type="submit" class="tt-btn tc-pri">Find homework</button></div></form>'+
-   '<p class="tc-hint">Page behind a school sign-in, like OneNote or Aeries grades? <a href="chrome.html" target="_blank" rel="noopener">Get the TaskM Chrome button</a>. Click it once on the page and TaskM keeps it updated.</p><div class="tc-srcs"></div>';
+   '<p class="tc-hint">Page behind a school sign-in, like OneNote or Aeries grades? '+(SP?'<button type="button" class="tc-linkbtn" data-school="">Open it in TaskM</button>, sign in, and tap Add to TaskM. TaskM keeps it updated.':'<a href="chrome.html" target="_blank" rel="noopener">Get the TaskM Chrome button</a>. Click it once on the page and TaskM keeps it updated.')+'</p><div class="tc-srcs"></div>';
   var ta=a.querySelector('textarea'),lb=a.querySelector('.tc-check'),fi=a.querySelector('.tc-file');ta.addEventListener('input',function(){lb.hidden=!/^(https?|webcal):\/\/\S+$/i.test(ta.value.trim());});
   ta.addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();a.querySelector('form').requestSubmit();}});
   fi.addEventListener('change',function(){addFiles(fi.files);fi.value='';});
@@ -4501,7 +4558,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(t==='addmail'){var v=ins[0].value.trim().toLowerCase().replace(/^@/,'');if(!/^(\S+@)?[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(v)){toast('Type an email like teacher@school.org or a domain like pvpusd.net');return;}var w=(A.profile.watchEmails||[]).slice();if(w.indexOf(v)<0)w.push(v);
    A.saveProfile({watchEmails:w}).then(paintStudent);}
   else if(t==='addgrade'){var c=ins[0].value.trim(),p=parseFloat(ins[1].value);if(!c||isNaN(p)){toast('Add a class and a percent');return;}var l=jl(GK,[]).filter(function(g){return g.course!==c;});l.push({course:c,pct:p});js(GK,l);paintStudent();publishSoon();}},true);
- document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-delmail],[data-delgrade],[data-delsrc],[data-tc="gmail"],[data-tc="outlook"],[data-tc="attach"],[data-tc="hidesetup"],[data-tc="setupmore"],[data-tc="gmail2"],[data-tc="outlook2"]');if(!b)return;
+ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-delmail],[data-delgrade],[data-delsrc],[data-tc="gmail"],[data-tc="outlook"],[data-tc="attach"],[data-tc="hidesetup"],[data-tc="setupmore"],[data-tc="gmail2"],[data-tc="outlook2"],[data-school]');if(!b)return;
+  if(b.hasAttribute('data-school')){schoolOpen(b.getAttribute('data-school'));return;}
   if(b.dataset.tc==='attach'){var fi=document.querySelector('#aiPanel .tc-file');if(fi)fi.click();return;}
   if(b.dataset.tc==='setupmore'){try{localStorage.setItem('taskm-setup-open',b.getAttribute('aria-expanded')==='true'?'0':'1');}catch(x){}setupPanel();return;}
   if(b.dataset.tc==='hidesetup'){try{localStorage.setItem('taskm-setup-hidden','1');}catch(x){}setupPanel();return;}
@@ -4563,7 +4621,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(parent){if(!document.documentElement.classList.contains('taskm-parent'))startParent();return;}
   if(started){paintStudent();return;}started=true;
   db('users/'+A.uid+'/imported').then(function(v){if(v&&typeof v==='object'){var im=imports();Object.keys(v).forEach(function(k){if(!im[k]||im[k].at<v[k].at)im[k]=v[k];});js(IK,im);}apply();},function(){apply();});
-  loadSources().then(quietOneNote);paintStudent();takeClip();});
+  loadSources().then(quietOneNote).then(function(){setTimeout(phoneRefresh,8000);});paintStudent();takeClip();});
 })();
 
 </script>
