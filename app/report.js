@@ -10,7 +10,7 @@
  var FN='https://us-central1-'+cfg.projectId+'.cloudfunctions.net/reportError',sent={},left=5;
  function A(){return window.TaskMAccount||{};}
  function app(){try{return window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?'iphone':'web';}catch(e){return 'web';}}
- function where(file){var m=String(file||'').match(/\/([\w.-]+\.js)(?:[?#].*)?$/);return m?m[1]:(String(file||'').indexOf(location.origin)===0?'index.html':'');}
+ function where(file){var m=String(file||'').match(/\/([\w.-]+\.js)(?:[?#].*)?$/);return m?m[1]:(String(file||'').indexOf(location.origin)===0?(location.pathname.replace(/^.*\//,'')||'index')+(/\.html$/.test(location.pathname)?'':'.html'):'');}
  function send(msg,file,stack){
   msg=String(msg||'').slice(0,300);
   if(!msg||left<=0||sent[msg])return;
