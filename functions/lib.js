@@ -235,7 +235,7 @@ function isOwner(token) {
   return !!(token && token.email && token.email_verified && OWNER_HASHES.includes(hash(String(token.email).toLowerCase())));
 }
 const count = o => (o && typeof o === 'object' ? Object.keys(o).length : 0);
-function betaSummary(users, authUsers, feedback, now) {
+function betaSummary(users, authUsers, feedback, now, extra) {
   const last = n => Array.from({ length: n }, (_, i) => ymdIn(new Date(now - i * DAY)));
   const d7 = last(7), d30 = last(30), today = d7[0];
   const byUid = {};
@@ -249,19 +249,86 @@ function betaSummary(users, authUsers, feedback, now) {
       name: String(p.name || a.name || '').slice(0, 80), email: a.email || '', role: p.role || (p.school ? 'student' : 'not set up'),
       school: p.school || '', grade: p.grade || '', joined: Date.parse(a.created || p.created || '') || null, seen,
       days7: d7.filter(d => days[d]).length, week: d7.map(d => !!days[d]).reverse(), days30: d30.filter(d => days[d]).length,
-      button: b.ext || null, sources: count(u.sources), tasks, inboxes: count(u.aiMail), grades: count(u.aiGrades), parents: count(u.parents),
+      button: b.ext || null, phone: !!(b.plat && b.plat.iphone), sources: count(u.sources), tasks, inboxes: count(u.aiMail), grades: count(u.aiGrades), parents: count(u.parents),
     };
   }).sort((x, y) => (y.seen || 0) - (x.seen || 0));
-  const fb = Object.entries(feedback || {}).map(([id, f]) => ({ id, ...f })).sort((x, y) => (y.at || 0) - (x.at || 0));
+  const fb = Object.entries(feedback || {}).map(([id, f]) => ({ id, ...f, done: !!f.done })).sort((x, y) => (y.at || 0) - (x.at || 0));
+  const ex = extra || {};
+  // Sign-ups and people who opened TaskM, per day for the last 30 days (oldest first)
+  const trend = d30.slice().reverse().map(d => ({
+    day: d, signups: rows.filter(r => r.joined && ymdIn(new Date(r.joined)) === d).length,
+    active: uids.filter(uid => (((users || {})[uid] || {}).beta || {}).days && users[uid].beta.days[d]).length,
+  }));
+  const grades = {};
+  rows.forEach(r => { if (r.role === 'student' && r.grade) grades[r.grade] = (grades[r.grade] || 0) + 1; });
+  // Connected sources: counted by kind of site, from the host name only (never the page address or what's on it)
+  const connected = {};
+  uids.forEach(uid => {
+    const seenKinds = new Set();
+    Object.values(((users || {})[uid] || {}).sources || {}).forEach(s => {
+      const k = sourceKind(s && s.url);
+      const c = connected[k] || (connected[k] = { kind: k, pages: 0, people: 0, broken: 0 });
+      c.pages++; if (s && s.error) c.broken++;
+      if (!seenKinds.has(k)) { seenKinds.add(k); c.people++; }
+    });
+  });
+  const students = rows.filter(r => r.role === 'student');
   return {
     at: now,
     totals: {
-      people: rows.length, students: rows.filter(r => r.role === 'student').length, parents: rows.filter(r => r.role === 'parent').length,
+      people: rows.length, students: students.length, parents: rows.filter(r => r.role === 'parent').length,
       today: rows.filter(r => r.seen && ymdIn(new Date(r.seen)) === today).length, week: rows.filter(r => r.days7 > 0 || (r.seen && now - r.seen < 7 * DAY)).length,
-      button: rows.filter(r => r.button).length, sources: rows.filter(r => r.sources).length, feedback: fb.length,
+      month: rows.filter(r => r.days30 > 0 || (r.seen && now - r.seen < 30 * DAY)).length,
+      newWeek: rows.filter(r => r.joined && now - r.joined < 7 * DAY).length,
+      button: rows.filter(r => r.button).length, sources: rows.filter(r => r.sources).length, phone: rows.filter(r => r.phone).length,
+      feedback: fb.length, open: fb.filter(f => !f.done && f.kind === 'bug').length,
     },
-    rows, feedback: fb,
+    // How far students get: signed up -> picked a grade -> connected something -> came back on 3+ of the last 7 days
+    funnel: [
+      ['Signed up', rows.filter(r => r.role !== 'parent').length],
+      ['Finished sign-up', students.length],
+      ['Connected a source', students.filter(r => r.sources || r.button).length],
+      ['Regulars (3+ days a week)', students.filter(r => r.days7 >= 3).length],
+    ],
+    trend, grades, connected: Object.values(connected).sort((a, b) => b.pages - a.pages),
+    errors: errorGroups(ex.errors, now), jobs: ex.jobs || {}, rows, feedback: fb,
   };
+}
+// Which kind of site a saved source is, from its host name
+function sourceKind(url) {
+  let h = '';
+  try { h = new URL(String(url || '')).hostname.toLowerCase(); } catch (e) { return 'File or text'; }
+  if (/onenote|sharepoint|1drv|onedrive/.test(h)) return 'OneNote';
+  if (/teams\.(microsoft|live)/.test(h)) return 'Teams';
+  if (/aeries/.test(h)) return 'Aeries';
+  if (h === 'mail.google.com') return 'Gmail';
+  if (/outlook\.(office|office365|live)\.com$/.test(h)) return 'Outlook';
+  if (h === 'classroom.google.com') return 'Google Classroom';
+  if (/(^|\.)pvpusd\.net$/.test(h)) return 'School website';
+  if (/pearson|savvas|mylab/.test(h)) return 'Pearson';
+  if (/collegeboard\.org$/.test(h)) return 'AP Classroom';
+  return 'Other link';
+}
+// Errors from the last 7 days, grouped so one bug hitting many people shows once with a count
+function errorGroups(errors, now) {
+  const g = {};
+  let day = 0, week = 0;
+  Object.values(errors || {}).forEach(e => {
+    if (!e || !e.at || now - e.at > 7 * DAY) return;
+    week++; if (now - e.at < DAY) day++;
+    const k = (e.src || 'app') + '|' + (e.where || '') + '|' + String(e.msg || '').slice(0, 120);
+    const x = g[k] || (g[k] = { src: e.src || 'app', where: e.where || '', msg: e.msg || '', count: 0, people: new Set(), first: e.at, last: 0, page: null, ext: null, stack: null });
+    x.count++; if (e.uid) x.people.add(e.uid);
+    x.first = Math.min(x.first, e.at);
+    if (e.at > x.last) { x.last = e.at; x.page = e.page || null; x.ext = e.ext || null; x.stack = e.stack || null; x.app = e.app || null; }
+  });
+  const list = Object.values(g).map(x => ({ ...x, people: x.people.size })).sort((a, b) => b.last - a.last).slice(0, 40);
+  return { day, week, list };
+}
+// Error reports are cut down before saving: no emails, long numbers, or link query strings, so no student content is kept
+function scrubError(s, max) {
+  return String(s || '').replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '<email>').replace(/(https?:\/\/[^\s?#'")]+)[?#][^\s'")]*/g, '$1')
+    .replace(/\b\d{6,}\b/g, '<n>').replace(/\s+\n/g, '\n').slice(0, max);
 }
 
 // ---- PVPHS school info: the school website, read once a day for every student (see schoolDaily in index.js)
@@ -336,5 +403,5 @@ function sortSchool(items) {
   return Object.values(by).sort((a, b) => (a.date ? 0 : 1) - (b.date ? 0 : 1) || String(a.date || '').localeCompare(String(b.date || '')) || a.title.localeCompare(b.title));
 }
 
-module.exports = { isOwner, betaSummary, TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel,
+module.exports = { isOwner, betaSummary, sourceKind, errorGroups, scrubError, TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel,
   SCHOOL_KINDS, SCHOOL_GRADES, icsEvents, schoolEvents, toSchoolItem, sortSchool, edlioMain };
