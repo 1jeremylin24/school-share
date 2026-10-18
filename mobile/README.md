@@ -6,6 +6,7 @@ The website notices it's inside the app (`window.Capacitor`) and switches on the
 - **Google sign-in** uses the phone's own Google sign-in (`@capacitor-firebase/authentication`), because Google blocks its sign-in page inside apps. See `googleIn()` in accounts.js.
 - **Reminders** (`@capacitor/local-notifications`) arrive even when TaskM is closed: 7 PM the evening before each test, quiz or project, plus one 7 PM note for other homework due the next day. They're rebuilt whenever the list or a checkmark changes. See `remindPlan()` in connect.js.
 - `www/offline.html` shows when the phone has no internet.
+- **School pages** (`ios/App/App/SchoolPage.swift`, the phone version of the TaskM Chrome button): TaskM's setup steps open OneNote, Teams, Aeries or Outlook in TaskM's own browser. The student signs in on that site's page and taps **Add to TaskM**, and the page's text goes to TaskM like a page from the Chrome button. Sign-ins stay on the phone, so pages added on the phone are read again in a hidden reader when TaskM opens (once their last read is 20+ hours old). See `schoolOpen()` and `phoneRefresh()` in connect.js. Android doesn't have this yet, so it keeps the Chrome-button steps.
 
 Not on the App Store. For now it runs only on Jeremy's own iPhone, installed from his Mac.
 
@@ -26,6 +27,8 @@ One-time setup:
 6. The first time, on the iPhone go to Settings > General > VPN & Device Management, tap your Apple ID, and choose Trust. Settings > Privacy & Security > Developer Mode must be on too.
 
 With a free Apple ID, the app stops opening after 7 days. Press ▶︎ in Xcode again to renew it.
+
+Website changes show up in the app by themselves. When something in `mobile/` changes, get the new code (`git pull`), run `npx cap sync ios`, then press ▶︎ again.
 
 ## Android (later)
 
