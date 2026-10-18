@@ -55,11 +55,14 @@ chrome.runtime.onMessage.addListener((m, sender) => {
   if (!host || !MAIL_HOSTS.test(host)) return;
   readMail(sender.tab.id, m.url, m.title);
 });
+const mailReads = new Set();   // a second click while the inbox is still being read doesn't open another tab
 async function readMail(tabId, url, title) {
   const tell = (res) => chrome.scripting.executeScript({ target: { tabId }, world: 'MAIN', args: [res],
     func: (r) => window.postMessage(r, location.origin) }).catch(() => {});
+  if (mailReads.has(url)) return;
+  mailReads.add(url);
   let r;
-  try { r = await readInWindow(url); } catch (e) { r = {}; }
+  try { r = (await readOpenMail(url)) || (await readInWindow(url)); } catch (e) { r = {}; } finally { mailReads.delete(url); }
   if (r.signin || !r.text || r.text.length < 40) {
     return tell({ type: 'taskm-read-result', ok: false, reason: r.signin ? 'signin' : 'empty', url });
   }
@@ -67,6 +70,32 @@ async function readMail(tabId, url, title) {
   await remember(clip);
   const ok = await post(tabId, clip, 50).catch(() => false);
   tell({ type: 'taskm-read-result', ok, url });
+}
+
+// The student already has this inbox open: read that tab instead of opening another one.
+// Gmail switches to TaskM's search for a moment (no reload) and goes back to where it was.
+async function readOpenMail(url) {
+  const u = new URL(url), acct = (/^\/mail\/u\/\d+/.exec(u.pathname) || [''])[0];
+  const tabs = await chrome.tabs.query({ url: u.origin + '/*' });
+  const t = tabs.find((x) => !refreshing.has(x.id) && x.status === 'complete' && (!acct || new URL(x.url).pathname.startsWith(acct)));
+  if (!t) return null;
+  const gmail = u.hostname === 'mail.google.com';
+  let back = null;
+  if (gmail) {
+    const [r] = await chrome.scripting.executeScript({ target: { tabId: t.id }, world: 'MAIN', args: [u.hash],
+      func: (h) => { const old = location.hash; if (old !== h) location.hash = h; return old; } }).catch(() => [null]);
+    if (!r) return null;
+    back = r.result;
+    await wait(4000);
+  }
+  try {
+    const text = await readTab(t.id);
+    return text && text.length >= 40 ? { text, title: (await chrome.tabs.get(t.id)).title || '' } : null;
+  } finally {
+    if (gmail && back !== null && back !== u.hash) {
+      chrome.scripting.executeScript({ target: { tabId: t.id }, world: 'MAIN', args: [back], func: (h) => { location.hash = h; } }).catch(() => {});
+    }
+  }
 }
 
 // ---- Teams: a click anywhere in Teams opens the Assignments app (every class) and reads that instead
@@ -182,8 +211,10 @@ async function openReader(url) {
   if (w) {
     const t = await chrome.tabs.create({ windowId: w.id, url, active: false });
     try {
-      const g = await chrome.tabs.group({ tabIds: [t.id], createProperties: { windowId: w.id } });
-      await chrome.tabGroups.update(g, { title: 'TaskM', color: 'blue', collapsed: true });
+      // one "TaskM" group per window, even when two pages are being read at once
+      const [mine] = await chrome.tabGroups.query({ windowId: w.id, title: 'TaskM' });
+      const g = await chrome.tabs.group(mine ? { tabIds: [t.id], groupId: mine.id } : { tabIds: [t.id], createProperties: { windowId: w.id } });
+      if (!mine) await chrome.tabGroups.update(g, { title: 'TaskM', color: 'blue', collapsed: true });
     } catch (e) { /* groups are only for looks */ }
     return { tabId: t.id, close: () => chrome.tabs.remove(t.id).catch(() => {}) };
   }
