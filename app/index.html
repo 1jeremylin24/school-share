@@ -1609,6 +1609,7 @@ html.au-open,html.au-open body{overflow:hidden}
 .au-wait{display:flex;align-items:center;gap:12px;padding:24px 0 8px;color:var(--muted);font-size:15px}
 .au-spin{width:18px;height:18px;border-radius:50%;border:2px solid color-mix(in srgb,var(--accent) 30%,transparent);border-top-color:var(--accent);animation:au-spin .8s linear infinite}
 .au-demo{margin-top:-4px;font-size:13.5px}
+.au-admin{display:block;width:max-content;margin:14px auto 0;font-size:12.5px;color:var(--muted);text-decoration:none}
 /* onboarding */
 .au-top{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;margin:-6px 0 2px}
 .au-back{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:12px;background:none;color:var(--muted);cursor:pointer}
@@ -4362,7 +4363,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  A.getKidSummary=function(sid){return db('users/'+sid+'/shared');};
 
  // ---- small UI pieces. Their styles live in app-build/ui/auth.css (design thread); only the parent-mode switch stays here.
- var st=document.createElement('style');st.textContent='html.taskm-parent body>*:not(#parentView):not(#acctGate):not(.au):not(.tc-modal):not(script):not(style){display:none!important}#parentView[hidden]{display:none}';document.head.appendChild(st);
+ var st=document.createElement('style');st.textContent='html.taskm-parent body>*:not(#parentView):not(#acctGate):not(.au):not(.tc-modal):not(script):not(style){display:none!important}#parentView[hidden]{display:none}.pv-sample{margin:0 0 16px;padding:10px 14px;border-radius:12px;background:var(--med-bg);color:var(--med);font-size:14px;font-weight:500}';document.head.appendChild(st);
  var SW='fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
  var IC={x:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',plus:'<path d="M12 5v14M5 12h14"/>',
   copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/>',
@@ -4737,7 +4738,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   else linkMail(b.dataset.tc);});
 
  // ---- parent dashboard
- var kids={},cur=null,sums={};
+ var kids={},cur=null,sums={},preview=false;
  function weekEnd(){var d=new Date();d.setHours(0,0,0,0);return d.getTime()+7*DAY;}
  function due(i){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(i.due||'');if(m)return new Date(+m[1],m[2]-1,+m[3],23,59).getTime();return i.due_sort?Date.parse(i.due_sort):i.due?Date.parse(i.due):null;}
  function li(i,extra){var d=due(i),t=d?new Date(d):null;
@@ -4747,7 +4748,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function card(cls,t,sub,body){return '<section class="tc-card'+(cls?' '+cls:'')+'">'+hd(t,sub)+body+'</section>';}
  function paintParent(){var v=document.getElementById('parentView');if(!v){v=document.createElement('div');v.id='parentView';document.body.appendChild(v);}
   var ids=Object.keys(kids),p=A.profile||{},first=(p.name||'').split(' ')[0],ti=document.querySelector('link[rel="apple-touch-icon"]');
-  var h='<header class="pv-bar"><span class="pv-brand">'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="32" height="32">':'')+'<b>TaskM</b><small>Parent</small></span><button type="button" class="tt-btn" data-acct="out">Sign out</button></header>'+
+  var h='<header class="pv-bar"><span class="pv-brand">'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="32" height="32">':'')+'<b>TaskM</b><small>Parent</small></span>'+(preview?'<button type="button" class="tt-btn" data-pvexit>Back to my TaskM</button>':'<button type="button" class="tt-btn" data-acct="out">Sign out</button>')+'</header>'+
+   (preview?'<p class="pv-sample">Sample parent view. This is what a parent sees after linking to a student. The homework here is made up.</p>':'')+
    '<h1 class="pv-h">'+hello()+(first?', <em>'+esc(first)+'.</em>':'.')+'</h1>';
   if(ids.length>1)h+='<div class="pv-tabs" role="group" aria-label="Your students">'+ids.map(function(id){return '<button type="button" class="pv-tab" data-kid="'+esc(id)+'" aria-pressed="'+(id===cur)+'">'+esc(kids[id].name||'Student')+'</button>';}).join('')+'</div>';
   var s=cur&&sums[cur],kn=cur?String((kids[cur]&&kids[cur].name)||(s&&s.name)||'Your student').split(' ')[0]:'';
@@ -4773,7 +4775,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
      'This only shows tasks '+esc(kn)+' adds. Ask them to connect Google Classroom or Teams so homework comes in on its own.')+'</span></p>';}
   var form='<form class="tc-row" data-tc="redeem"><input type="text" class="tc-codein" placeholder="ABCD-1234" aria-label="Invite code" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="9" enterkeyhint="go"><button type="submit" class="tt-btn tc-pri">Link</button></form>';
   if(!ids.length)h+='<section class="tc-card pv-first"><h2 class="pv-lh">Link your <em>student.</em></h2><ol class="pv-steps"><li>On their TaskM, they open <b>Settings</b> and tap <b>Invite a parent</b>.</li><li>Type the code they get here. It works for 7 days.</li></ol>'+form+'</section>';
-  else h+='<details class="pv-add"><summary>'+ico('plus')+'Add another student</summary>'+form+'</details>';
+  else if(!preview)h+='<details class="pv-add"><summary>'+ico('plus')+'Add another student</summary>'+form+'</details>';
   v.innerHTML=h;}
  function loadKid(id){cur=id;paintParent();A.getKidSummary(id).then(function(s){sums[id]=s||null;paintParent();},function(){sums[id]=null;paintParent();});}
  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-kid]');if(b)loadKid(b.dataset.kid);});
@@ -4781,6 +4783,19 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   A.redeemInvite(f.querySelector('input').value).then(function(k){kids[k.uid]={name:k.name};toast('Linked to '+(k.name||'your student'));loadKid(k.uid);},function(x){b.disabled=false;formErr(f,x.message);});},true);
  function startParent(){document.documentElement.classList.add('taskm-parent');if(window.TaskMAuthUI&&TaskMAuthUI.hide)setTimeout(TaskMAuthUI.hide,0);paintParent();
   A.getKids().then(function(k){kids=k||{};var ids=Object.keys(kids);if(ids.length)loadKid(ids[0]);else paintParent();},function(){paintParent();});}
+ // Owner only (app/owner.js): a sample parent dashboard on the owner's own student account. Nothing is saved or linked.
+ A.previewParent=function(on){var r=document.documentElement,v=document.getElementById('parentView');
+  if(!on){preview=false;kids={};sums={};cur=null;r.classList.remove('taskm-parent');if(v)v.remove();window.scrollTo(0,0);return;}
+  var T=window.TaskM,t=T&&T.todayKey?T.todayKey():new Date().toISOString().slice(0,10),now=new Date().toISOString(),
+   d=function(n){var x=new Date(t+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
+  var items=sampleItems().map(function(s,i){return {id:'pv'+i,title:s.title,type:s.type,category:s.category,due:s.due};});
+  items.push({id:'pvo',title:'Reading quiz corrections',type:'assignment',category:'AP English Language',due:d(-2)},
+   {id:'pvd1',title:'Lab safety contract',type:'form',category:'AP Biology',due:d(-1),status:'done'},{id:'pvd2',title:'3.6 homework: chain rule',type:'assignment',category:'AP Calculus BC',due:d(-1),status:'done'});
+  preview=true;kids={sample:{name:'Alex'}};cur='sample';
+  sums={sample:{name:'Alex',school:'Palos Verdes Peninsula High School',grade:'11',updated:now,items:items,done:{},sources:[{kind:'teams',at:now},{kind:'OneNote',at:now}],
+   grades:[{course:'AP Calculus BC',pct:94.2,source:'Aeries',graded:18},{course:'AP Biology',pct:88.7,source:'Aeries',graded:12},{course:'AP English Language',pct:91.5,source:'Aeries',graded:9},{course:'Spanish 3',pct:97.1,source:'Aeries',graded:15}]}};
+  r.classList.add('taskm-parent');paintParent();window.scrollTo(0,0);};
+ document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-pvexit]'))A.previewParent(false);});
 
  // ---- start once signed in
  var started=false;
@@ -4877,6 +4892,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <script src="school.js" defer></script>
 <script src="calendar.js" defer></script>
 <script src="report.js" defer></script>
+<script src="owner.js" defer></script>
 <script>
 /* TaskM account screens: sign in, sign up, onboarding (school + where homework lives), Linked accounts.
    Talks to the backend only through window.TaskMAccount (see HOOKS.md). Uses the app's theme tokens. */
@@ -4961,7 +4977,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   '<form class="au-form" data-form="signin" novalidate>'+field('auEmail','Email','email','email','inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"')+
   field('auPw','Password','password','current-password','enterkeyhint="go"')+err()+
   '<button type="submit" class="au-btn au-primary">Sign in</button><button type="button" class="au-link" data-act="reset">Forgot your password?</button></form>'+
-  '<p class="au-swap">New to TaskM? <button type="button" class="au-link" data-go="signup">Create an account</button></p>'+demoLink();}
+  '<p class="au-swap">New to TaskM? <button type="button" class="au-link" data-go="signup">Create an account</button></p>'+demoLink()+adminLink();}
+ // TaskM's owner signs in here for the admin page (admin.html checks the account on the server)
+ function adminLink(){return '<a class="au-link au-admin" href="admin.html">Admin sign-in</a>';}
  function demoLink(){return !window.TASKM_FIREBASE_CONFIG&&A().startDemo?'<button type="button" class="au-link au-demo" data-act="demo">Try it without an account</button>':'';}
  function signup(){var t=RT[draft.role];return brand()+roleSwitch()+'<h1 class="au-h" data-rt="h">'+t.h+'</h1><p class="au-sub" data-rt="s">'+t.s+'</p>'+
   '<button type="button" class="au-btn au-google" data-act="google">'+G+'Sign up with Google</button><div class="au-or"><span>or</span></div>'+
@@ -4970,7 +4988,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   field('auPw','Password','password','new-password','minlength="8" enterkeyhint="go" aria-describedby="auPwHint"')+'<small class="au-hint" id="auPwHint">At least 8 characters.</small>'+
   '<label class="au-check"><input type="checkbox" id="auAge" required><span><span data-rt="a">'+t.a+'</span><a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>'+err()+
   '<button type="submit" class="au-btn au-primary">Create account</button></form>'+
-  '<p class="au-swap">Already have an account? <button type="button" class="au-link" data-go="signin">Sign in</button></p>'+demoLink();}
+  '<p class="au-swap">Already have an account? <button type="button" class="au-link" data-go="signin">Sign in</button></p>'+demoLink()+adminLink();}
  function waiting(){return brand()+'<div class="au-wait" role="status"><span class="au-spin" aria-hidden="true"></span>Opening your TaskM…</div>';}
 
  // onboarding: three short steps, one decision each
