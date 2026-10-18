@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head>
-<script>window.TASKM_FIREBASE_CONFIG={"apiKey": "AIzaSyBc6IcV58GL0p1rICVJU5Y0jbfoaLYYRDs", "authDomain": "taskm-sync-d6861.firebaseapp.com", "databaseURL": "https://taskm-sync-d6861-default-rtdb.firebaseio.com", "projectId": "taskm-sync-d6861", "storageBucket": "taskm-sync-d6861.firebasestorage.app", "messagingSenderId": "159025581008", "appId": "1:159025581008:web:b2b4084fef76770cc087d5"};window.TASKM_EXTERNAL_AUTH_UI=true;window.TASKM_GOOGLE_CLIENT_ID="";window.TASKM_MS_CLIENT_ID="e1801649-3efa-4458-99ac-f3892f932607";</script>
+<script>(function(){try{var L=localStorage;if(location.search||location.hash||L.getItem('taskm-acct-uid')||L.getItem('taskm-acct-demo')==='1'||window.Capacitor||!matchMedia('(hover:hover) and (pointer:fine) and (min-width:900px)').matches)return;location.replace('home.html');}catch(e){}})();window.TASKM_FIREBASE_CONFIG={"apiKey": "AIzaSyBc6IcV58GL0p1rICVJU5Y0jbfoaLYYRDs", "authDomain": "taskm-sync-d6861.firebaseapp.com", "databaseURL": "https://taskm-sync-d6861-default-rtdb.firebaseio.com", "projectId": "taskm-sync-d6861", "storageBucket": "taskm-sync-d6861.firebasestorage.app", "messagingSenderId": "159025581008", "appId": "1:159025581008:web:b2b4084fef76770cc087d5"};window.TASKM_EXTERNAL_AUTH_UI=true;window.TASKM_GOOGLE_CLIENT_ID="";window.TASKM_MS_CLIENT_ID="e1801649-3efa-4458-99ac-f3892f932607";</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
@@ -5123,7 +5123,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   o.classroom=one('classroom');o.teams=one('teams');o.email=one('email')||one('email-forward');var ic2=R.ical||R.canvas||R.schoology;if(ic2){o.ical=one(R.ical?'ical':R.canvas?'canvas':'schoology');o.ical.platform=ic2.platform||(ic2.data&&ic2.data.platform)||(R.schoology&&!R.canvas?'schoology':'canvas');}
   return o;}
  // route on every sign-in change
- function route(u){lastUser=u;if(!u){if(view==='signup'&&root&&!root.hidden)return;show('signin');return;}
+ var goUp=/[?&]go=up\b/.test(location.search); // the home page's Create account button
+ function route(u){lastUser=u;if(!u){if(view==='signup'&&root&&!root.hidden)return;show(goUp?'signup':'signin');goUp=false;return;}
   var p=u.profile||{};
   if(p.school||p.role==='parent'){dropRole();if((editing||relinkEl)&&root&&!root.hidden)return;hide();return;}
   if(u.name&&!draft.name)draft.name=u.name;var r=storedRole();if(r)draft.role=r;
