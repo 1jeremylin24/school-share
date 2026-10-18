@@ -266,7 +266,8 @@ h2 em{font-style:italic;color:var(--accent)}
 <script>
 (function(){
   var signedIn=false;try{signedIn=!!localStorage.getItem('taskm-acct-uid');}catch(e){}
-  if(signedIn){document.querySelector('[data-signed-out]').hidden=true;document.querySelector('[data-signed-in]').hidden=false;}
+  if(signedIn){document.querySelector('[data-signed-out]').hidden=true;document.querySelector('[data-signed-in]').hidden=false;
+    document.querySelectorAll('.ctas').forEach(function(c){c.innerHTML='<a class="btn btn-pri" href="/">Open TaskM</a>';});}
 
   var still=matchMedia('(prefers-reduced-motion: reduce)').matches;
   var hero=document.querySelector('.hero'),cv=hero.querySelector('canvas.rain'),cx=cv.getContext('2d');
