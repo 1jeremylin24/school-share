@@ -5000,7 +5000,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var site=has('site'),soon=has('soon'),oth=sel.indexOf('other')>=0;
   if(site.length)out+='<div class="au-cr done"><div class="au-crh">'+ic(I.globe,20)+'<b>School website</b><span class="au-ok">'+ic(I.check,14)+'Included</span></div><small class="au-hint">TaskM reads '+esc(draft.school||'your school')+'’s website and calendar every morning, for everyone at your school. </small></div>';
   if(soon.length||oth){var names=soon.map(function(k){return plat(k).n;});if(oth&&draft.other)names.push(draft.other);
-   out+='<p class="au-note">'+ic(I.info,16)+'<span>TaskM can’t connect to '+esc(listAnd(names))+' yet. Until it can, forward their emails to TaskM'+(sel.indexOf('outlook')<0?' (pick School email on the last step)':'')+', or add those tasks yourself.</span></p>';}
+   out+='<p class="au-note">'+ic(I.info,16)+'<span>You’ll connect '+esc(listAnd(names))+' right after this. Open '+(names.length>1?'each one':'it')+' once with the TaskM Chrome button on a computer, or in the TaskM iPhone app, and TaskM checks '+(names.length>1?'them':'it')+' for new homework every day.</span></p>';}
   if(!out)out='<p class="au-note">'+ic(I.pen,16)+'<span>You’ll add tasks yourself. Type things like “bio quiz 10/22” and TaskM sets the date.</span></p>';
   return out;}
  function listAnd(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];}
