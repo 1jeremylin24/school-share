@@ -5,6 +5,7 @@
    The extension never sees or stores a password. To send updates without a TaskM tab it keeps a limited "button key"
    from TaskM that can only add pages for that student and expires after 90 days. */
 const TASKM = 'https://taskm-school.web.app/';
+const APP = TASKM + 'app';   // the app itself; the site's front page is the home page
 const CLIP_IN = 'https://us-central1-taskm-sync-d6861.cloudfunctions.net/clipIn';
 const MAX_TEXT = 150000;
 const REFRESH_HOURS = 20;          // background refresh reads a saved page when it's older than this
@@ -136,7 +137,7 @@ async function remember(clip) {
 // Opening a saved page again re-reads it quietly
 async function onTabUpdated(tabId, info, tab) {
   if (info.status !== 'complete' || !tab.url) return;
-  if (tab.url.startsWith(TASKM)) return syncWithTaskM(tabId);
+  if (tab.url.startsWith(APP)) return syncWithTaskM(tabId);
   if (refreshing.has(tabId)) return;
   const pages = await getPages(), k = pageKey(tab.url), p = k && pages[k];
   if (!p || Date.now() - p.at < VISIT_GAP_MIN * 60000) return;
@@ -258,7 +259,7 @@ async function quietUpdate(k, clip) {
   const { pending = {} } = await chrome.storage.local.get('pending');
   pending[k] = msg;
   await chrome.storage.local.set({ pending });
-  const [t] = await chrome.tabs.query({ url: TASKM + '*' });
+  const [t] = await chrome.tabs.query({ url: APP + '*' });
   if (t) syncWithTaskM(t.id);
 }
 
@@ -376,13 +377,13 @@ function joinFrames(frames) {
 
 // ---- the TaskM tab
 async function openTaskM(from) {
-  const [open] = await chrome.tabs.query({ url: TASKM + '*' });
+  const [open] = await chrome.tabs.query({ url: APP + '*' });
   let t = open;
   if (t) {
     t = await chrome.tabs.update(t.id, { active: true });
     await chrome.windows.update(t.windowId, { focused: true });
   } else {
-    t = await chrome.tabs.create({ url: TASKM, index: from.index + 1, windowId: from.windowId });
+    t = await chrome.tabs.create({ url: APP, index: from.index + 1, windowId: from.windowId });
   }
   if (t.status !== 'complete') await loaded(t.id);
   return t.id;

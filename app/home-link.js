@@ -1,5 +1,5 @@
-/* Home button: on a computer, a "Home" button next to Share (and the sidebar logo) opens the TaskM home page (home.html).
-   home.html shows "Open TaskM" to signed-in visitors, so people can go back and forth.
+/* Home button: on a computer, a "Home" button next to Share (and the sidebar logo) opens the TaskM home page (taskm-school.web.app/, app/index.html).
+   The home page shows "Open TaskM" to signed-in visitors, so people can go back and forth.
    Lives in its own file so index.html (built by build.py) only needs <script src="home-link.js" defer></script>. */
 (function(){
  'use strict';
@@ -8,13 +8,13 @@
  function add(){
   var share=document.getElementById('shareBtn');
   if(share&&!document.getElementById('homeBtn')){
-   var a=document.createElement('a');a.className='btn ib';a.id='homeBtn';a.href='home.html';
+   var a=document.createElement('a');a.className='btn ib';a.id='homeBtn';a.href='/';
    a.title='TaskM home page';a.setAttribute('aria-label','Home page');a.style.textDecoration='none';
    a.innerHTML='<span class="bi">'+ICON+'</span><span class="bl"> Home</span>';
    share.parentNode.insertBefore(a,share);}
   var wm=document.querySelector('#dSide .tt-wm');   // the TaskM logo at the top of the sidebar
   if(wm&&!wm.dataset.home){wm.dataset.home='1';wm.style.cursor='pointer';wm.title='TaskM home page';
-   wm.addEventListener('click',function(){location.href='home.html';});}
+   wm.addEventListener('click',function(){location.href='/';});}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',add);else add();
  setTimeout(add,1500);   // the header is restyled after load; make sure the button is still there
