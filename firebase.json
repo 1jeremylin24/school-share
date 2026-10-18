@@ -17,6 +17,15 @@
         ]
       },
       {
+        "source": "/app",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
         "source": "**/*.html",
         "headers": [
           {
@@ -24,6 +33,12 @@
             "value": "no-cache"
           }
         ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/app",
+        "destination": "/app.html"
       }
     ]
   },
