@@ -1543,7 +1543,9 @@ body{font-family:var(--ns-body);background:var(--bg);-webkit-font-smoothing:anti
 .tt-clear>.tt-i{flex:none;margin-top:2px;color:var(--low,#4caf7d)}
 .tt-clear b{color:var(--text);font-weight:600}
 @media (prefers-reduced-motion:reduce){.tt-new.leave{transition:none}}
-</style><style>
+</style><script>/* Log in / Sign up from the home page, or nobody signed in: paint the account page's sky first, never the app (auth.js removes au-pre) */
+(function(){try{var q=/[?&]go=(in|up)\b/.test(location.search),u=localStorage.getItem('taskm-acct-uid');if(q||!u){var h=document.documentElement;h.classList.add('au-pre');setTimeout(function(){h.classList.remove('au-pre');},6000);}}catch(e){}})();</script>
+<style>
 /* TaskM account screens. Built on the app's own tokens so they follow Auto/Light/Dark. */
 .au{--au-r:14px;position:fixed;inset:0;z-index:2000;display:grid;place-items:center;overflow-y:auto;overscroll-behavior:contain;
  padding:max(24px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
@@ -1973,6 +1975,10 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
  .au-split .au-bar .au-logo{display:inline-flex}
  .au .au-card{padding:24px 0 28px}
  .au .au-h{font-size:34px}}
+
+/* before auth.js decides, show only the sky (see the au-pre script in <head>) */
+html.au-pre,html.au-pre body{background:#07080f!important}
+html.au-pre body>*:not(.au){visibility:hidden!important}
 
 </style>
 <style>
@@ -5171,8 +5177,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   // arrow keys move between "I'm a student" and "I'm a parent", like any radio group
   root.addEventListener('keydown',function(e){var b=e.target.closest&&e.target.closest('.au-role [role=radio]');if(!b||!/^Arrow/.test(e.key))return;e.preventDefault();
    var r=draft.role==='student'?'parent':'student';setRole(r);var nb=$('.au-role [data-role="'+r+'"]');if(nb)nb.focus();});return root;}
- function show(v,keep){mount();if(v==='onboard'&&view!=='onboard'&&!keep)step=0;root.hidden=false;d.documentElement.classList.add('au-open');render(v);rain(true);}
- function hide(){editing=false;relinkEl=null;if(!root)return;root.hidden=true;d.documentElement.classList.remove('au-open');rain(false);}
+ function show(v,keep){mount();if(v==='onboard'&&view!=='onboard'&&!keep)step=0;root.hidden=false;d.documentElement.classList.add('au-open');d.documentElement.classList.remove('au-pre');render(v);rain(true);}
+ function hide(){editing=false;relinkEl=null;if(!root)return;root.hidden=true;d.documentElement.classList.remove('au-open','au-pre');rain(false);}
 
  // the account screens are their own page, in the home page's look (same night sky and rain), not a card over the app
   var NATIVE=!!(window.Capacitor||(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.bridge));
@@ -5225,7 +5231,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  // a parent who picked "I'm a parent" on sign-up has nothing else to fill in
  function autoParent(){if(savingParent)return;savingParent=true;show('wait');
   Promise.resolve().then(saveParent).then(function(){savingParent=false;done();},function(e){savingParent=false;show('onboard');showErr(errText(e));});}
- function boot(){mount();var acc=A();
+ function boot(){mount();var acc=A();if((goIn||goUp)&&root.hidden&&!lastUser)show(goUp?'signup':'signin');
   // "Edit grade and platforms" in Settings reopens onboarding with what's saved
   d.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-acct="profile"]');if(!b)return;var p=(A().profile)||(lastUser&&lastUser.profile)||{};
    editing=true;draft.role=p.role==='parent'?'parent':'student';draft.name=p.name||draft.name;draft.school='Palos Verdes Peninsula High School';draft.grade=p.grade||'';draft.platforms=(p.platforms||[]).slice();draft.other=p.otherPlatform||p.other||'';step=0;show('onboard');});
