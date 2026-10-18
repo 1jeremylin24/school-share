@@ -32,7 +32,7 @@
   rowHtml:function(state,label){var p=A.profile||{};
    return '<div class="tt-synch"><span class="tt-dotc '+esc(A.demo?'off':state)+'"></span><span><b>'+esc(p.name||'Your account')+(p.school?' · '+esc(p.school):'')+'</b><small>'+
     esc(A.demo?'Demo account · saved on this device only':'Signed in · '+(label||''))+'</small></span></div>'+
-    '<div class="tt-syncb"><button type="button" class="tt-btn" data-acct="profile">Edit school and platforms</button><button type="button" class="tt-btn tt-ghost" data-acct="out">Sign out</button></div>';},
+    '<div class="tt-syncb"><button type="button" class="tt-btn" data-acct="profile">Edit grade and platforms</button><button type="button" class="tt-btn tt-ghost" data-acct="out">Sign out</button></div>';},
   signOut:function(){ss(UK,null);ss(NK,null);if(demo){ss(DK,null);location.reload();return;}if(auth)auth.signOut().then(function(){location.reload();});}};
  // ---- hooks for the design thread's screens (see /mnt/project-files/TaskM/app-build/ui/HOOKS.md)
  var authFns=[];
@@ -120,22 +120,23 @@
    'auth/network-request-failed':'Can’t reach the internet. Check your connection.','auth/too-many-requests':'Too many tries. Wait a minute and try again.'}[c]
    ||((x&&x.message)||'Something went wrong. Try again.');}
 
- // ---- sign-up details: school, grade and where homework comes from
+ // ---- sign-up details: grade and where homework comes from. TaskM is only for Palos Verdes Peninsula High School for now, so it never asks for the school.
+ var SCHOOL='Palos Verdes Peninsula High School',SITE='https://pvphs.pvpusd.net/';
  function showProfile(p,editing){if(EXT)return;var plats=p.platforms||[];
-  show('<h1>'+(editing?'Your school and platforms':'Tell us about your school')+'</h1><p>TaskM uses this to know where to look for your homework.</p><form data-a="profile" novalidate>'+
+  show('<h1>'+(editing?'Your grade and platforms':'Tell us about you')+'</h1><p>TaskM uses this to know where to look for your homework.</p><form data-a="profile" novalidate>'+
    '<label for="acNm">First name</label><input id="acNm" type="text" autocomplete="given-name" value="'+esc(p.name||'')+'" required>'+
-   '<label for="acSc">School</label><input id="acSc" type="text" autocomplete="organization" placeholder="e.g. Palos Verdes High School" value="'+esc(p.school||'')+'" required>'+
-   '<label for="acGr">Grade</label><select id="acGr">'+['','9','10','11','12','College','Other'].map(function(g){return '<option value="'+g+'"'+(String(p.grade||'')===g?' selected':'')+'>'+(g?(/^\d+$/.test(g)?g+'th grade':g):'Choose…')+'</option>';}).join('')+'</select>'+
+   '<p class="ac-note">School: <b>'+esc(SCHOOL)+'</b></p>'+
+   '<label for="acGr">Grade</label><select id="acGr">'+['','9','10','11','12'].map(function(g){return '<option value="'+g+'"'+(String(p.grade||'')===g?' selected':'')+'>'+(g?(/^\d+$/.test(g)?g+'th grade':g):'Choose…')+'</option>';}).join('')+'</select>'+
    '<label>Where do you get homework? Pick all that apply.</label><div class="ac-plats">'+PLATFORMS.map(function(x){return '<label class="ac-plat"><input type="checkbox" value="'+x[0]+'"'+(plats.indexOf(x[0])>=0?' checked':'')+'>'+esc(x[1])+'</label>';}).join('')+'</div>'+
    (editing?'':'<label class="ac-check"><input type="checkbox" id="acAge"> I’m 13 or older and agree to the TaskM terms and privacy policy.</label>')+
    '<div class="ac-note">Automatic importing from these platforms is being built. For now, add tasks with the + button and they’ll follow you to every device you sign in on.</div>'+
    '<button type="submit" class="ac-btn pri">'+(editing?'Save':'Start using TaskM')+'</button>'+(editing?'<button type="button" class="ac-btn" data-a="cancel">Cancel</button>':'')+'</form><div class="ac-err" role="alert"></div>');
   gate.onclick=function(e){var b=e.target.closest('[data-a="cancel"]');if(b)lock(false);};
-  gate.onsubmit=function(e){e.preventDefault();var nm=gate.querySelector('#acNm').value.trim(),sc=gate.querySelector('#acSc').value.trim(),gr=gate.querySelector('#acGr').value,
+  gate.onsubmit=function(e){e.preventDefault();var nm=gate.querySelector('#acNm').value.trim(),sc=SCHOOL,gr=gate.querySelector('#acGr').value,
     pl=[].map.call(gate.querySelectorAll('.ac-plat input:checked'),function(i){return i.value;}),age=gate.querySelector('#acAge'),b=gate.querySelector('button[type=submit]');
-   if(!nm){err('Add your first name.');return;}if(!sc){err('Add your school.');return;}if(!pl.length){err('Pick at least one place you get homework.');return;}
+   if(!nm){err('Add your first name.');return;}if(!pl.length){err('Pick at least one place you get homework.');return;}
    if(age&&!age.checked){err('TaskM is for students 13 and older for now.');return;}
-   var np={role:p.role||'student',name:nm,school:sc,grade:gr,platforms:pl,over13:true,created:p.created||new Date().toISOString(),secret:p.secret||secret()};
+   var np={role:p.role||'student',name:nm,school:sc,site:SITE,grade:gr,platforms:pl,over13:true,created:p.created||new Date().toISOString(),secret:p.secret||secret()};
    busy(b,true);saveProfile(np).then(function(){A.profile=np;ss(NK,nm);if(editing){lock(false);if(window.TaskMSync)window.TaskMSync.paint();}else ready(np);},
     function(){busy(b,false);err('Couldn’t save. Check your connection and try again.');});};}
 
@@ -4635,7 +4636,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   SETUP.forEach(function(x){if(p.indexOf(x.k)<0)return;var mail=x.k==='outlook';
    steps.push({n:x.n,u:x.u,sp:SP&&!mail,t:SP&&mail?'In TaskM’s Email tab, tap Link school Outlook or Link Gmail, sign in, then tap Add to TaskM.':SP?(x.k==='teams'?'Sign in to Teams and tap Add to TaskM anywhere. TaskM finds every class’s assignments by itself.':(x.t?x.t+' ':'')+'Sign in if it asks, then tap Add to TaskM.'):x.t&&/button/.test(x.t)?x.t:(x.t?x.t+' ':'')+'Click the TaskM button there once.',done:has(x.m),btn:'Open'});});
   steps.push({n:'Your grades',u:null,sp:!!SP,t:SP?'Open your grades page (like Aeries), sign in and tap Add to TaskM. Your grades then stay updated here.':'Open your grades page (like Aeries) and click the TaskM button. Your grades then stay updated here.',done:has(/aeries|grade|powerschool|infinitecampus|skyward|portal/i)});
-  if(p.indexOf('website')>=0)steps.push({n:'School website or calendar',u:null,t:'Paste its link in the box below and leave “Check this link every morning” on.',done:Object.keys(aiSrc).some(function(k){return !aiSrc[k].kind;})});
+  if(p.indexOf('website')>=0)steps.push({n:'School website or calendar',u:null,t:'Paste pvphs.pvpusd.net in the box below and leave “Check this link every morning” on.',done:Object.keys(aiSrc).some(function(k){return !aiSrc[k].kind;})});
   return steps;}
  function setupPanel(){btnBanner();var a=document.getElementById('aiPanel');if(!a||!srcLoaded)return;var el=document.getElementById('setupPanel'),hide=false,open=false;try{hide=localStorage.getItem('taskm-setup-hidden')==='1';open=localStorage.getItem('taskm-setup-open')==='1';}catch(e){}
   var st=setupSteps(),n=st.filter(function(x){return x.done;}).length,next=st.filter(function(x){return !x.done;})[0];
@@ -4808,18 +4809,18 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function vis(sel){var l=document.querySelectorAll(sel);for(var i=0;i<l.length;i++){var r=l[i].getBoundingClientRect();if(r.width>0&&r.height>0)return l[i];}return null;}
  function view(v){var b=vis('#viewSeg button[data-view="'+v+'"]')||document.querySelector('#viewSeg button[data-view="'+v+'"]');if(b&&!b.classList.contains('on'))b.click();}
  var STEPS=[
-  {v:'list',h:'Meet Alex, a sample student',p:'Everything you see was pulled in by itself from OneNote, Teams, Google Classroom and email. Here’s a 20-second look around.'},
+  {v:'list',h:'Meet Alex, a sample student',p:'Everything you see was pulled in by itself from OneNote, Teams, Aeries and email. Here’s a 20-second look around.'},
   {v:'list',el:'.mk-focus|.dk-top',h:'Focus: what to do tonight',p:'Your top 3 come first, sorted by what’s due soonest and matters most. Check them off and you’re free.'},
   {v:'calendar',el:'#viewSeg button[data-view="calendar"]',h:'Calendar: every due date',p:'Tests, homework and school days off, laid out by day. Drag a task to another day to move it.'},
   {v:'email',el:'#viewSeg button[data-view="email"]',h:'Email: only what needs you',p:'TaskM reads your inboxes, sums up each email and puts the ones that need an answer on top.'},
   {v:'list',el:'.tt-fab|#ttAdd',h:'Add anything in one line',p:'Type something like “calc hw friday” and TaskM picks up the class and date for you.'},
-  {v:'list',h:'Now let’s connect yours',p:'Tap each place your school posts homework once. After that TaskM keeps itself updated, and Alex’s sample tasks disappear as yours arrive.',last:true}];
+  {v:'list',h:'Now let’s connect yours',p:'Alex’s sample is gone, so this is your own TaskM. Tap each place your teachers post homework once, and after that TaskM keeps itself updated.',last:true}];
  function startTour(){if(tourBox)return;startSample();tourBox=document.createElement('div');tourBox.id='tmTour';tourBox.className='tm-tour';
   tourBox.innerHTML='<div class="tm-spot" aria-hidden="true"></div><div class="tm-tip" role="dialog" aria-modal="true" aria-labelledby="tmTipH"></div>';document.body.appendChild(tourBox);
   showStep(0);}
- function showStep(i){tourAt=i;var s=STEPS[i];view(s.v);setTimeout(function(){if(!tourBox)return;var el=s.el?s.el.split('|').reduce(function(f,x){return f||vis(x);},null):null,spot=tourBox.querySelector('.tm-spot'),tip=tourBox.querySelector('.tm-tip');
+ function showStep(i){tourAt=i;var s=STEPS[i];if(s.last){endSample();window.scrollTo(0,0);}view(s.v);setTimeout(function(){if(!tourBox)return;var el=s.el?s.el.split('|').reduce(function(f,x){return f||vis(x);},null):null,spot=tourBox.querySelector('.tm-spot'),tip=tourBox.querySelector('.tm-tip');
    tip.innerHTML='<p class="tm-n">'+(i+1)+' of '+STEPS.length+'</p><h3 id="tmTipH">'+esc(s.h)+'</h3><p>'+esc(s.p)+'</p><div class="tm-acts">'+
-    (s.last?'<button type="button" class="tm-ghost" data-tmlook>Look around first</button><button type="button" class="tm-pri" data-tmconnect>Connect my school</button>':
+    (s.last?'<button type="button" class="tm-ghost" data-tmlook>Not now</button><button type="button" class="tm-pri" data-tmconnect>Connect my school</button>':
      '<button type="button" class="tm-ghost" data-tmskip>Skip</button><button type="button" class="tm-pri" data-tmnext>'+(i?'Next':'Show me')+'</button>')+'</div>';
    tourBox.classList.toggle('tm-center',!el);
    if(el){var pad=6,vh=window.innerHeight,vw=window.innerWidth,r=el.getBoundingClientRect();if(getComputedStyle(el).position!=='fixed'&&(r.top<70||r.bottom>vh*0.55))window.scrollBy(0,r.top-80);r=el.getBoundingClientRect();
@@ -4828,7 +4829,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     tip.style.cssText='width:'+tw+'px;left:'+Math.max(12,Math.min(vw-tw-12,r.left+r.width/2-tw/2))+'px;top:'+(below?r.bottom+pad+12:above?r.top-pad-12-th:vh-th-90)+'px';}
    else{spot.style.cssText='';tip.style.cssText='';}
    var f=tip.querySelector('.tm-pri');if(f)try{f.focus({preventScroll:true});}catch(x){}},120);}
- function endTour(){try{localStorage.setItem(TOURK,'done');}catch(e){}if(tourBox){tourBox.remove();tourBox=null;}view('list');window.scrollTo(0,0);}
+ function endTour(){try{localStorage.setItem(TOURK,'done');}catch(e){}if(tourBox){tourBox.remove();tourBox=null;}endSample();view('list');window.scrollTo(0,0);}
  // the connect page: one card per place this student said their school posts homework (from sign-up)
  function openConnect(){var c=document.getElementById('tmConnect');if(!c){c=document.createElement('div');c.id='tmConnect';c.className='tm-conn';document.body.appendChild(c);}
   paintConnect();requestAnimationFrame(function(){c.classList.add('open');});}
@@ -4848,7 +4849,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(!t){var cn=e.target.closest&&e.target.closest('#tmConnect [data-school],#tmConnect a.tt-btn,#tmConnect [data-tc]');if(cn)setTimeout(closeConnect,50);return;}
   if(t.hasAttribute('data-tmnext')){showStep(tourAt+1);return;}
   if(t.hasAttribute('data-tmskip')||t.hasAttribute('data-tmlook')){endTour();return;}
-  if(t.hasAttribute('data-tmconnect')){if(tourBox)endTour();openConnect();return;}
+  if(t.hasAttribute('data-tmconnect')){if(tourBox)endTour();endSample();openConnect();return;}
   if(t.hasAttribute('data-tmclose')){closeConnect();return;}
   if(t.hasAttribute('data-tmreplay')){closeConnect();try{localStorage.removeItem(TOURK);}catch(x){}startTour();return;}
   if(t.hasAttribute('data-tmendsample')){endSample();return;}
@@ -4867,7 +4868,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 (function(){
  'use strict';
  var A=function(){return window.TaskMAccount||{};};
- var d=document,root=null,view='',step=0,draft={role:'student',name:'',school:'',grade:'',platforms:[]},busy=false,lastUser=null,editing=false,relinkEl=null,savingParent=false;
+ var d=document,root=null,view='',step=0,draft={role:'student',name:'',school:'Palos Verdes Peninsula High School',grade:'',platforms:[]},busy=false,lastUser=null,editing=false,relinkEl=null,savingParent=false;
  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
  function $(s,el){return (el||root).querySelector(s);}
  function $$(s,el){return Array.prototype.slice.call((el||root).querySelectorAll(s));}
@@ -4964,11 +4965,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var h=sw?roleSwitch()+(par?'':top):par?brand():top;
   if(par)return h+'<h1 class="au-h">Set up your <em>parent account.</em></h1><p class="au-sub">Once your student links their TaskM to you, you’ll see what’s due and what’s coming up.</p>'+
    nameField()+err()+'<button type="button" class="au-btn au-primary" data-act="finish">'+(editing?'Save':'Finish setup')+'</button>';
-  if(step===0)h+='<h1 class="au-h">Where do you <em>go to school?</em></h1><p class="au-sub">TaskM adds your school’s days off, finals and late starts for you.</p>'+
+  if(step===0)h+='<h1 class="au-h">What grade <em>are you in?</em></h1><p class="au-sub">TaskM is made for Palos Verdes Peninsula High School, so your days off, finals and late starts are already in.</p>'+
    (needName()?nameField():'')+
-   '<label class="au-f" for="auSchool"><span>School</span><span class="au-in">'+ic(I.school,18)+'<input id="auSchool" type="text" autocomplete="organization" placeholder="Start typing your school" value="'+esc(draft.school)+'" role="combobox" aria-expanded="false" aria-controls="auSchoolList" aria-autocomplete="list" enterkeyhint="next"></span></label>'+
-   '<ul class="au-list" id="auSchoolList" role="listbox" hidden></ul>'+
-   '<fieldset class="au-f au-grades"><legend>Grade</legend><div class="au-seg">'+['9','10','11','12','Other'].map(function(g){return '<button type="button" class="au-chip" data-grade="'+g+'" aria-pressed="'+(draft.grade===g)+'">'+g+'</button>';}).join('')+'</div></fieldset>'+
+   '<fieldset class="au-f au-grades"><legend>Grade</legend><div class="au-seg">'+['9','10','11','12'].map(function(g){return '<button type="button" class="au-chip" data-grade="'+g+'" aria-pressed="'+(draft.grade===g)+'">'+g+'</button>';}).join('')+'</div></fieldset>'+
    err()+'<button type="button" class="au-btn au-primary" data-act="next">Continue</button>';
   else if(step===1)h+='<h1 class="au-h">Where does your <em>homework live?</em></h1><p class="au-sub">Pick everything your teachers use. You can change this later.</p>'+
    '<div class="au-plats" role="group" aria-label="Homework platforms">'+PLAT.map(function(p){var on=draft.platforms.indexOf(p.k)>=0;
@@ -5048,13 +5047,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    run(t,function(){return A().resetPassword(em.trim());},function(){showErr('');var e2=$('.au-err');e2.hidden=false;e2.classList.add('ok');e2.textContent='Check your email for a link to reset your password.';});}
   else if(a==='back'){step=Math.max(0,step-1);render();}
   else if(a==='next'){var on=$('#auObName');if(step===0&&on){draft.name=on.value.trim();if(!draft.name){showErr('Type your first name so TaskM can greet you.');on.focus();return;}}
-   if(step===0&&!draft.school){showErr('Pick your school, or type its name.');$('#auSchool').focus();return;}
+   if(step===0&&!draft.grade){showErr('Pick your grade.');return;}
    if(step===1&&!draft.platforms.length){showErr('Pick at least one, even if it’s “I’ll add some myself.”');return;}
    if(step===1){var oi=$('#auOther');draft.other=oi?oi.value.trim():'';if(draft.platforms.indexOf('other')>=0&&!draft.other){showErr('Type where else you get homework, or unselect Other.');oi.focus();return;}}
    step++;render();}
   else if(a==='finish'&&draft.role==='parent'){var pn=$('#auObName');draft.name=(pn?pn.value:draft.name||'').trim();if(!draft.name){showErr('Type your first name.');if(pn)pn.focus();return;}
    run(t,saveParent,done);}
-  else if(a==='finish')run(t,function(){return A().saveProfile({role:'student',name:draft.name||(lastUser&&lastUser.name)||'',school:draft.school,grade:draft.grade,platforms:draft.platforms.slice(),other:draft.platforms.indexOf('other')>=0?draft.other:'',otherPlatform:draft.platforms.indexOf('other')>=0?draft.other:''});},done);}
+  else if(a==='finish')run(t,function(){return A().saveProfile({role:'student',name:draft.name||(lastUser&&lastUser.name)||'',school:'Palos Verdes Peninsula High School',site:'https://pvphs.pvpusd.net/',grade:draft.grade,platforms:draft.platforms.slice(),other:draft.platforms.indexOf('other')>=0?draft.other:'',otherPlatform:draft.platforms.indexOf('other')>=0?draft.other:''});},done);}
  function saveParent(){return A().saveProfile({role:'parent',name:draft.name});}
  function done(){dropRole();window.dispatchEvent(new CustomEvent('taskm:auth-done'));hide();}
  function onSubmit(e){var f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();var btn=$('button[type=submit]',f),em=$('#auEmail').value.trim(),pw=$('#auPw').value;
@@ -5101,9 +5100,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function autoParent(){if(savingParent)return;savingParent=true;show('wait');
   Promise.resolve().then(saveParent).then(function(){savingParent=false;done();},function(e){savingParent=false;show('onboard');showErr(errText(e));});}
  function boot(){mount();var acc=A();
-  // "Edit school and platforms" in Settings reopens onboarding with what's saved
+  // "Edit grade and platforms" in Settings reopens onboarding with what's saved
   d.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-acct="profile"]');if(!b)return;var p=(A().profile)||(lastUser&&lastUser.profile)||{};
-   editing=true;draft.role=p.role==='parent'?'parent':'student';draft.name=p.name||draft.name;draft.school=p.school||'';draft.grade=p.grade||'';draft.platforms=(p.platforms||[]).slice();draft.other=p.otherPlatform||p.other||'';step=0;show('onboard');});
+   editing=true;draft.role=p.role==='parent'?'parent':'student';draft.name=p.name||draft.name;draft.school='Palos Verdes Peninsula High School';draft.grade=p.grade||'';draft.platforms=(p.platforms||[]).slice();draft.other=p.otherPlatform||p.other||'';step=0;show('onboard');});
   if(acc.onReady)acc.onReady(route);}
  if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',boot);else boot();
  window.TaskMAuthUI={show:show,hide:hide,renderLinked:renderLinked,_draft:draft};
