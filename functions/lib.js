@@ -85,7 +85,7 @@ function htmlToText(html) {
     .replace(/<(script|style|noscript|svg|head)[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<br\s*\/?>|<\/(p|div|li|tr|h\d|section|article)>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&nbsp;|&#160;/g, ' ').replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
     .replace(/[ \t]+/g, ' ')
     .replace(/\s*\n\s*/g, '\n')
     .trim();
@@ -264,4 +264,77 @@ function betaSummary(users, authUsers, feedback, now) {
   };
 }
 
-module.exports = { isOwner, betaSummary, TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel };
+// ---- PVPHS school info: the school website, read once a day for every student (see schoolDaily in index.js)
+const SCHOOL_KINDS = ['no_school', 'schedule', 'exam', 'deadline', 'drill', 'asb', 'election', 'counseling', 'college', 'testing', 'club', 'sports', 'arts', 'event', 'announcement'];
+const SCHOOL_GRADES = [9, 10, 11, 12];
+
+// Every calendar event from now to `ahead` days out: {title, date, time, location, details, link}. Times in UTC become Pacific.
+function icsEvents(ics, today, ahead = 120) {
+  const text = String(ics).replace(/\r?\n[ \t]/g, '');
+  const un = s => s.replace(/\\n/gi, ' ').replace(/\\([,;\\])/g, '$1').replace(/\s+/g, ' ').trim();
+  const out = [];
+  for (const block of text.split('BEGIN:VEVENT').slice(1)) {
+    const get = k => { const m = new RegExp('^' + k + '(?:;[^:\\n]*)?:(.*)$', 'm').exec(block); return m ? m[1].trim() : ''; };
+    const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})\d{2}(Z?))?/.exec(get('DTSTART'));
+    if (!m) continue;
+    let date = `${m[1]}-${m[2]}-${m[3]}`, time = m[4] ? `${m[4]}:${m[5]}` : null;
+    if (m[6]) {
+      const at = new Date(`${date}T${time}:00Z`);
+      date = ymdIn(at);
+      time = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at);
+    }
+    if (time === '00:00') time = null;
+    const d = daysBetween(today, date);
+    const title = un(get('SUMMARY'));
+    if (!title || d < -1 || d > ahead) continue;
+    out.push({ title: title.slice(0, 160), date, time, location: un(get('LOCATION')).slice(0, 80) || null, details: htmlToText(un(get('DESCRIPTION'))).replace(/\s+/g, ' ').slice(0, 300) || null, link: get('URL') || null });
+  }
+  return out.sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+}
+
+// Just the page's own content on the school's Edlio site (drops the big site menu and the footer)
+function edlioMain(html) {
+  const s = String(html), a = s.indexOf('id="content_main"'), b = s.indexOf('id="footer_main"');
+  if (a < 0) return s;
+  const from = s.indexOf('>', a) + 1, to = b > a ? s.lastIndexOf('<', b) : -1;
+  return s.slice(from, to > from ? to : undefined);
+}
+
+// The school's own student calendar, plus the master calendar minus practices, games and anything already listed
+const ROUTINE = /\b(practice|rehearsal|scrimmage|conditioning|open gym|weight ?room)\b|\b(VR|JV|FS|varsity|frosh)\b|\s(vs\.?|@)\s|^(tennis|volleyball|water polo|football|basketball|soccer|baseball|softball|swim|track|golf|wrestling|cross country|lacrosse)\b/i;
+function schoolEvents(curated, master) {
+  const key = e => e.date + '|' + e.title.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24);
+  const seen = new Set(), out = [];
+  for (const e of curated) if (!seen.has(key(e))) { seen.add(key(e)); out.push({ ...e, cal: 'school' }); }
+  for (const e of master) if (!ROUTINE.test(e.title) && !seen.has(key(e))) { seen.add(key(e)); out.push({ ...e, cal: 'master' }); }
+  return out.sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
+}
+
+// One AI-read school item -> what TaskM stores at /school/pvphs/items. Dated items that are long past are dropped.
+function toSchoolItem(x, today) {
+  if (!x || !x.title || !SCHOOL_KINDS.includes(x.kind)) return null;
+  const date = isYmd(x.date) ? x.date : null, end = isYmd(x.end_date) && date && x.end_date > date ? x.end_date : null;
+  if (date && daysBetween(today, end || date) < -1) return null;
+  if (date && daysBetween(today, date) > 365) return null;
+  const grades = [...new Set((x.grades || []).map(Number))].filter(g => SCHOOL_GRADES.includes(g)).sort();
+  const title = String(x.title).trim().slice(0, 160);
+  return {
+    id: 'sch-' + hash([title.toLowerCase(), date || ''].join('|')).slice(0, 16),
+    title, kind: x.kind, date, end_date: end, time: isHm(x.time) ? x.time : null,
+    grades: grades.length === 4 ? [] : grades,            // [] = everyone
+    audience: ['students', 'parents', 'everyone'].includes(x.audience) ? x.audience : 'everyone',
+    importance: ['high', 'normal', 'low'].includes(x.importance) ? x.importance : 'normal',
+    summary: String(x.summary || '').trim().slice(0, 400),
+    link: safeUrl(x.link || '') || null,
+    source: String(x.source || '').slice(0, 60) || 'PVPHS website',
+  };
+}
+// Dated items first (soonest first), then undated reference info; duplicates by id dropped
+function sortSchool(items) {
+  const by = {};
+  for (const i of items) if (i && !by[i.id]) by[i.id] = i;
+  return Object.values(by).sort((a, b) => (a.date ? 0 : 1) - (b.date ? 0 : 1) || String(a.date || '').localeCompare(String(b.date || '')) || a.title.localeCompare(b.title));
+}
+
+module.exports = { isOwner, betaSummary, TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel,
+  SCHOOL_KINDS, SCHOOL_GRADES, icsEvents, schoolEvents, toSchoolItem, sortSchool, edlioMain };
