@@ -51,9 +51,12 @@
  // Parent view from another page (/app?parent-preview): open the sample parent view as soon as the student account is ready.
  // owner.js also does this, but only after a verified-email owner check, which a student ID sign-in doesn't pass.
  if(/[?&]parent-preview\b/.test(location.search)&&page()==='app'){
-  var go=function(acc){var A=window.TaskMAccount;if(!go||!on()||!acc||!acc.profile||acc.profile.role==='parent'||!A.previewParent)return;go=null;
-   try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
-   setTimeout(function(){if(!document.documentElement.classList.contains('taskm-parent'))A.previewParent(true);mark();},300);};
+  // the page stays covered (html.pv-pre, set in <head>) until the parent view is up, so My TaskM never flashes first
+  var go=function(acc){var A=window.TaskMAccount,h=document.documentElement;if(!go||(acc&&!acc.profile))return;go=null;
+   if(on()&&acc&&acc.profile&&acc.profile.role!=='parent'&&A.previewParent){
+    try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
+    if(!h.classList.contains('taskm-parent'))A.previewParent(true);mark();}
+   requestAnimationFrame(function(){h.classList.remove('pv-pre');});};
   var hook=function(){var A=window.TaskMAccount;if(A&&A.onReady)A.onReady(function(acc){if(go)go(acc);});};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();}
 })();

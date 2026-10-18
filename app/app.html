@@ -1544,7 +1544,8 @@ body{font-family:var(--ns-body);background:var(--bg);-webkit-font-smoothing:anti
 .tt-clear b{color:var(--text);font-weight:600}
 @media (prefers-reduced-motion:reduce){.tt-new.leave{transition:none}}
 </style><script>/* Log in / Sign up from the home page, or nobody signed in: paint the account page's sky first, never the app (auth.js removes au-pre) */
-(function(){try{var q=/[?&]go=(in|up)\b/.test(location.search),u=localStorage.getItem('taskm-acct-uid');if(q||!u){var h=document.documentElement;h.classList.add('au-pre');setTimeout(function(){h.classList.remove('au-pre');},6000);}}catch(e){}})();</script>
+(function(){try{var q=/[?&]go=(in|up)\b/.test(location.search),u=localStorage.getItem('taskm-acct-uid');if(q||!u){var h=document.documentElement;h.classList.add('au-pre');setTimeout(function(){h.classList.remove('au-pre');},6000);}}catch(e){}})();</script><script>/* Parent view from the owner bar (/app?parent-preview): show a blank page, not My TaskM, until the parent view opens (owner-bar.js removes pv-pre) */
+(function(){try{if(/[?&]parent-preview\b/.test(location.search)&&localStorage.getItem('taskm-owner')==='1'&&localStorage.getItem('taskm-acct-uid')){var h=document.documentElement;h.classList.add('pv-pre');setTimeout(function(){h.classList.remove('pv-pre');},6000);}}catch(e){}})();</script>
 <style>
 /* TaskM account screens. Built on the app's own tokens so they follow Auto/Light/Dark. */
 .au{--au-r:14px;position:fixed;inset:0;z-index:2000;display:grid;place-items:center;overflow-y:auto;overscroll-behavior:contain;
@@ -1987,6 +1988,7 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
 /* before auth.js decides, show only the sky (see the au-pre script in <head>) */
 html.au-pre,html.au-pre body{background:#07080f!important}
 html.au-pre body>*:not(.au){visibility:hidden!important}
+html.pv-pre body>*:not(#parentView):not(#tmOwnerBar){visibility:hidden!important}
 
 </style>
 <style>
