@@ -1958,14 +1958,14 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
  .au-home:hover{border-color:rgba(190,192,255,.4);background:rgba(255,255,255,.05)}
  .au .au-primary:hover{background:#fff}}
 
-/* Option A: split. The home page's sky on the left, the form on the right. Phones: the sky is a short band on top. */
-.au-split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(420px,1fr)}
+/* Split page: the home page's sky on the left, the form on the right. */
+.au-split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(420px,1fr);place-items:stretch}
 .au-split .au-art{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;padding:max(28px,env(safe-area-inset-top)) 52px 0 max(52px,env(safe-area-inset-left));border-right:1px solid var(--line)}
 .au-split .au-pitch{margin-top:clamp(48px,13vh,140px)}
 .au-split .au-shot{margin:auto -34% 0 0;padding-top:44px}
 .au-split .au-shot img{width:100%;height:auto;border-radius:14px 14px 0 0;border:1px solid var(--line-2);border-bottom:0;box-shadow:0 40px 120px -20px rgba(70,60,200,.55),0 20px 40px -10px rgba(0,0,0,.6)}
 .au-split .au-bar .au-logo{display:none}
-/* phones and narrow windows: no room for two columns, so the sky goes behind the form (same as option B) */
+/* phones and narrow windows: no room for two columns, so the sky goes behind the form */
 @media (max-width:900px){
  .au-split{display:block}
  .au-split .au-art{position:fixed;inset:0;height:auto;padding:0;border:0}
@@ -1973,15 +1973,6 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
  .au-split .au-bar .au-logo{display:inline-flex}
  .au .au-card{padding:24px 0 28px}
  .au .au-h{font-size:34px}}
-
-/* Option B: centered. The whole page is the home page's sky, with the form standing on it. */
-.au-center .au-art{position:fixed;inset:0}
-.au-center .au-art>:not(.au-rain){display:none}
-.au-center .au-main{width:min(1200px,100%);margin-inline:auto}
-.au-center .au-card{max-width:420px}
-.au-center .au-h{font-size:52px;text-align:center}
-.au-center .au-sub{text-align:center}
-@media (max-width:600px){.au-center .au-h{font-size:38px}.au-center .au-card{padding-top:24px}}
 
 </style>
 <style>
@@ -5176,7 +5167,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    draft.name=nm;keepRole();run(btn,function(){return A().signUpEmail(em,pw,nm);});}}
 
  function mount(){if(root)return root;root=d.createElement('div');root.className='au';root.hidden=true;root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','TaskM account');
-  root.className='au au-'+LAYOUT;root.innerHTML=page();d.body.appendChild(root);root.addEventListener('click',onClick);root.addEventListener('submit',onSubmit);
+  root.className='au au-split';root.innerHTML=page();d.body.appendChild(root);root.addEventListener('click',onClick);root.addEventListener('submit',onSubmit);
   // arrow keys move between "I'm a student" and "I'm a parent", like any radio group
   root.addEventListener('keydown',function(e){var b=e.target.closest&&e.target.closest('.au-role [role=radio]');if(!b||!/^Arrow/.test(e.key))return;e.preventDefault();
    var r=draft.role==='student'?'parent':'student';setRole(r);var nb=$('.au-role [data-role="'+r+'"]');if(nb)nb.focus();});return root;}
@@ -5184,8 +5175,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function hide(){editing=false;relinkEl=null;if(!root)return;root.hidden=true;d.documentElement.classList.remove('au-open');rain(false);}
 
  // the account screens are their own page, in the home page's look (same night sky and rain), not a card over the app
- var LAYOUT=(function(){try{return localStorage.getItem('taskm-au-layout')||'split';}catch(e){return 'split';}})();
- var NATIVE=!!(window.Capacitor||(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.bridge));
+  var NATIVE=!!(window.Capacitor||(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.bridge));
  function logo(){var ti=d.querySelector('link[rel="apple-touch-icon"]');var t=NATIVE?'span':'a';return '<'+t+' class="au-logo"'+(NATIVE?'':' href="/"')+'>'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="30" height="30">':'')+'TaskM</'+t+'>';}
  function page(){return '<aside class="au-art" aria-hidden="true"><canvas class="au-rain"></canvas>'+logo()+
    '<div class="au-pitch"><p class="au-big">Homework,<br><em>handled.</em></p><p class="au-lede">TaskM reads OneNote, Teams, Aeries and your email every morning, then shows you what to do tonight.</p></div>'+
