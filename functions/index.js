@@ -6,7 +6,8 @@
      Links can be saved so they are checked again every morning.
    - aiRemoveSource: stop checking a saved link and drop its tasks.
    - aiDaily (5:30 AM Pacific): re-reads every saved link that changed and refreshes each student's AI tasks.
-   - betaFeedback / betaStats: feedback from the app, and the owner-only usage page (app/beta.html).
+   - betaFeedback / betaStats / adminFeedback / reportError: feedback and error reports from the app, and the owner-only
+     admin page (app/admin.html): sign-ups, active users, feedback, connected sources, errors and the morning jobs.
    - schoolDaily / schoolInfo / schoolRefresh: the PVPHS website, read every morning for everyone and tagged by grade.
    The Claude API key lives in Secret Manager as ANTHROPIC_API_KEY; it never reaches the website. */
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
@@ -277,6 +278,7 @@ async function addForUser(uid, d) {
   } catch (e) {
     if (e instanceof HttpsError) throw e;
     logger.error('aiAdd failed', e);
+    await noteError('aiAdd', e, uid);
     throw new HttpsError('internal', 'TaskM couldn’t read that right now. Try again in a minute.');
   }
 }
@@ -306,7 +308,7 @@ exports.clipIn = onRequest({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 300, 
     res.json({ result: out });
   } catch (e) {
     const code = e instanceof HttpsError ? (e.code === 'resource-exhausted' ? 429 : 400) : 500;
-    if (!(e instanceof HttpsError)) logger.error('clipIn failed', e);
+    if (!(e instanceof HttpsError)) { logger.error('clipIn failed', e); await noteError('clipIn', e, rec.uid); }
     res.status(code).json({ error: e.message || 'failed' });
   }
 });
@@ -350,8 +352,46 @@ exports.betaStats = onCall({ cors: ORIGINS, memory: '512MiB' }, async (req) => {
     page = await getAuth().listUsers(1000, page && page.pageToken);
     page.users.forEach(u => authUsers.push({ uid: u.uid, email: u.email, name: u.displayName, created: u.metadata.creationTime, lastSignIn: u.metadata.lastSignInTime }));
   } while (page.pageToken);
-  const [users, feedback] = await Promise.all([db.ref('users').once('value'), db.ref('feedback').orderByChild('at').limitToLast(300).once('value')]);
-  return L.betaSummary(users.val() || {}, authUsers, feedback.val() || {}, Date.now());
+  const [users, feedback, errors, jobs] = await Promise.all([db.ref('users').once('value'), db.ref('feedback').orderByChild('at').limitToLast(300).once('value'),
+    db.ref('errors').orderByChild('at').startAt(Date.now() - 7 * 864e5).limitToLast(2000).once('value'), db.ref('admin/jobs').once('value')]);
+  return L.betaSummary(users.val() || {}, authUsers, feedback.val() || {}, Date.now(), { errors: errors.val() || {}, jobs: jobs.val() || {} });
+});
+
+// Owner only: mark a feedback note handled (or open it again)
+exports.adminFeedback = onCall({ cors: ORIGINS }, async (req) => {
+  signedIn(req);
+  if (!L.isOwner(req.auth.token)) throw new HttpsError('permission-denied', 'Only TaskM’s owner can do this.');
+  const id = String((req.data || {}).id || '');
+  if (!/^[-\w]{10,40}$/.test(id)) throw new HttpsError('invalid-argument', 'Unknown note.');
+  const ref = db.ref(`feedback/${id}`);
+  if (!(await ref.child('at').once('value')).exists()) throw new HttpsError('not-found', 'That note is gone.');
+  await ref.update({ done: req.data.done ? ServerValue.TIMESTAMP : null });
+  return { ok: true };
+});
+
+// ---- Errors: the app reports its own crashes (app/report.js) and the server notes its own failures, so the admin page
+// can show what broke. Only the error message, where it happened and the app version are kept, scrubbed of emails and links.
+async function noteError(where, e, uid) {
+  try {
+    await db.ref('errors').push({ src: 'server', where, msg: L.scrubError(e && e.message || e, 300), uid: uid || null, at: ServerValue.TIMESTAMP });
+  } catch (x) { logger.error('noteError failed', x); }
+}
+async function jobDone(name, info) {
+  try { await db.ref(`admin/jobs/${name}`).set({ ...info, at: ServerValue.TIMESTAMP }); } catch (x) { logger.error('jobDone failed', x); }
+}
+exports.reportError = onCall({ cors: ORIGINS }, async (req) => {
+  const uid = req.auth ? req.auth.uid : null;
+  const d = req.data || {};
+  const msg = L.scrubError(d.msg, 300).trim();
+  if (!msg) return { ok: false };
+  // at most 30 reports a day per person, and 500 a day from people who aren't signed in yet
+  const r = await db.ref(`errorCount/${L.ymdIn(new Date())}/${uid || 'guest'}`).transaction(n => (n || 0) + 1);
+  if (r.snapshot.val() > (uid ? 30 : 500)) return { ok: false };
+  await db.ref('errors').push({
+    src: 'app', where: L.scrubError(d.where, 60) || null, msg, stack: L.scrubError(d.stack, 900) || null, page: L.scrubError(d.page, 40) || null,
+    app: d.app === 'iphone' ? 'iphone' : 'web', ext: String(d.ext || '').slice(0, 20) || null, uid, at: ServerValue.TIMESTAMP,
+  });
+  return { ok: true };
 });
 
 // Every morning: re-read saved links that changed since yesterday
@@ -378,6 +418,7 @@ exports.aiDaily = onSchedule({ schedule: '30 5 * * *', timeZone: L.TZ, secrets: 
     await rebuild(uid);
   }
   logger.info('aiDaily done', { students: Object.keys(index).length, changed, failed });
+  await jobDone('aiDaily', { ok: true, students: Object.keys(index).length, changed, failed });
 });
 
 // ================= PVPHS school info (shared by every student) =================
@@ -477,8 +518,16 @@ async function refreshSchool(force) {
 }
 
 exports.schoolDaily = onSchedule({ schedule: '0 5 * * *', timeZone: L.TZ, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '1GiB' }, async () => {
-  const r = await refreshSchool(false);
+  let r;
+  try { r = await refreshSchool(false); } catch (e) {
+    await noteError('schoolDaily', e);
+    await jobDone('schoolDaily', { ok: false, error: L.scrubError(e.message, 200) });
+    throw e;
+  }
   logger.info('schoolDaily done', r);
+  const st = (await db.ref('school/pvphs/status').once('value')).val() || {};
+  const bad = Object.entries(st).filter(([, v]) => v && v !== 'ok' && typeof v === 'string' && !/^\d+$/.test(v)).map(([k]) => k);
+  await jobDone('schoolDaily', { ok: true, unchanged: !!r.unchanged, count: r.count || null, failedPages: bad.slice(0, 10) });
 });
 
 // The app's School tab, counselor and Focus reminders read this. Any signed-in TaskM user can read it.

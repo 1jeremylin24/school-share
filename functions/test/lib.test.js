@@ -109,11 +109,32 @@ test('the beta usage page counts visits and setup, and only the owner may open i
   assert.strictEqual(out.rows[0].name, 'Ana');
   assert.deepStrictEqual([out.rows[0].days7, out.rows[0].days30, out.rows[0].tasks, out.rows[0].sources, out.rows[0].inboxes], [2, 2, 3, 2, 1]);
   assert.strictEqual(out.rows.find(r => r.email === 'cy@x.com').role, 'not set up');
-  assert.deepStrictEqual(out.totals, { people: 3, students: 1, parents: 1, today: 1, week: 1, button: 1, sources: 1, feedback: 2 });
+  assert.deepStrictEqual(out.totals, { people: 3, students: 1, parents: 1, today: 1, week: 1, month: 1, newWeek: 1, button: 1, sources: 1, phone: 0, feedback: 2, open: 0 });
+  assert.strictEqual(out.trend.length, 30);
+  assert.deepStrictEqual(out.trend[29], { day: '2026-10-18', signups: 0, active: 1 });
+  assert.strictEqual(out.trend.find(t => t.day === '2026-10-15').signups, 1);
+  assert.deepStrictEqual(out.funnel.map(f => f[1]), [2, 1, 1, 0]);
+  assert.deepStrictEqual(out.grades, { 11: 1 });
   assert.strictEqual(out.feedback[0].text, 'new');
   assert.strictEqual(L.isOwner({ email: 'LinJeremy1124@gmail.com', email_verified: true }), true);
   assert.strictEqual(L.isOwner({ email: 'linjeremy1124@gmail.com', email_verified: false }), false);
   assert.strictEqual(L.isOwner({ email: 'someone@gmail.com', email_verified: true }), false);
+});
+
+test('admin page: sources counted by kind of site, errors grouped and scrubbed', () => {
+  const now = Date.parse('2026-10-18T20:00:00Z');
+  const users = { a: { sources: { s1: { url: 'https://pvpusd-my.sharepoint.com/x?y=1' }, s2: { url: 'https://mail.google.com/mail/u/0/#search/x', error: 'Sign in' }, s3: { url: 'https://onenote.officeapps.live.com/' } } },
+    b: { sources: { s1: { url: 'https://pvphs.pvpusd.net/news' } } } };
+  const out = L.betaSummary(users, [], {}, now, { errors: {
+    e1: { src: 'app', where: 'tools', msg: 'x is undefined', uid: 'a', at: now - 3600e3 }, e2: { src: 'app', where: 'tools', msg: 'x is undefined', uid: 'b', at: now - 60e3 },
+    e3: { src: 'server', where: 'aiAdd', msg: 'boom', at: now - 3 * 864e5 }, e4: { src: 'app', msg: 'old', at: now - 9 * 864e5 } } });
+  assert.deepStrictEqual(out.connected.find(c => c.kind === 'OneNote'), { kind: 'OneNote', pages: 2, people: 1, broken: 0 });
+  assert.deepStrictEqual(out.connected.find(c => c.kind === 'Gmail'), { kind: 'Gmail', pages: 1, people: 1, broken: 1 });
+  assert.strictEqual(L.sourceKind('https://pvphs.pvpusd.net/'), 'School website');
+  assert.strictEqual(L.sourceKind('not a url'), 'File or text');
+  assert.deepStrictEqual([out.errors.day, out.errors.week, out.errors.list.length], [2, 3, 2]);
+  assert.deepStrictEqual([out.errors.list[0].count, out.errors.list[0].people], [2, 2]);
+  assert.strictEqual(L.scrubError('Failed for ana@x.com at https://a.com/p?token=abc id 12345678', 300), 'Failed for <email> at https://a.com/p id <n>');
 });
 
 test('school calendars: Pacific times, HTML descriptions cleaned, master calendar minus games, practices and repeats', () => {

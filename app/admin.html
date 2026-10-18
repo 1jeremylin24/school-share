@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f6fb">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d1020">
+<title>TaskM Admin</title>
+<link rel="icon" href="icon-192-v2.png">
+<style>
+/* Owner-only admin page. Every number comes from betaStats (functions/index.js), which checks the owner's verified
+   email on the server; the database itself never lets the browser read /feedback, /errors or other people's data. */
+:root{--bg:#f6f6fb;--card:#fff;--text:#16182b;--muted:#62667e;--faint:#8b8fa6;--line:#e5e6f0;--accent:#5048e5;--accent2:#a9a5f5;--soft:#eeedfd;
+ --bad:#c2364b;--bad-soft:#fbe9ec;--ok:#1f8a5b;--ok-soft:#e5f5ed;--warn:#a35f00;--warn-soft:#fdf1df;--ease:cubic-bezier(.23,1,.32,1)}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1020;--card:#161a2e;--text:#e9ebf6;--muted:#a0a6c2;--faint:#7b809c;--line:#262b45;--accent:#8b85ff;--accent2:#4a4790;--soft:#22264a;
+ --bad:#ff8396;--bad-soft:#3a1d27;--ok:#5fd39a;--ok-soft:#16332a;--warn:#f2b45a;--warn-soft:#3a2c14}}
+*{box-sizing:border-box}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+::selection{background:var(--accent);color:#fff}
+main{max-width:1180px;margin:0 auto;padding:max(24px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 64px max(16px,env(safe-area-inset-left))}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+header img{width:38px;height:38px;border-radius:10px}
+h1{margin:0;font-size:22px;letter-spacing:-.015em;font-weight:700}
+.sub{color:var(--muted);font-size:13px}
+.grow{flex:1;min-width:160px}
+button{font:inherit;font-size:14px;min-height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;
+ touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform 120ms var(--ease),background-color 150ms ease}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.sm{min-height:30px;padding:0 10px;font-size:13px;border-radius:8px}
+@media (hover:hover) and (pointer:fine){button:not(:disabled):hover{background:var(--soft)}button.pri:not(:disabled):hover{background:var(--accent);filter:brightness(1.08)}}
+h2{font-size:15px;margin:0;font-weight:650;letter-spacing:-.005em}
+section{margin-bottom:28px}
+.sh{display:flex;align-items:center;gap:10px;margin:0 2px 10px;flex-wrap:wrap;min-height:34px}
+.sh .note{color:var(--faint);font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.pad{padding:16px 18px}
+
+/* Needs you: only what asks for action */
+.alerts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.al{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;font-size:14px;font-weight:550;text-decoration:none;color:var(--text);background:var(--card);border:1px solid var(--line)}
+.al i{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+.al.bad{background:var(--bad-soft);border-color:transparent}.al.bad i{background:var(--bad)}
+.al.warn{background:var(--warn-soft);border-color:transparent}.al.warn i{background:var(--warn)}
+.al.ok{background:var(--ok-soft);border-color:transparent}.al.ok i{background:var(--ok)}
+
+/* Key numbers: one strip, not a wall of cards */
+.nums{display:grid;grid-template-columns:repeat(6,1fr)}
+.num{padding:16px 18px;border-left:1px solid var(--line)}
+.num:first-child{border-left:0}
+.num b{display:block;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.15}
+.num span{color:var(--muted);font-size:13px}
+.num small{display:block;color:var(--faint);font-size:12px;margin-top:2px}
+@media (max-width:860px){.nums{grid-template-columns:repeat(3,1fr)}.num:nth-child(4){border-left:0}.num:nth-child(n+4){border-top:1px solid var(--line)}}
+@media (max-width:480px){.nums{grid-template-columns:repeat(2,1fr)}.num{border-left:0;border-top:1px solid var(--line)}.num:nth-child(even){border-left:1px solid var(--line)}.num:nth-child(-n+2){border-top:0}}
+
+/* Trend chart */
+.chart{padding:14px 16px 10px}
+.legend{display:flex;gap:16px;color:var(--muted);font-size:12.5px;margin:0 2px 8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg.tr{display:block;width:100%;height:170px;overflow:visible}
+svg.tr text{fill:var(--faint);font-size:11px;font-variant-numeric:tabular-nums}
+svg.tr .grid{stroke:var(--line);stroke-width:1}
+svg.tr .bar{fill:var(--accent2)}
+svg.tr .bar.today{fill:var(--accent)}
+svg.tr .su{fill:var(--ok)}
+
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+
+/* Feedback + errors lists */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--card);margin-left:auto}
+.seg button{border:0;min-height:28px;padding:0 10px;font-size:12.5px;border-radius:7px;background:transparent;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--soft);color:var(--text);font-weight:600}
+.list{max-height:560px;overflow:auto;overscroll-behavior:contain}
+.it{padding:13px 16px;border-bottom:1px solid var(--line)}
+.it:last-child{border-bottom:0}
+.it.done{opacity:.6}
+.meta{display:flex;gap:6px 10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.meta b{color:var(--text);font-weight:600}
+.it p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.it .acts{margin-top:8px}
+.tag{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--accent)}
+.tag.bug{background:var(--bad-soft);color:var(--bad)}.tag.love{background:var(--ok-soft);color:var(--ok)}
+.tag.server{background:var(--warn-soft);color:var(--warn)}
+.cnt{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)}
+code{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
+details{margin-top:6px}details summary{cursor:pointer;color:var(--muted);font-size:12.5px}
+details pre{margin:6px 0 0;padding:10px;border-radius:8px;background:var(--bg);font:11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted)}
+
+/* Tables */
+.scroll{overflow-x:auto;overscroll-behavior-x:contain}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+th{color:var(--faint);font-weight:600;font-size:12px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+td small{display:block;color:var(--muted)}
+.wide{min-width:860px}
+.badtxt{color:var(--bad);font-weight:600}
+.oktxt{color:var(--ok);font-weight:600}
+.dots{display:inline-flex;gap:3px}.dots i{width:8px;height:8px;border-radius:2px;background:var(--line)}.dots i.on{background:var(--accent)}
+
+/* Funnel */
+.fn{padding:6px 18px 14px}
+.fr{display:grid;grid-template-columns:minmax(120px,190px) 1fr 44px;gap:12px;align-items:center;padding:7px 0;font-size:13.5px}
+.fr .track{height:10px;border-radius:5px;background:var(--bg);overflow:hidden}
+.fr .fill{height:100%;border-radius:5px;background:var(--accent);transform-origin:left;transition:transform 500ms var(--ease)}
+.fr b{text-align:right;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 16px}
+.chip{font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--bg);color:var(--muted)}
+.chip b{color:var(--text)}
+
+.jobs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.job{padding:14px 18px;border-left:1px solid var(--line)}
+.job:first-child{border-left:0}
+.job h3{margin:0 0 4px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.job h3 i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.job h3 i.ok{background:var(--ok)}.job h3 i.bad{background:var(--bad)}.job h3 i.warn{background:var(--warn)}
+.job p{margin:0;color:var(--muted);font-size:13px}
+.job .acts{margin-top:10px}
+
+.msg{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 22px;text-align:center;max-width:460px;margin:60px auto}
+.msg p{color:var(--muted);margin:8px 0 18px}
+.empty{padding:20px 16px;color:var(--muted);font-size:14px}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translate(-50%,0);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;
+ transition:opacity 200ms ease,transform 200ms var(--ease)}
+.toast[hidden]{display:block!important;opacity:0;transform:translate(-50%,8px);pointer-events:none}
+.skel{height:300px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition-duration:0ms!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="icon-192-v2.png" alt="">
+    <div class="grow"><h1>TaskM Admin</h1><div class="sub" id="who">Loading…</div></div>
+    <button type="button" id="reload" hidden>Refresh</button>
+    <button type="button" id="out" hidden>Sign out</button>
+  </header>
+  <div class="msg" id="gate" hidden><h2 id="gateH">Sign in</h2><p id="gateP">Use the account you made TaskM with.</p><button type="button" class="pri" id="in">Sign in with Google</button></div>
+  <div class="skel" id="skel"></div>
+  <div id="dash" hidden>
+    <div class="alerts" id="alerts" aria-label="Needs you"></div>
+    <section><div class="card nums" id="nums"></div></section>
+    <section>
+      <div class="sh"><h2>Last 30 days</h2><span class="note">people who opened TaskM each day, and new sign-ups</span></div>
+      <div class="card chart"><div class="legend"><span><i style="background:var(--accent2)"></i>Opened TaskM</span><span><i style="background:var(--ok)"></i>Signed up</span></div><div id="trend"></div></div>
+    </section>
+    <div class="two">
+      <section id="fbSec">
+        <div class="sh"><h2>Feedback</h2><span class="note" id="fbNote"></span>
+          <div class="seg" role="group" aria-label="Show"><button type="button" data-fbf="open" aria-pressed="true">To do</button><button type="button" data-fbf="all" aria-pressed="false">All</button></div></div>
+        <div class="card list" id="fb"></div>
+      </section>
+      <section id="errSec">
+        <div class="sh"><h2>Errors</h2><span class="note" id="errNote"></span></div>
+        <div class="card list" id="errs"></div>
+      </section>
+    </div>
+    <div class="two">
+      <section>
+        <div class="sh"><h2>Connected sources</h2><span class="note">kind of site only, never the page itself</span></div>
+        <div class="card scroll"><table><thead><tr><th>Source</th><th class="n">People</th><th class="n">Pages</th><th class="n">Not working</th></tr></thead><tbody id="src"></tbody></table></div>
+      </section>
+      <section>
+        <div class="sh"><h2>How far students get</h2></div>
+        <div class="card"><div class="fn" id="funnel"></div><div class="chips" id="grades"></div></div>
+      </section>
+    </div>
+    <section>
+      <div class="sh"><h2>Morning jobs</h2><span class="note">run by TaskM’s server every day</span></div>
+      <div class="card jobs" id="jobs"></div>
+    </section>
+    <section>
+      <div class="sh"><h2>People</h2><span class="note" id="pplNote"></span></div>
+      <div class="card scroll"><table class="wide"><thead><tr><th>Person</th><th>Grade</th><th>Joined</th><th>Last opened</th><th>Last 7 days</th><th>Uses</th><th class="n">Sources</th><th class="n">Tasks</th><th class="n">Inboxes</th><th class="n">Parents</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+(function(){
+ var CFG={"apiKey":"AIzaSyBc6IcV58GL0p1rICVJU5Y0jbfoaLYYRDs","authDomain":"taskm-sync-d6861.firebaseapp.com","databaseURL":"https://taskm-sync-d6861-default-rtdb.firebaseio.com","projectId":"taskm-sync-d6861","storageBucket":"taskm-sync-d6861.firebasestorage.app","messagingSenderId":"159025581008","appId":"1:159025581008:web:b2b4084fef76770cc087d5"};
+ var FN='https://us-central1-taskm-sync-d6861.cloudfunctions.net/',DAY=864e5,data=null,fbFilter='open',auth=null;
+ var $=function(id){return document.getElementById(id);};
+ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ function ago(t){if(!t)return '—';var s=(Date.now()-t)/1000;if(s<90)return 'just now';if(s<3600)return Math.round(s/60)+' min ago';if(s<86400)return Math.round(s/3600)+' h ago';
+  var d=Math.round(s/86400);return d<14?d+(d===1?' day ago':' days ago'):new Date(t).toLocaleDateString([],{month:'short',day:'numeric'});}
+ function day(t){return t?new Date(t).toLocaleDateString([],{month:'short',day:'numeric'}):'—';}
+ function plural(n,w){return n+' '+(w==='person'?(n===1?w:'people'):w+(n===1?'':'s'));}
+ var tt;function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(function(){t.hidden=true;},2600);}
+ function gate(h,p,showIn){$('skel').hidden=true;$('dash').hidden=true;$('gate').hidden=false;$('gateH').textContent=h;$('gateP').textContent=p;$('in').hidden=!showIn;}
+ function call(name,body){var u=auth&&auth.currentUser;if(!u)return Promise.reject({message:'Sign in again.'});
+  return u.getIdToken().then(function(tok){return fetch(FN+name,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({data:body||{}})});})
+   .then(function(r){return r.json().catch(function(){return {};});},function(){throw {message:'Couldn’t reach TaskM’s server. Check your connection.'};})
+   .then(function(j){if(j.error)throw {status:j.error.status,message:j.error.message||'Something went wrong.'};return j.result||{};});}
+ function load(){$('reload').disabled=true;
+  call('betaStats').then(function(d){$('reload').disabled=false;paint(d);},function(e){$('reload').disabled=false;
+   if(data){toast(e.message);return;}gate(e.status==='PERMISSION_DENIED'?'Owner only':'Couldn’t load',e.message||'Try again in a minute.',false);});}
+
+ function paint(d){data=d;var t=d.totals,errs=d.errors||{day:0,week:0,list:[]},jobs=d.jobs||{};
+  $('skel').hidden=true;$('gate').hidden=true;$('dash').hidden=false;
+  $('who').textContent=($('who').getAttribute('data-email')||'')+' · updated '+new Date(d.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  // Needs you
+  var broken=(d.connected||[]).reduce(function(n,c){return n+c.broken;},0),a=[];
+  if(t.open)a.push(['bad',plural(t.open,'problem report')+' to look at','#fbSec']);
+  if(errs.day)a.push(['bad',plural(errs.day,'error')+' in the last day','#errSec']);
+  var jobBad=['schoolDaily','aiDaily'].filter(function(k){var j=jobs[k];return !j||!j.ok||Date.now()-j.at>36*3600e3;});
+  if(jobBad.length)a.push(['warn',jobBad.length===2?'Both morning jobs need a look':(jobBad[0]==='schoolDaily'?'School website read':'Saved-link refresh')+' needs a look','#jobs']);
+  if(broken)a.push(['warn',plural(broken,'source')+' not working for students','#src']);
+  if(!a.length)a.push(['ok','Nothing needs you right now',null]);
+  $('alerts').innerHTML=a.map(function(x){return x[2]?'<a class="al '+x[0]+'" href="'+x[2]+'"><i></i>'+esc(x[1])+'</a>':'<span class="al '+x[0]+'"><i></i>'+esc(x[1])+'</span>';}).join('');
+  // Numbers
+  $('nums').innerHTML=[[t.people,'people',t.students+' students · '+t.parents+' parents'],[t.newWeek,'new this week',''],[t.today,'opened today',''],[t.week,'this week',t.month+' this month'],
+   [t.sources,'connected a source',t.button+' have the Chrome button'],[t.phone,'use the iPhone app','']]
+   .map(function(x){return '<div class="num"><b>'+x[0]+'</b><span>'+x[1]+'</span>'+(x[2]?'<small>'+esc(x[2])+'</small>':'')+'</div>';}).join('');
+  trend(d.trend||[]);feedback();errors(errs);
+  // Sources
+  var labelled={'File or text':'Pasted text or files'};
+  $('src').innerHTML=(d.connected||[]).map(function(c){return '<tr><td>'+esc(labelled[c.kind]||c.kind)+'</td><td class="n">'+c.people+'</td><td class="n">'+c.pages+'</td><td class="n'+(c.broken?' badtxt':'')+'">'+(c.broken||'—')+'</td></tr>';}).join('')
+   ||'<tr><td colspan="4" class="empty">No one has connected a source yet.</td></tr>';
+  // Funnel + grades
+  var top=Math.max(1,(d.funnel&&d.funnel[0]&&d.funnel[0][1])||1);
+  $('funnel').innerHTML=(d.funnel||[]).map(function(f){return '<div class="fr"><span>'+esc(f[0])+'</span><div class="track"><div class="fill" style="transform:scaleX('+(f[1]/top).toFixed(3)+')"></div></div><b>'+f[1]+'</b></div>';}).join('');
+  var g=d.grades||{};$('grades').innerHTML=['9','10','11','12'].map(function(k){return '<span class="chip">Grade '+k+' <b>'+(g[k]||0)+'</b></span>';}).join('');
+  // Jobs
+  var sd=jobs.schoolDaily,ad=jobs.aiDaily;
+  function st(j){return !j?['', 'Hasn’t reported yet. It reports after its next run.']:!j.ok?['bad','Failed '+ago(j.at)+(j.error?': '+j.error:'')]:Date.now()-j.at>36*3600e3?['warn','Last ran '+ago(j.at)+'. It should run every morning.']:['ok','Ran '+ago(j.at)];}
+  var s1=st(sd),s2=st(ad);
+  $('jobs').innerHTML='<div class="job"><h3><i class="'+s1[0]+'"></i>School website read <span class="sub">5 AM</span></h3><p>'+esc(s1[1])+'</p>'+
+    (sd&&sd.ok?'<p>'+(sd.unchanged?'Nothing new on the site.':plural(sd.count||0,'school item')+' saved.')+(sd.failedPages&&sd.failedPages.length?' Couldn’t read: '+esc(sd.failedPages.join(', '))+'.':'')+'</p>':'')+
+    '<div class="acts"><button type="button" class="sm" id="schoolNow">Read the school website now</button></div></div>'+
+   '<div class="job"><h3><i class="'+s2[0]+'"></i>Saved-link refresh <span class="sub">5:30 AM</span></h3><p>'+esc(s2[1])+'</p>'+
+    (ad&&ad.ok?'<p>'+plural(ad.students||0,'student')+', '+(ad.changed||0)+' changed, '+(ad.failed||0)+' couldn’t be read.</p>':'')+'</div>';
+  // People
+  $('pplNote').textContent=plural(d.rows.length,'account')+', most recent first';
+  $('rows').innerHTML=d.rows.map(function(r){var dots=(r.week||[]).map(function(on){return '<i class="'+(on?'on':'')+'"></i>';}).join('');
+   var uses=[r.phone?'iPhone app':'',r.button?'Chrome button '+r.button:''].filter(Boolean).join('<small>')||'Website';
+   return '<tr><td><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small></td><td>'+(r.grade?esc(r.grade):'—')+(r.role!=='student'?'<small>'+esc(r.role)+'</small>':'')+'</td>'+
+    '<td>'+day(r.joined)+'</td><td>'+ago(r.seen)+'</td><td><span class="dots" title="'+r.days7+' of the last 7 days ('+r.days30+' of 30)">'+dots+'</span></td><td>'+uses+'</td>'+
+    '<td class="n">'+r.sources+'</td><td class="n">'+r.tasks+'</td><td class="n">'+r.inboxes+'</td><td class="n">'+r.parents+'</td></tr>';}).join('')||'<tr><td colspan="10" class="empty">Nobody yet.</td></tr>';
+ }
+
+ function trend(rows){var W=Math.max(320,$('trend').clientWidth||700),H=170,L=26,B=20,n=rows.length||30,bw=(W-L)/n;
+  var max=Math.max(4,Math.max.apply(null,rows.map(function(r){return Math.max(r.active,r.signups);}))),step=Math.ceil(max/4);max=step*4;
+  var y=function(v){return (H-B)-(v/max)*(H-B-8);},s='';
+  for(var i=0;i<=4;i++){var v=i*step;s+='<line class="grid" x1="'+L+'" x2="'+W+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(L-6)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';}
+  rows.forEach(function(r,i){var x=L+i*bw,w=Math.max(2,bw*.62),h=(H-B)-y(r.active);
+   s+='<rect class="bar'+(i===n-1?' today':'')+'" x="'+(x+(bw-w)/2).toFixed(1)+'" y="'+y(r.active).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+Math.max(0,h).toFixed(1)+'" rx="2"><title>'+esc(r.day)+': '+r.active+' opened, '+r.signups+' signed up</title></rect>';
+   if(r.signups)s+='<circle class="su" cx="'+(x+bw/2).toFixed(1)+'" cy="'+y(r.signups).toFixed(1)+'" r="3.5"><title>'+esc(r.day)+': '+r.signups+' signed up</title></circle>';
+   if(i%7===(n-1)%7)s+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle">'+new Date(r.day+'T12:00:00').toLocaleDateString([],{month:'short',day:'numeric'})+'</text>';});
+  $('trend').innerHTML='<svg class="tr" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="People who opened TaskM and sign-ups per day for the last 30 days">'+s+'</svg>';}
+
+ var KINDS={bug:'Problem',idea:'Idea',love:'Likes it'};
+ function feedback(){var all=data.feedback||[],list=fbFilter==='open'?all.filter(function(f){return !f.done;}):all,open=all.filter(function(f){return !f.done;}).length;
+  $('fbNote').textContent=all.length?open+' to do of '+all.length:'';
+  $('fb').innerHTML=list.length?list.map(function(f){return '<div class="it'+(f.done?' done':'')+'"><div class="meta"><span class="tag '+esc(f.kind)+'">'+esc(KINDS[f.kind]||f.kind)+'</span><b>'+esc(f.name||f.email||'Someone')+'</b>'+
+    '<span>'+ago(f.at)+'</span>'+(f.page?'<span>'+esc(f.page)+'</span>':'')+(f.ext?'<span>button '+esc(f.ext)+'</span>':'')+'</div><p>'+esc(f.text)+'</p>'+
+    '<div class="acts"><button type="button" class="sm" data-done="'+esc(f.id)+'" data-v="'+(f.done?0:1)+'">'+(f.done?'Move back to to-do':'Mark handled')+'</button>'+(f.email?' <a class="sub" href="mailto:'+esc(f.email)+'?subject=Your%20TaskM%20feedback">Reply by email</a>':'')+'</div></div>';}).join('')
+   :'<div class="empty">'+(all.length?'All caught up. Every note is handled.':'No feedback yet. It shows up here when someone taps Send feedback in TaskM.')+'</div>';}
+ function errors(e){$('errNote').textContent=e.week?plural(e.week,'report')+' this week':'';
+  $('errs').innerHTML=e.list.length?e.list.map(function(x){return '<div class="it"><div class="meta"><span class="tag '+(x.src==='server'?'server':'')+'">'+(x.src==='server'?'Server':(x.app==='iphone'?'iPhone app':'Website'))+'</span>'+
+    (x.where?'<code>'+esc(x.where)+'</code>':'')+'<span>last '+ago(x.last)+'</span>'+(x.people?'<span>'+plural(x.people,'person')+'</span>':'')+'<span class="cnt">×'+x.count+'</span></div><p><code>'+esc(x.msg)+'</code></p>'+
+    (x.stack?'<details><summary>Where in the code</summary><pre>'+esc(x.stack)+'</pre></details>':'')+'</div>';}).join('')
+   :'<div class="empty">No errors this week.</div>';}
+
+ document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('button');if(!b)return;
+  if(b.hasAttribute('data-fbf')){fbFilter=b.getAttribute('data-fbf');document.querySelectorAll('[data-fbf]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});feedback();}
+  else if(b.hasAttribute('data-done')){var id=b.getAttribute('data-done'),v=b.getAttribute('data-v')==='1';b.disabled=true;
+   call('adminFeedback',{id:id,done:v}).then(function(){data.feedback.forEach(function(f){if(f.id===id)f.done=v;});data.totals.open=data.feedback.filter(function(f){return !f.done&&f.kind==='bug';}).length;
+    paint(data);toast(v?'Marked handled':'Moved back to to-do');},function(e){b.disabled=false;toast(e.message);});}
+  else if(b.id==='schoolNow'){b.disabled=true;b.textContent='Reading the school website…';
+   call('schoolRefresh').then(function(){toast('School website read again');load();},function(e){b.disabled=false;b.textContent='Read the school website now';toast(e.message);});}});
+
+ // Local preview with sample numbers (screenshots only; never on the live site)
+ if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&window.ADMIN_PREVIEW){$('who').setAttribute('data-email','Preview');paint(window.ADMIN_PREVIEW);return;}
+ if(typeof firebase==='undefined'){gate('Couldn’t load','Couldn’t load sign-in. Check your connection and reload.',false);return;}
+ firebase.initializeApp(CFG);auth=firebase.auth();
+ $('in').onclick=function(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(e){$('gateP').textContent=e.message;});};
+ $('out').onclick=function(){auth.signOut();};
+ $('reload').onclick=load;
+ var rz;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){if(data)trend(data.trend||[]);},150);});
+ auth.onAuthStateChanged(function(u){if(u){$('who').setAttribute('data-email','Signed in as '+(u.email||'you'));$('who').textContent='Signed in as '+(u.email||'you');$('out').hidden=false;$('reload').hidden=false;load();}
+  else{data=null;$('who').textContent='Only TaskM’s owner can open this page.';$('out').hidden=true;$('reload').hidden=true;gate('Sign in','Use the account you made TaskM with.',true);}});
+})();
+</script>
+</body>
+</html>

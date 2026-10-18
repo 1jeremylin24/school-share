@@ -2,100 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>TaskM Beta</title>
-<link rel="icon" href="icon-192-v2.png">
-<style>
-:root{--bg:#f6f6fb;--card:#fff;--text:#16182b;--muted:#6b6f86;--line:#e5e6f0;--accent:#5048e5;--soft:#eeedfd;--bug:#c2364b;--love:#1f8a5b;--idea:#5048e5}
-@media (prefers-color-scheme:dark){:root{--bg:#0d1020;--card:#161a2e;--text:#e9ebf6;--muted:#9aa0bd;--line:#262b45;--accent:#8b85ff;--soft:#22264a;--bug:#ff7d8f;--love:#5fd39a;--idea:#8b85ff}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
-main{max-width:1100px;margin:0 auto;padding:28px 16px 60px}
-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
-header img{width:40px;height:40px;border-radius:10px}
-h1{margin:0;font-size:24px;letter-spacing:-.01em}
-.sub{color:var(--muted);font-size:13.5px}
-.grow{flex:1}
-button,.btn{font:inherit;font-size:14px;height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer}
-button.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:26px}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-.tile b{display:block;font-size:28px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.tile span{color:var(--muted);font-size:13px}
-h2{font-size:17px;margin:0 0 10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:26px;overflow:hidden}
-.scroll{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:820px}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
-th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
-td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-tr:last-child td{border-bottom:0}
-td small{display:block;color:var(--muted)}
-.dots{display:inline-flex;gap:3px}.dots i{width:8px;height:8px;border-radius:2px;background:var(--line)}.dots i.on{background:var(--accent)}
-.fb{padding:14px 16px;border-bottom:1px solid var(--line)}
-.fb:last-child{border-bottom:0}
-.fb p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
-.fb .meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
-.tag{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--soft)}
-.tag.bug{color:var(--bug)}.tag.love{color:var(--love)}.tag.idea{color:var(--idea)}
-.msg{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 22px;text-align:center;max-width:460px;margin:60px auto}
-.msg p{color:var(--muted);margin:8px 0 18px}
-.empty{padding:22px 16px;color:var(--muted)}
-[hidden]{display:none!important}
-</style>
+<title>TaskM Admin</title>
+<meta http-equiv="refresh" content="0; url=admin.html">
+<script>location.replace('admin.html'+location.hash);</script>
 </head>
-<body>
-<main>
-  <header>
-    <img src="icon-192-v2.png" alt="">
-    <div class="grow"><h1>TaskM Beta</h1><div class="sub" id="who">Loading…</div></div>
-    <button type="button" id="reload" hidden>Refresh</button>
-    <button type="button" id="out" hidden>Sign out</button>
-  </header>
-  <div class="msg" id="gate" hidden><h2 id="gateH">Sign in</h2><p id="gateP">Use the account you made TaskM with.</p><button type="button" class="pri" id="in">Sign in with Google</button></div>
-  <section id="dash" hidden>
-    <div class="tiles" id="tiles"></div>
-    <h2>Feedback</h2>
-    <div class="card" id="fb"></div>
-    <h2>People</h2>
-    <div class="card scroll"><table><thead><tr><th>Person</th><th>School</th><th>Joined</th><th>Last opened</th><th>Last 7 days</th><th>Button</th><th class="n">Pages</th><th class="n">Tasks</th><th class="n">Inboxes</th><th class="n">Parents</th></tr></thead><tbody id="rows"></tbody></table></div>
-  </section>
-</main>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script>
-(function(){
- var CFG={"apiKey":"AIzaSyBc6IcV58GL0p1rICVJU5Y0jbfoaLYYRDs","authDomain":"taskm-sync-d6861.firebaseapp.com","databaseURL":"https://taskm-sync-d6861-default-rtdb.firebaseio.com","projectId":"taskm-sync-d6861","storageBucket":"taskm-sync-d6861.firebasestorage.app","messagingSenderId":"159025581008","appId":"1:159025581008:web:b2b4084fef76770cc087d5"};
- var FN='https://us-central1-taskm-sync-d6861.cloudfunctions.net/betaStats',DAY=864e5;
- firebase.initializeApp(CFG);var auth=firebase.auth(),$=function(id){return document.getElementById(id);};
- function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
- function ago(t){if(!t)return '—';var s=(Date.now()-t)/1000;if(s<90)return 'just now';if(s<3600)return Math.round(s/60)+' min ago';if(s<86400)return Math.round(s/3600)+' h ago';
-  var d=Math.round(s/86400);return d<14?d+(d===1?' day ago':' days ago'):new Date(t).toLocaleDateString([],{month:'short',day:'numeric'});}
- function day(t){return t?new Date(t).toLocaleDateString([],{month:'short',day:'numeric'}):'—';}
- function gate(h,p,showIn){$('dash').hidden=true;$('gate').hidden=false;$('gateH').textContent=h;$('gateP').textContent=p;$('in').hidden=!showIn;}
- function load(u){$('who').textContent='Signed in as '+(u.email||'you');$('out').hidden=false;$('reload').hidden=false;$('reload').disabled=true;
-  u.getIdToken().then(function(tok){return fetch(FN,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:'{"data":{}}'});})
-   .then(function(r){return r.json();}).then(function(j){$('reload').disabled=false;
-    if(j.error){gate(j.error.status==='PERMISSION_DENIED'?'Owner only':'Couldn’t load',j.error.message||'Try again in a minute.',false);return;}
-    paint(j.result);},function(){$('reload').disabled=false;gate('Couldn’t load','Couldn’t reach TaskM’s server. Check your connection.',false);});}
- function paint(d){$('gate').hidden=true;$('dash').hidden=false;var t=d.totals;
-  $('who').textContent=$('who').textContent.replace(/ · .*/,'')+' · updated '+new Date(d.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-  $('tiles').innerHTML=[[t.people,'people signed up'],[t.students,'students'],[t.parents,'parents'],[t.today,'opened TaskM today'],[t.week,'opened it this week'],[t.button,'have the Chrome button'],[t.sources,'saved a school page'],[t.feedback,'feedback notes']]
-   .map(function(x){return '<div class="tile"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>';}).join('');
-  var kinds={bug:'Something’s wrong',idea:'Idea',love:'Likes it'};
-  $('fb').innerHTML=d.feedback.length?d.feedback.map(function(f){return '<div class="fb"><div class="meta"><span class="tag '+esc(f.kind)+'">'+esc(kinds[f.kind]||f.kind)+'</span><b>'+esc(f.name||f.email||'Someone')+'</b>'+
-    (f.school?'<span>'+esc(f.school)+'</span>':'')+'<span>'+ago(f.at)+'</span>'+(f.ext?'<span>button '+esc(f.ext)+'</span>':'')+(f.page?'<span>'+esc(f.page)+'</span>':'')+'</div><p>'+esc(f.text)+'</p></div>';}).join('')
-   :'<div class="empty">No feedback yet. It shows up here when someone taps Send feedback in TaskM.</div>';
-  $('rows').innerHTML=d.rows.map(function(r){var dots=(r.week||[]).map(function(on){return '<i class="'+(on?'on':'')+'"></i>';}).join('');
-   return '<tr><td><b>'+esc(r.name||'(no name)')+'</b><small>'+esc(r.email)+'</small></td><td>'+esc(r.school||'—')+(r.grade?'<small>Grade '+esc(r.grade)+'</small>':'')+(r.role!=='student'?'<small>'+esc(r.role)+'</small>':'')+'</td>'+
-    '<td>'+day(r.joined)+'</td><td>'+ago(r.seen)+'</td><td><span class="dots" title="'+r.days7+' of the last 7 days ('+r.days30+' of 30)">'+dots+'</span></td><td>'+(r.button?esc(r.button):'—')+'</td>'+
-    '<td class="n">'+r.sources+'</td><td class="n">'+r.tasks+'</td><td class="n">'+r.inboxes+'</td><td class="n">'+r.parents+'</td></tr>';}).join('')||'<tr><td colspan="10" class="empty">Nobody yet.</td></tr>';}
- $('in').onclick=function(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(e){$('gateP').textContent=e.message;});};
- $('out').onclick=function(){auth.signOut();};
- $('reload').onclick=function(){if(auth.currentUser)load(auth.currentUser);};
- auth.onAuthStateChanged(function(u){if(u)load(u);else{$('who').textContent='Only TaskM’s owner can open this page.';$('out').hidden=true;$('reload').hidden=true;gate('Sign in','Use the account you made TaskM with.',true);}});
-})();
-</script>
-</body>
+<body><p>The beta page moved to <a href="admin.html">TaskM Admin</a>.</p></body>
 </html>
