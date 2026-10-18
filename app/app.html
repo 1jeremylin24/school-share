@@ -5151,7 +5151,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(a==='google'){if(view==='signup'){keepRole();var nn=$('#auName');if(nn&&nn.value.trim())draft.name=nn.value.trim();}run(t,function(){return A().signInGoogle();});}
   else if(a==='done'){var el=relinkEl;hide();if(el)renderLinked(el);}
   else if(a==='open'){try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}done();}
-  else if(a==='switch'){var so=A().signOut;if(so)so();}
+  else if(a==='switch'){if(A().signOut)A().signOut();}
   else if(a==='demo'){var acc=A();if(acc.startDemo){show('wait');acc.startDemo();}}
   else if(a==='reset'){var em=toEmail(($('#auEmail')||{}).value);if(!/\S+@\S+\.\S+/.test(em)){showErr('Type your email or student ID above, then tap “Forgot your password?” again.');return;}
    run(t,function(){return A().resetPassword(em.trim());},function(){showErr('');var e2=$('.au-err');e2.hidden=false;e2.classList.add('ok');e2.textContent='Check your email for a link to reset your password.';});}

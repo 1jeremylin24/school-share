@@ -13,6 +13,8 @@
  A.rowHtml=function(state,label){var p=A.profile||{},h=rowHtml.apply(A,arguments);
   if(!owner||A.demo||p.role==='parent')return h;
   return h+'<div class="tt-syncb"><a class="tt-btn" href="admin.html" style="text-decoration:none">Admin page</a><button type="button" class="tt-btn" data-ownpv>Preview parent view</button></div>';};
+ // Sign out takes the owner bar away at once, before the page reloads
+ var signOut=A.signOut;if(signOut)A.signOut=function(){owner=false;if(window.TaskMOwnerBar)TaskMOwnerBar.set(false);return signOut.apply(A,arguments);};
  function preview(){if(A.previewParent)A.previewParent(true);}
  document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-ownpv]'))preview();});
  firebase.auth().onAuthStateChanged(function(u){
