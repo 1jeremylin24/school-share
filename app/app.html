@@ -1923,6 +1923,66 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
 .tc-fbok .tc-i{color:var(--accent)}
 @media (prefers-reduced-motion:reduce){.tc-fbk label{transition:none}}
 
+/* ---- Full-page account screens (Oct 18): their own page in the home page's look, never a card over the app ---- */
+.au{--bg:#07080f;--text:#eeeef8;--muted:#a3a6c4;--faint:#767a9c;--line:rgba(190,192,255,.14);--line-2:rgba(190,192,255,.22);--panel:rgba(255,255,255,.035);--glass:transparent;--accent:#a9a6ff;
+ color-scheme:dark;display:block;padding:0;background:#07080f;-webkit-backdrop-filter:none;backdrop-filter:none;color:var(--text)}
+.au ::selection{background:rgba(169,166,255,.35);color:#fff}
+.au-art{position:relative;overflow:hidden;isolation:isolate;background:
+  radial-gradient(120% 70% at 50% 108%,rgba(98,88,230,.45),transparent 60%),
+  radial-gradient(70% 50% at 50% -10%,rgba(60,62,140,.35),transparent 70%),
+  linear-gradient(180deg,#0a0b18 0%,#07080f 100%)}
+.au-rain{position:absolute;inset:0;width:100%;height:100%;z-index:-1}
+.au-logo{display:inline-flex;align-items:center;gap:10px;color:var(--text);text-decoration:none;font:600 19px/1 var(--ns-body);letter-spacing:-.01em}
+.au-logo img{border-radius:8px}
+.au-big{margin:0;font:400 clamp(52px,6vw,96px)/.92 var(--ns-display);letter-spacing:-.025em;text-wrap:balance}
+.au-big em{font-style:italic;color:var(--accent)}
+.au-lede{max-width:27em;margin:22px 0 0;color:var(--muted);font-size:17px;line-height:1.55;text-wrap:pretty}
+.au-main{position:relative;display:flex;flex-direction:column;min-height:100dvh;
+ padding:max(24px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}
+.au-bar{display:flex;align-items:center;gap:12px;min-height:40px}
+.au-home{display:inline-flex;align-items:center;gap:6px;height:38px;margin-left:auto;padding:0 16px 0 10px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.02);
+ color:var(--text);text-decoration:none;font:500 14px/1 var(--ns-body);touch-action:manipulation;-webkit-user-select:none;user-select:none;transition:transform .14s var(--ws-out,ease-out),border-color .16s,background-color .16s}
+.au-home:active{transform:scale(.97)}
+.au .au-card{width:100%;max-width:400px;margin:auto;padding:36px 0;gap:14px;background:none;border:0;border-radius:0;box-shadow:none}
+.au[data-view=onboard] .au-card{max-width:480px}
+.au-card .au-brand{display:none}
+.au .au-h{font-size:40px}
+.au .au-btn{border-radius:999px}
+.au .au-primary{background:var(--text);border-color:var(--text);color:#0a0b16}
+.au input[type=text],.au input[type=email],.au input[type=password],.au input[type=url]{background:var(--panel);border-color:var(--line-2)}
+.au-idh b{color:var(--text);font-weight:600}
+.au-idh[hidden]{display:none}
+.au-foot{margin:0;text-align:center;color:var(--faint);font-size:13px}
+.au-foot a{color:var(--muted);text-underline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+ .au-home:hover{border-color:rgba(190,192,255,.4);background:rgba(255,255,255,.05)}
+ .au .au-primary:hover{background:#fff}}
+
+/* Option A: split. The home page's sky on the left, the form on the right. Phones: the sky is a short band on top. */
+.au-split{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(420px,1fr)}
+.au-split .au-art{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;padding:max(28px,env(safe-area-inset-top)) 52px 0 max(52px,env(safe-area-inset-left));border-right:1px solid var(--line)}
+.au-split .au-pitch{margin-top:clamp(48px,13vh,140px)}
+.au-split .au-shot{margin:auto -34% 0 0;padding-top:44px}
+.au-split .au-shot img{width:100%;height:auto;border-radius:14px 14px 0 0;border:1px solid var(--line-2);border-bottom:0;box-shadow:0 40px 120px -20px rgba(70,60,200,.55),0 20px 40px -10px rgba(0,0,0,.6)}
+.au-split .au-bar .au-logo{display:none}
+/* phones and narrow windows: no room for two columns, so the sky goes behind the form (same as option B) */
+@media (max-width:900px){
+ .au-split{display:block}
+ .au-split .au-art{position:fixed;inset:0;height:auto;padding:0;border:0}
+ .au-split .au-art>:not(.au-rain){display:none}
+ .au-split .au-bar .au-logo{display:inline-flex}
+ .au .au-card{padding:24px 0 28px}
+ .au .au-h{font-size:34px}}
+
+/* Option B: centered. The whole page is the home page's sky, with the form standing on it. */
+.au-center .au-art{position:fixed;inset:0}
+.au-center .au-art>:not(.au-rain){display:none}
+.au-center .au-main{width:min(1200px,100%);margin-inline:auto}
+.au-center .au-card{max-width:420px}
+.au-center .au-h{font-size:52px;text-align:center}
+.au-center .au-sub{text-align:center}
+@media (max-width:600px){.au-center .au-h{font-size:38px}.au-center .au-card{padding-top:24px}}
+
 </style>
 <style>
 html body{padding-top:env(safe-area-inset-top,0px)}
@@ -4958,13 +5018,20 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function storedRole(){try{return sessionStorage.getItem(RK)||'';}catch(e){return '';}}
  function keepRole(){try{sessionStorage.setItem(RK,draft.role);}catch(e){}}
  function dropRole(){try{sessionStorage.removeItem(RK);}catch(e){}}
- var RT={student:{h:'Stop typing in <em>your homework.</em>',s:'TaskM reads your classes every morning and plans your night. Free while it’s in beta.',a:'I’m 13 or older and agree to the '},
-  parent:{h:'See what’s due, <em>without asking.</em>',s:'Follow your student’s homework and tests in one calm view. Free while it’s in beta.',a:'I’m a parent or guardian and agree to the '}};
+ var RT={student:{h:'Stop typing in <em>your homework.</em>',s:'TaskM reads your classes every morning and plans your night. Free while it’s in beta.',a:'I’m 13 or older and agree to the ',e:'School email or student ID'},
+  parent:{h:'See what’s due, <em>without asking.</em>',s:'Follow your student’s homework and tests in one calm view. Free while it’s in beta.',a:'I’m a parent or guardian and agree to the ',e:'Email'}};
+ // PVPHS student IDs are six numbers (like 591302) and the school email is <id>@pvpusd.net, so a typed ID becomes that email
+ var SCHOOL_MAIL='pvpusd.net';
+ function isId(v){return /^\d{6}$/.test(v);}
+ function idOk(){return view==='signin'||draft.role==='student';}
+ function toEmail(v){v=(v||'').trim();return idOk()&&isId(v)?v+'@'+SCHOOL_MAIL:v;}
+ function idHint(){var i=$('#auEmail'),h=$('#auIdHint');if(!i||!h)return;var v=i.value.trim();
+  h.innerHTML=!idOk()?'':isId(v)?'You’ll use <b>'+v+'@'+SCHOOL_MAIL+'</b>':'Your student ID is the 6 numbers on your school ID, like 591302.';h.hidden=!idOk();}
  function roleSwitch(){return '<div class="au-role" role="radiogroup" aria-label="Who is this account for?" data-on="'+draft.role+'">'+[['student','I’m a student',I.school],['parent','I’m a parent',I.family]].map(function(r){var on=draft.role===r[0];
   return '<button type="button" role="radio" aria-checked="'+on+'" tabindex="'+(on?0:-1)+'" data-role="'+r[0]+'">'+ic(r[2],18)+r[1]+'</button>';}).join('')+'</div>';}
  function setRole(r){if(draft.role===r)return;draft.role=r;
   if(view==='signup'){var w=$('.au-role');w.dataset.on=r;$$('[data-role]',w).forEach(function(b){var on=b.dataset.role===r;b.setAttribute('aria-checked',on);b.tabIndex=on?0:-1;});
-   ['h','s','a'].forEach(function(k){var el=$('[data-rt="'+k+'"]');if(el)el.innerHTML=RT[r][k];});showErr('');}
+   ['h','s','a','e'].forEach(function(k){var el=$('[data-rt="'+k+'"]');if(el)el.innerHTML=RT[r][k];});idHint();showErr('');}
   else{var on=$('#auObName');if(on)draft.name=on.value.trim();render();var nb=$('.au-role [aria-checked=true]');if(nb)nb.focus({preventScroll:true});}}
  function plat(k){return PLAT.filter(function(x){return x.k===k;})[0];}
 
@@ -4972,11 +5039,13 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   return '<div class="au-brand">'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="36" height="36">':'')+'<span><b>TaskM</b><small>Plan it. Check it. Done.</small></span></div>';}
  function field(id,label,type,ac,extra){return '<label class="au-f" for="'+id+'"><span>'+label+'</span><span class="au-in"><input id="'+id+'" name="'+id+'" type="'+type+'" autocomplete="'+ac+'" '+(extra||'')+' required>'+
   (type==='password'?'<button type="button" class="au-eye" data-eye="'+id+'" aria-label="Show password" aria-pressed="false">'+ic(I.eye,18)+'</button>':'')+'</span></label>';}
+ function emailField(label){return '<label class="au-f" for="auEmail"><span data-rt="e">'+label+'</span><span class="au-in"><input id="auEmail" name="auEmail" type="text" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" required aria-describedby="auIdHint"></span></label>'+
+  '<small class="au-hint au-idh" id="auIdHint" aria-live="polite"></small>';}
  function err(){return '<p class="au-err" role="alert" hidden></p>';}
 
  function signin(){return brand()+'<h1 class="au-h">Your homework, <em>already planned.</em></h1><p class="au-sub">Sign in to see what’s due and what’s new since this morning.</p>'+
   '<button type="button" class="au-btn au-google" data-act="google">'+G+'Continue with Google</button><div class="au-or"><span>or</span></div>'+
-  '<form class="au-form" data-form="signin" novalidate>'+field('auEmail','Email','email','email','inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"')+
+  '<form class="au-form" data-form="signin" novalidate>'+emailField('School email or student ID')+
   field('auPw','Password','password','current-password','enterkeyhint="go"')+err()+
   '<button type="submit" class="au-btn au-primary">Sign in</button><button type="button" class="au-link" data-act="reset">Forgot your password?</button></form>'+
   '<p class="au-swap">New to TaskM? <button type="button" class="au-link" data-go="signup">Create an account</button></p>'+demoLink()+adminLink();}
@@ -4986,11 +5055,14 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function signup(){var t=RT[draft.role];return brand()+roleSwitch()+'<h1 class="au-h" data-rt="h">'+t.h+'</h1><p class="au-sub" data-rt="s">'+t.s+'</p>'+
   '<button type="button" class="au-btn au-google" data-act="google">'+G+'Sign up with Google</button><div class="au-or"><span>or</span></div>'+
   '<form class="au-form" data-form="signup" novalidate>'+field('auName','First name','text','given-name','autocapitalize="words" enterkeyhint="next"')+
-  field('auEmail','Email','email','email','inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"')+
+  emailField(t.e)+
   field('auPw','Password','password','new-password','minlength="8" enterkeyhint="go" aria-describedby="auPwHint"')+'<small class="au-hint" id="auPwHint">At least 8 characters.</small>'+
   '<label class="au-check"><input type="checkbox" id="auAge" required><span><span data-rt="a">'+t.a+'</span><a href="terms.html" target="_blank" rel="noopener">Terms</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>'+err()+
   '<button type="submit" class="au-btn au-primary">Create account</button></form>'+
   '<p class="au-swap">Already have an account? <button type="button" class="au-link" data-go="signin">Sign in</button></p>'+demoLink()+adminLink();}
+ // Log in / Sign up on the home page while already signed in: say so, instead of silently opening the app
+ function signed(){var n=(lastUser&&lastUser.name)||'';return '<h1 class="au-h">You’re already <em>signed in.</em></h1><p class="au-sub">'+(n?'This browser is signed in as '+esc(n.split(' ')[0])+'.':'This browser is already signed in to TaskM.')+'</p>'+
+  '<button type="button" class="au-btn au-primary" data-act="open">Open my TaskM</button><button type="button" class="au-btn" data-act="switch">Use a different account</button>';}
  function waiting(){return brand()+'<div class="au-wait" role="status"><span class="au-spin" aria-hidden="true"></span>Opening your TaskM…</div>';}
 
  // onboarding: three short steps, one decision each
@@ -5035,9 +5107,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    :'<small class="au-hint">Your forwarding address appears here once your account is ready. Forward teacher emails to it and TaskM pulls out the dates.</small>';}
   return '<div class="au-cr'+(done?' done':'')+'" data-row="'+k+'"><div class="au-crh">'+ic(I[p.i],20)+'<b>'+p.n+'</b>'+(done?'<span class="au-ok">'+ic(I.check,14)+'Connected</span>':'')+'</div>'+body+'</div>';}
  function render(v){view=v||view;root.setAttribute('data-view',view);var c=$('.au-card');
-  c.innerHTML=view==='signin'?signin():view==='signup'?signup():view==='wait'?waiting():onboard();
+  c.innerHTML=view==='signin'?signin():view==='signup'?signup():view==='wait'?waiting():view==='signed'?signed():onboard();
   c.classList.remove('in');void c.offsetWidth;c.classList.add('in');
   var f=$('input:not([type=checkbox])',c);if(f&&matchMedia('(pointer:fine)').matches)setTimeout(function(){try{f.focus({preventScroll:true});}catch(e){}},30);
+  var ei=$('#auEmail');if(ei){ei.addEventListener('input',idHint);idHint();}
   if(view==='onboard'&&step===0)schoolList();
   var oi=$('#auOther');if(oi)oi.addEventListener('input',function(){showErr('');});}
  function showErr(m){var e=$('.au-err');if(!e)return;e.textContent=m||'';e.hidden=!m;}
@@ -5077,8 +5150,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var a=t.dataset.act;if(!a)return;
   if(a==='google'){if(view==='signup'){keepRole();var nn=$('#auName');if(nn&&nn.value.trim())draft.name=nn.value.trim();}run(t,function(){return A().signInGoogle();});}
   else if(a==='done'){var el=relinkEl;hide();if(el)renderLinked(el);}
+  else if(a==='open'){try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}done();}
+  else if(a==='switch'){if(A().signOut)A().signOut();}
   else if(a==='demo'){var acc=A();if(acc.startDemo){show('wait');acc.startDemo();}}
-  else if(a==='reset'){var em=($('#auEmail')||{}).value||'';if(!/\S+@\S+\.\S+/.test(em)){showErr('Type your email above, then tap “Forgot your password?” again.');return;}
+  else if(a==='reset'){var em=toEmail(($('#auEmail')||{}).value);if(!/\S+@\S+\.\S+/.test(em)){showErr('Type your email or student ID above, then tap “Forgot your password?” again.');return;}
    run(t,function(){return A().resetPassword(em.trim());},function(){showErr('');var e2=$('.au-err');e2.hidden=false;e2.classList.add('ok');e2.textContent='Check your email for a link to reset your password.';});}
   else if(a==='back'){step=Math.max(0,step-1);render();}
   else if(a==='next'){var on=$('#auObName');if(step===0&&on){draft.name=on.value.trim();if(!draft.name){showErr('Type your first name so TaskM can greet you.');on.focus();return;}}
@@ -5091,7 +5166,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   else if(a==='finish')run(t,function(){return A().saveProfile({role:'student',name:draft.name||(lastUser&&lastUser.name)||'',school:'Palos Verdes Peninsula High School',site:'https://pvphs.pvpusd.net/',grade:draft.grade,platforms:draft.platforms.slice(),other:draft.platforms.indexOf('other')>=0?draft.other:'',otherPlatform:draft.platforms.indexOf('other')>=0?draft.other:''});},done);}
  function saveParent(){return A().saveProfile({role:'parent',name:draft.name});}
  function done(){dropRole();window.dispatchEvent(new CustomEvent('taskm:auth-done'));hide();}
- function onSubmit(e){var f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();var btn=$('button[type=submit]',f),em=$('#auEmail').value.trim(),pw=$('#auPw').value;
+ function onSubmit(e){var f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();var btn=$('button[type=submit]',f),em=toEmail($('#auEmail').value),pw=$('#auPw').value;
+  if(/^\d+$/.test(em)){showErr('A student ID is 6 numbers, like 591302.');$('#auEmail').focus();return;}
   if(!/\S+@\S+\.\S+/.test(em)){showErr(ERR['auth/invalid-email']);$('#auEmail').focus();return;}
   if(f.dataset.form==='signin'){if(!pw){showErr('Type your password.');$('#auPw').focus();return;}run(btn,function(){return A().signInEmail(em,pw);});}
   else{var nm=$('#auName').value.trim();if(!nm){showErr('Type your first name so TaskM can greet you.');$('#auName').focus();return;}
@@ -5100,12 +5176,33 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    draft.name=nm;keepRole();run(btn,function(){return A().signUpEmail(em,pw,nm);});}}
 
  function mount(){if(root)return root;root=d.createElement('div');root.className='au';root.hidden=true;root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','TaskM account');
-  root.innerHTML='<div class="au-card"></div>';d.body.appendChild(root);root.addEventListener('click',onClick);root.addEventListener('submit',onSubmit);
+  root.className='au au-'+LAYOUT;root.innerHTML=page();d.body.appendChild(root);root.addEventListener('click',onClick);root.addEventListener('submit',onSubmit);
   // arrow keys move between "I'm a student" and "I'm a parent", like any radio group
   root.addEventListener('keydown',function(e){var b=e.target.closest&&e.target.closest('.au-role [role=radio]');if(!b||!/^Arrow/.test(e.key))return;e.preventDefault();
    var r=draft.role==='student'?'parent':'student';setRole(r);var nb=$('.au-role [data-role="'+r+'"]');if(nb)nb.focus();});return root;}
- function show(v,keep){mount();if(v==='onboard'&&view!=='onboard'&&!keep)step=0;root.hidden=false;d.documentElement.classList.add('au-open');render(v);}
- function hide(){editing=false;relinkEl=null;if(!root)return;root.hidden=true;d.documentElement.classList.remove('au-open');}
+ function show(v,keep){mount();if(v==='onboard'&&view!=='onboard'&&!keep)step=0;root.hidden=false;d.documentElement.classList.add('au-open');render(v);rain(true);}
+ function hide(){editing=false;relinkEl=null;if(!root)return;root.hidden=true;d.documentElement.classList.remove('au-open');rain(false);}
+
+ // the account screens are their own page, in the home page's look (same night sky and rain), not a card over the app
+ var LAYOUT=(function(){try{return localStorage.getItem('taskm-au-layout')||'split';}catch(e){return 'split';}})();
+ var NATIVE=!!(window.Capacitor||(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.bridge));
+ function logo(){var ti=d.querySelector('link[rel="apple-touch-icon"]');var t=NATIVE?'span':'a';return '<'+t+' class="au-logo"'+(NATIVE?'':' href="/"')+'>'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="30" height="30">':'')+'TaskM</'+t+'>';}
+ function page(){return '<aside class="au-art" aria-hidden="true"><canvas class="au-rain"></canvas>'+logo()+
+   '<div class="au-pitch"><p class="au-big">Homework,<br><em>handled.</em></p><p class="au-lede">TaskM reads OneNote, Teams, Aeries and your email every morning, then shows you what to do tonight.</p></div>'+
+   '<div class="au-shot"><img src="home/app-desktop.webp" alt="" width="2400" height="1500" decoding="async"></div></aside>'+
+  '<div class="au-main"><div class="au-bar">'+logo()+(NATIVE?'':'<a class="au-home" href="/">'+ic('<path d="M15 18l-6-6 6-6"/>',16)+'Home</a>')+'</div>'+
+   '<div class="au-card"></div><p class="au-foot">Made for Palos Verdes Peninsula High School students · <a href="privacy.html">Privacy</a></p></div>';}
+ var rainOn=false,rainFn=null,looping=false;
+ function rain(on){var cv=root&&$('.au-rain');if(!cv||!cv.getContext)return;rainOn=on;if(!on||rainFn){if(on&&rainFn)rainFn();return;}
+  var cx=cv.getContext('2d'),still=matchMedia('(prefers-reduced-motion: reduce)').matches,dpr=Math.min(window.devicePixelRatio||1,2),W=0,H=0,drops=[];
+  function drop(any){var z=Math.random();return {x:Math.random()*(W+40),y:any?Math.random()*H:-20,l:8+z*18,v:3+z*7,a:.08+z*.22};}
+  function size(){var w=cv.clientWidth,h=cv.clientHeight;if(w===W&&h===H)return;W=w;H=h;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0);
+   drops=[];for(var i=0,n=Math.round(W*H/9000);i<n;i++)drops.push(drop(true));}
+  function frame(){if(!rainOn||root.hidden){looping=false;return;}size();cx.clearRect(0,0,W,H);cx.lineWidth=1;
+   for(var i=0;i<drops.length;i++){var p=drops[i];cx.strokeStyle='rgba(200,204,255,'+p.a+')';cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-p.l*.12,p.y+p.l);cx.stroke();
+    if(!still){p.y+=p.v;p.x-=p.v*.12;if(p.y>H)drops[i]=drop(false);}}
+   if(still)looping=false;else requestAnimationFrame(frame);}
+  rainFn=function(){if(looping)return;looping=true;requestAnimationFrame(frame);};addEventListener('resize',function(){if(still&&rainOn)rainFn();});rainFn();}
 
  // Linked accounts: a settings section the app can draw anywhere (the phone settings sheet, the computer's settings)
  function renderLinked(el){if(!el)return;var acc=A();
@@ -5126,9 +5223,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   return o;}
  // route on every sign-in change
  var goUp=/[?&]go=up\b/.test(location.search); // the home page's Create account button
+ var goIn=/[?&]go=in\b/.test(location.search);
  function route(u){lastUser=u;if(!u){if(view==='signup'&&root&&!root.hidden)return;show(goUp?'signup':'signin');goUp=false;return;}
   var p=u.profile||{};
-  if(p.school||p.role==='parent'){dropRole();if((editing||relinkEl)&&root&&!root.hidden)return;hide();return;}
+  if(p.school||p.role==='parent'){if(view==='signed'&&root&&!root.hidden)return;
+   if((goIn||goUp)&&!editing&&!relinkEl){goIn=goUp=false;show('signed');return;}
+   dropRole();if((editing||relinkEl)&&root&&!root.hidden)return;hide();return;}
   if(u.name&&!draft.name)draft.name=u.name;var r=storedRole();if(r)draft.role=r;
   if(r==='parent'&&draft.name){autoParent();return;}
   show('onboard');}

@@ -1,11 +1,12 @@
 /* Owner switcher: on TaskM's owner account, a small bar at the bottom of every page jumps between
    Home (/), My TaskM (/app), Parent view (sample parent dashboard) and Admin (admin.html).
-   It shows only after owner.js or admin.html has confirmed the owner on this device (localStorage taskm-owner).
+   It shows only after owner.js or admin.html has confirmed the owner on this device (localStorage taskm-owner), and only while
+   someone is signed in (taskm-acct-uid, cleared by Sign out; admin.html clears the flag itself when it signs out).
    It only shows links: admin data is still checked on the server, so the flag opens nothing. */
 (function(){
  'use strict';
  var KEY='taskm-owner',bar=null;
- function on(){try{return localStorage.getItem(KEY)==='1';}catch(e){return false;}}
+ function on(){try{return localStorage.getItem(KEY)==='1'&&(!!localStorage.getItem('taskm-acct-uid')||page()==='admin');}catch(e){return false;}}
  function page(){var p=location.pathname;
   if(/admin(\.html)?$/.test(p))return 'admin';
   if(/^\/app(\.html)?$/.test(p))return document.documentElement.classList.contains('taskm-parent')?'parent':'app';
@@ -23,6 +24,7 @@
     '@media (hover:hover) and (pointer:fine){.tm-ob a:not([aria-current]):hover{background:rgba(255,255,255,.08);color:#fff}}'+
     '@media (max-width:700px){.tm-ob{bottom:calc(84px + env(safe-area-inset-bottom,0px))}.tm-ob a{padding:0 10px}}'+
     'html.taskm-parent #tmOwnerBar#tmOwnerBar#tmOwnerBar{display:flex!important}'+   // the parent view hides everything else in <body>
+    'html.au-open .tm-ob{display:none!important}'+   // never over the log in / sign up page
     '@media print{.tm-ob{display:none}}';
    document.head.appendChild(st);
    bar=document.createElement('nav');bar.className='tm-ob';bar.id='tmOwnerBar';bar.setAttribute('aria-label','Owner pages');
@@ -36,4 +38,7 @@
  window.TaskMOwnerBar={set:function(yes){try{if(yes)localStorage.setItem(KEY,'1');else localStorage.removeItem(KEY);}catch(e){}paint();},paint:paint};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();
  new MutationObserver(mark).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+ // signing out in another tab, or coming back to this page with Back, updates the bar right away
+ addEventListener('storage',function(e){if(!e.key||e.key===KEY||e.key==='taskm-acct-uid')paint();});
+ addEventListener('pageshow',paint);
 })();
