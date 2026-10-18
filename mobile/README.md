@@ -13,7 +13,7 @@ Not on the App Store. For now it runs only on Jeremy's own iPhone, installed fro
 
 One-time setup:
 1. Install **Xcode** from the Mac App Store, open it once, and let it install its extra parts.
-2. In the Firebase console (project taskm-sync-d6861), go to Project settings > Your apps > Add app > iOS. Enter bundle ID `app.taskm.school` and download `GoogleService-Info.plist`.
+2. Firebase is already set up: the iOS app `app.taskm.school` is registered, and its `GoogleService-Info.plist` plus the Google sign-in URL scheme are in the Xcode project.
 3. Get the code onto the Mac, then build it:
    ```
    cd school-share/mobile
@@ -21,11 +21,9 @@ One-time setup:
    npx cap sync ios
    npx cap open ios
    ```
-4. In Xcode, drag `GoogleService-Info.plist` into the **App > App** folder and tick "Copy items if needed".
-5. Open `GoogleService-Info.plist` and copy its `REVERSED_CLIENT_ID`. In App > Info > URL Types, click + and paste it into URL Schemes.
-6. Click **App** at the top of the left sidebar, open Signing & Capabilities, tick "Automatically manage signing", and pick your Apple ID as the Team (Xcode > Settings > Accounts adds it).
-7. Plug in your iPhone, unlock it, and pick it at the top of Xcode. Then press ▶︎ (Run).
-8. The first time, on the iPhone go to Settings > General > VPN & Device Management, tap your Apple ID, and choose Trust. Settings > Privacy & Security > Developer Mode must be on too.
+4. Click **App** at the top of the left sidebar, open Signing & Capabilities, tick "Automatically manage signing", and pick your Apple ID as the Team (Xcode > Settings > Accounts adds it).
+5. Plug in your iPhone, unlock it, and pick it at the top of Xcode. Then press ▶︎ (Run).
+6. The first time, on the iPhone go to Settings > General > VPN & Device Management, tap your Apple ID, and choose Trust. Settings > Privacy & Security > Developer Mode must be on too.
 
 With a free Apple ID, the app stops opening after 7 days. Press ▶︎ in Xcode again to renew it.
 
