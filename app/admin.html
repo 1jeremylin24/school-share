@@ -189,6 +189,7 @@ td small{display:block;color:var(--muted)}
   </div>
 </main>
 <div class="toast" id="toast" role="status" hidden></div>
+<script src="owner-bar.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
@@ -208,7 +209,7 @@ td small{display:block;color:var(--muted)}
    .then(function(r){return r.json().catch(function(){return {};});},function(){throw {message:'Couldn’t reach TaskM’s server. Check your connection.'};})
    .then(function(j){if(j.error)throw {status:j.error.status,message:j.error.message||'Something went wrong.'};return j.result||{};});}
  function load(){$('reload').disabled=true;
-  call('betaStats').then(function(d){$('reload').disabled=false;paint(d);},function(e){$('reload').disabled=false;
+  call('betaStats').then(function(d){$('reload').disabled=false;if(window.TaskMOwnerBar)TaskMOwnerBar.set(true);paint(d);},function(e){$('reload').disabled=false;if(e.status==='PERMISSION_DENIED'&&window.TaskMOwnerBar)TaskMOwnerBar.set(false);
    if(data){toast(e.message);return;}gate(e.status==='PERMISSION_DENIED'?'Owner only':'Couldn’t load',e.message||'Try again in a minute.',false);});}
 
  function paint(d){data=d;var t=d.totals,errs=d.errors||{day:0,week:0,list:[]},jobs=d.jobs||{};
@@ -294,7 +295,7 @@ td small{display:block;color:var(--muted)}
  $('reload').onclick=load;
  var rz;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){if(data)trend(data.trend||[]);},150);});
  auth.onAuthStateChanged(function(u){if(u){$('who').setAttribute('data-email','Signed in as '+(u.email||'you'));$('who').textContent='Signed in as '+(u.email||'you');$('out').hidden=false;$('reload').hidden=false;$('links').hidden=false;load();}
-  else{data=null;$('who').textContent='Only TaskM’s owner can open this page.';$('out').hidden=true;$('reload').hidden=true;$('links').hidden=true;gate('Sign in','Use the account you made TaskM with.',true);}});
+  else{data=null;if(window.TaskMOwnerBar)TaskMOwnerBar.set(false);$('who').textContent='Only TaskM’s owner can open this page.';$('out').hidden=true;$('reload').hidden=true;$('links').hidden=true;gate('Sign in','Use the account you made TaskM with.',true);}});
 })();
 </script>
 </body>

@@ -16,8 +16,9 @@
  function preview(){if(A.previewParent)A.previewParent(true);}
  document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-ownpv]'))preview();});
  firebase.auth().onAuthStateChanged(function(u){
-  if(!u||!u.email||!u.emailVerified){owner=false;return;}
-  sha(String(u.email).toLowerCase()).then(function(h){owner=OWNER_HASHES.indexOf(h)>=0;if(!owner)return;
+  var bar=function(yes){if(window.TaskMOwnerBar)TaskMOwnerBar.set(yes);};   // owner-bar.js: Home / My TaskM / Parent view / Admin
+  if(!u||!u.email||!u.emailVerified){owner=false;bar(false);return;}
+  sha(String(u.email).toLowerCase()).then(function(h){owner=OWNER_HASHES.indexOf(h)>=0;bar(owner);if(!owner)return;
    if(window.TaskMSync&&TaskMSync.paint)TaskMSync.paint();
    if(wantPreview){wantPreview=false;history.replaceState(null,'',location.pathname+location.hash);
     var go=function(){var p=A.profile||{};if(p.role!=='parent')setTimeout(preview,300);};
