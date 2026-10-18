@@ -2043,6 +2043,7 @@ html.tt-kbup .tt-sheetbox{padding-bottom:12px}
 .tm-sample{position:fixed;z-index:950;left:16px;bottom:calc(var(--tt-nav,0px) + 16px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 104px);display:flex;align-items:center;gap:8px;
  padding:6px 6px 6px 14px;border-radius:999px;background:var(--text);color:var(--bg);font-size:13px;box-shadow:0 10px 24px -8px rgba(0,0,0,.35)}
 .tm-sample>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-sample .tm-sl{font-style:normal}@media (max-width:600px){.tm-sample .tm-sl{display:none}}
 .tm-sample button[data-tmconnect]{flex:none;min-height:32px;padding:0 12px;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent,#fff);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .tm-sample .tm-sx{flex:none;display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:inherit;opacity:.7;cursor:pointer}
 @media (min-width:601px){.tm-sample{left:auto;right:24px;bottom:24px;max-width:none}}
@@ -4903,7 +4904,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function endSample(){var T=window.TaskM;if(!sampleOn)return;sampleOn=false;document.documentElement.classList.remove('tm-sampling');
   if(T&&T.items)for(var i=T.items.length-1;i>=0;i--)if(T.items[i].sample)T.items.splice(i,1);var b=document.getElementById('tmSample');if(b)b.remove();redraw();paintMail();}
  function sampleBar(){if(document.getElementById('tmSample'))return;var b=document.createElement('div');b.id='tmSample';b.className='tm-sample';b.setAttribute('role','status');
-  b.innerHTML='<span><b>Sample student</b> · this is TaskM once it’s connected</span><button type="button" data-tmconnect>Connect yours</button>'+
+  b.innerHTML='<span><b>Sample student</b><i class="tm-sl"> · this is TaskM once it’s connected</i></span><button type="button" data-tmconnect>Connect yours</button>'+
    '<button type="button" class="tm-sx" data-tmendsample aria-label="Hide the sample tasks">'+ico('x',14)+'</button>';document.body.appendChild(b);}
  function vis(sel){var l=document.querySelectorAll(sel);for(var i=0;i<l.length;i++){var r=l[i].getBoundingClientRect();if(r.width>0&&r.height>0)return l[i];}return null;}
  function view(v){var b=vis('#viewSeg button[data-view="'+v+'"]')||document.querySelector('#viewSeg button[data-view="'+v+'"]');if(b&&!b.classList.contains('on'))b.click();}
