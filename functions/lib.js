@@ -136,11 +136,16 @@ function combine(lists, today) {
 }
 
 // A class grade the AI found (gradebook pages like Aeries) -> the app's grade shape
+// The gradebook's own letter wins over the percent, since it includes the teacher's curve
 function toGrade(g, source) {
-  if (!g || !g.class_name || g.percent === null || g.percent === undefined || g.percent === '') return null;
-  const pct = Number(g.percent);
-  if (!isFinite(pct) || pct < 0 || pct > 150) return null;
-  return { course: String(g.class_name).trim().slice(0, 80), pct: Math.round(pct * 10) / 10, source };
+  if (!g || !g.class_name) return null;
+  const m = /^\s*([A-F][+-]?)\s*$/i.exec(String(g.letter || '')), letter = m ? m[1].toUpperCase() : null;
+  const has = g.percent !== null && g.percent !== undefined && g.percent !== '', pct = has ? Number(g.percent) : NaN;
+  const okPct = has && isFinite(pct) && pct >= 0 && pct <= 150;
+  if (!okPct && !letter) return null;
+  const out = { course: String(g.class_name).trim().slice(0, 80), pct: okPct ? Math.round(pct * 10) / 10 : null, source };
+  if (letter) out.letter = letter;
+  return out;
 }
 
 // An email the AI summarized (Gmail/Outlook read by the Chrome button) -> a row for the Email tab

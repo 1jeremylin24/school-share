@@ -65,6 +65,9 @@ test('Word and PowerPoint files are read as text', () => {
 test('grades keep the newest value per class', () => {
   assert.deepStrictEqual(L.toGrade({ class_name: 'AP Biology', percent: 93.456 }, 'Aeries'), { course: 'AP Biology', pct: 93.5, source: 'Aeries' });
   assert.strictEqual(L.toGrade({ class_name: 'Art', percent: null }, 'x'), null);
+  assert.deepStrictEqual(L.toGrade({ class_name: 'AP Calculus BC', percent: 78, letter: 'a' }, 'Aeries'), { course: 'AP Calculus BC', pct: 78, source: 'Aeries', letter: 'A' });
+  assert.deepStrictEqual(L.toGrade({ class_name: 'PE', percent: null, letter: 'B+' }, 'Aeries'), { course: 'PE', pct: null, source: 'Aeries', letter: 'B+' });
+  assert.deepStrictEqual(L.toGrade({ class_name: 'Art', percent: 91, letter: 'Pass' }, 'x'), { course: 'Art', pct: 91, source: 'x' });
   const g = L.combineGrades({
     a: { at: '2026-10-10T00:00:00Z', list: [{ course: 'AP Biology', pct: 88, source: 'Aeries' }, { course: 'Calc BC', pct: 95, source: 'Aeries' }] },
     b: { at: '2026-10-16T00:00:00Z', list: [{ course: 'ap biology', pct: 91, source: 'Aeries' }] },

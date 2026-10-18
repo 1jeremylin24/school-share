@@ -45,6 +45,7 @@ const Task = z.object({
 const Grade = z.object({
   class_name: z.string().describe('Class name as shown, e.g. "AP Calculus BC"'),
   percent: z.number().nullable().describe('Overall class grade as a percent, e.g. 93.4; null if only a letter is shown'),
+  letter: z.string().nullable().describe('The letter grade or mark the gradebook shows for the class, e.g. "A" or "B+" (Aeries calls it Mark); null if none is shown'),
 });
 const Email = z.object({
   from: z.string().describe('Sender name as shown, e.g. "Mr. Kim" or "College Board"'),
@@ -71,7 +72,7 @@ Dates:
 - Turn weekday names and words like "tomorrow" into real dates using today's date, which is given with the text. A weekday with no other clue means the next one on or after today.
 - Never guess a date that isn't supported by the text. Leave out items that have no date at all.
 
-Grades: if the material shows the student's current overall grade for each class (a gradebook such as Aeries, or a progress report), list one entry per class in grades. Don't list single assignment scores. Leave grades empty otherwise. Missing or late assignments shown in a gradebook count as to-do items only if they have a due date.
+Grades: if the material shows the student's current overall grade for each class (a gradebook such as Aeries, or a progress report), list one entry per class in grades. Copy the class's letter or mark exactly as the gradebook shows it (teachers' curves are already in that letter, so never work one out from the percent). Don't list single assignment scores. Leave grades empty otherwise. Missing or late assignments shown in a gradebook count as to-do items only if they have a due date.
 
 Emails: when the material is an inbox or emails, also list each real email in emails (school, college, events, money, personal), skipping ads, promotions, newsletters with nothing for the student, and security or sign-in notices. Write the summary for a busy student: what it's about and anything to do, with the dates, times, places and costs it mentions. Put a to-do item in tasks too when an email asks for something with a date (a form, a registration, a payment, an event to attend).
 
