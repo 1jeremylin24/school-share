@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TaskM</string>
+    <string name="title_activity_main">TaskM</string>
+    <string name="package_name">app.taskm.school</string>
+    <string name="custom_url_scheme">app.taskm.school</string>
+</resources>

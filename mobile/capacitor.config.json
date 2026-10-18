@@ -1,0 +1,16 @@
+{
+  "appId": "app.taskm.school",
+  "appName": "TaskM",
+  "webDir": "www",
+  "server": {
+    "url": "https://taskm-school.web.app",
+    "cleartext": false,
+    "errorPath": "offline.html"
+  },
+  "ios": { "contentInset": "never", "backgroundColor": "#0c1222" },
+  "android": { "backgroundColor": "#0c1222" },
+  "plugins": {
+    "FirebaseAuthentication": { "skipNativeAuth": true, "providers": ["google.com"] },
+    "LocalNotifications": { "iconColor": "#5048e5" }
+  }
+}

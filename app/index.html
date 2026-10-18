@@ -43,7 +43,12 @@
  A.onAuth=function(fn){authFns.push(fn);};
  A.signInEmail=function(em,pw){return needAuth()||auth.signInWithEmailAndPassword(em,pw).catch(rej);};
  A.signUpEmail=function(em,pw,name){return needAuth()||auth.createUserWithEmailAndPassword(em,pw).then(function(c){if(name){ss(NK,name);return c.user.updateProfile({displayName:name});}}).catch(rej);};
- A.signInGoogle=function(){return needAuth()||auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(rej);};
+  // In the TaskM phone app, Google blocks its sign-in page inside the app, so the phone's own Google sign-in is used instead
+ function googleIn(){var CAP=window.Capacitor,FA=CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()&&CAP.Plugins&&CAP.Plugins.FirebaseAuthentication;
+  if(!FA)return auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  return FA.signInWithGoogle({skipNativeAuth:true}).then(function(r){var t=r&&r.credential&&r.credential.idToken;if(!t)throw {code:'auth/cancelled-popup-request'};
+   return auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(t));});}
+ A.signInGoogle=function(){return needAuth()||googleIn().catch(rej);};
  A.resetPassword=function(em){return needAuth()||auth.sendPasswordResetEmail(em).catch(rej);};
  A.saveProfile=function(p){var np=Object.assign({role:'student',over13:true,created:new Date().toISOString()},A.profile||{},p);if(!np.secret)np.secret=secret();
   return saveProfile(np).then(function(){A.profile=np;ss(NK,np.name||'');if(!isReady)ready(np);else{emit(A);if(window.TaskMSync)window.TaskMSync.paint();}});};
@@ -102,7 +107,7 @@
   gate.onclick=function(e){var b=e.target.closest('[data-a]');if(!b||b.tagName==='FORM')return;var a=b.dataset.a;
    if(a==='up'||a==='in')showSignIn(a);
    else if(a==='demo'){startDemo();}
-   else if(a==='google'){busy(b,true);err('');auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(x){busy(b,false);err(niceErr(x));});}
+   else if(a==='google'){busy(b,true);err('');googleIn().catch(function(x){busy(b,false);err(niceErr(x));});}
    else if(a==='reset'){var em=gate.querySelector('#acEm').value.trim();if(!em){err('Type your email above first, then tap Forgot password.');return;}
     auth.sendPasswordResetEmail(em).then(function(){err('');gate.querySelector('.ac-err').textContent='Check your email for a reset link.';},function(x){err(niceErr(x));});}};
   gate.onsubmit=function(e){e.preventDefault();var em=gate.querySelector('#acEm').value.trim(),pw=gate.querySelector('#acPw').value,b=gate.querySelector('button[type=submit]');
@@ -4118,7 +4123,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function imports(){return jl(IK,{});}
  function apply(){var all=baseItems.slice(),seen={};all.forEach(function(i){seen[i.id]=1;});var im=imports();
   Object.keys(im).forEach(function(k){(im[k].items||[]).forEach(function(i){if(!seen[i.id]){seen[i.id]=1;all.push(i);}});});
-  var txt=JSON.stringify(all);if(orgEl&&orgEl.textContent!==txt){orgEl.textContent=txt;if(X&&X.reload)X.reload();}publishSoon();}
+  var txt=JSON.stringify(all);if(orgEl&&orgEl.textContent!==txt){orgEl.textContent=txt;if(X&&X.reload)X.reload();}publishSoon();remindSoon();}
  // ---- AI importer (server): Claude reads pasted text and saved links; results land in /users/<uid>/imported/ai
  function callFn(name,data){if(A.demo||!A.uid)return fail('demo','Adding homework with AI needs a real account (not the demo).');
   return fetch(FN+name,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+A.token},body:JSON.stringify({data:data||{}})})
@@ -4301,6 +4306,33 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   callFn('betaFeedback',{text:t,kind:k,page:(location.hash||'').slice(0,40),ext:document.documentElement.getAttribute('data-taskm-ext-v')||'',ua:navigator.userAgent})
    .then(function(){f.outerHTML='<p class="tc-msub tc-fbok">'+ico('check')+'Thanks! Your feedback was sent.</p><div class="tc-acts"><button type="button" class="tt-btn tc-pri" data-close>Done</button></div>';},
     function(x){b.disabled=false;b.textContent='Send';formErr(f,x.message);});});
+ // ---- TaskM phone app (a Capacitor shell that loads this site): reminders that arrive even when TaskM is closed.
+ // Tests, quizzes and projects get their own reminder at 7 PM the evening before; other homework due the next day is
+ // grouped into one 7 PM reminder. Rebuilt whenever the list or a checkmark changes. iPhones keep at most 64 waiting.
+ var CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform()),LN=NATIVE&&CAP.Plugins?CAP.Plugins.LocalNotifications:null;
+ function nid(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)%2000000000+1;}
+ function remindPlan(items,isDone,now){var BIG={test:1,quiz:1,project:1},days={},out=[];
+  items.forEach(function(it){if(!it||!it.due||isDone(it.id))return;var d=String(it.due).slice(0,10),at=new Date(d+'T19:00:00');if(isNaN(at))return;at.setDate(at.getDate()-1);
+   if(at<=now||at-now>21*DAY)return;var cls=it.class_short||it.category||'';
+   if(BIG[it.type])out.push({id:nid('t|'+it.id),at:at,title:'Tomorrow: '+it.title,body:(cls?cls+' · ':'')+it.type+'. Plan some study time tonight.'});
+   else(days[d]=days[d]||{at:at,list:[]}).list.push(it.title);});
+  Object.keys(days).forEach(function(d){var x=days[d],n=x.list.length;
+   out.push({id:nid('d|'+d),at:x.at,title:n===1?'Due tomorrow: '+x.list[0]:n+' things due tomorrow',body:n===1?'Open TaskM to check it off.':andList(x.list.slice(0,4))+(n>4?' and '+(n-4)+' more':'')+'.'});});
+  return out.sort(function(a,b){return a.at-b.at;}).slice(0,60);}
+ window.TaskMRemindPlan=remindPlan;
+ var remindT=0;
+ function remindSoon(){if(!LN)return;clearTimeout(remindT);remindT=setTimeout(remindSync,1500);}
+ function remindSync(){var items=[];try{items=JSON.parse(orgEl.textContent||'[]');}catch(e){}
+  var T=window.TaskM;if(T&&T.extras)items=items.concat(T.extras()||[]);
+  var plan=remindPlan(items,function(id){return !!(T&&T.isChecked&&T.isChecked(id));},new Date());
+  LN.checkPermissions().then(function(p){if(p.display==='granted')return p;if(p.display==='denied'||jl('taskm-remind-asked',0))return null;
+    js('taskm-remind-asked',1);return LN.requestPermissions().then(function(q){return q.display==='granted'?q:null;});})
+   .then(function(ok){if(!ok)return;return LN.getPending().then(function(r){var old=(r&&r.notifications||[]).map(function(n){return {id:n.id};});
+     return old.length?LN.cancel({notifications:old}):null;}).then(function(){if(!plan.length)return;
+     return LN.schedule({notifications:plan.map(function(x){return {id:x.id,title:x.title,body:x.body,schedule:{at:x.at,allowWhileIdle:true}};})});});})
+   .catch(function(){});}
+ if(LN){LN.addListener('localNotificationActionPerformed',function(){try{window.focus();}catch(e){}});
+  var hookT=setInterval(function(){if(window.TaskM&&window.TaskM.on){clearInterval(hookT);window.TaskM.on(remindSoon);}},500);}
  function seenPing(){if(A.demo||!A.uid)return;var n=new Date(),d=ymd(n),v=document.documentElement.getAttribute('data-taskm-ext-v')||'',k='taskm-seen',mark=A.uid+'|'+d+'|'+n.getHours()+'|'+v;
   if(jl(k,'')===mark)return;var body={seen:{'.sv':'timestamp'},ext:v||null};body['days/'+d]=true;
   db('users/'+A.uid+'/beta',{method:'PATCH',body:body}).then(function(){js(k,mark);},function(){});}
