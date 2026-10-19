@@ -33,6 +33,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSCrossWebsiteTrackingUsageDescription</key>
+	<string>Teams shows your Assignments list from another Microsoft site inside Teams. Allowing this lets that list sign in inside TaskM’s browser so TaskM can read your homework. TaskM doesn’t track you or show ads.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

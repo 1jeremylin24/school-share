@@ -4367,7 +4367,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   callFn('aiAdd',c.signin?{clip:{url:c.url,title:c.title},signin:true}:{text:c.text.slice(0,150000),clip:{url:c.url,title:c.title}}).then(function(res){
     loadSources();if(c.signin)return;
     if(c.quiet&&(res.unchanged||!(res.count||res.grades)))return pullAI();
-    clipNote(resultLine(res,'“'+label+'”'),!(res.count||res.grades||res.unchanged));if(/mail\.google|outlook\./.test(c.url))mailNote(esc(resultLine(res,'your email')));return pullAI().then(function(){if(res.grades)paintStudent();});},
+    clipNote(resultLine(res,'“'+label+'”')+(typeof c.hint==='string'&&c.hint?' '+c.hint.slice(0,400):''),!(res.count||res.grades||res.unchanged));if(/mail\.google|outlook\./.test(c.url))mailNote(esc(resultLine(res,'your email')));return pullAI().then(function(){if(res.grades)paintStudent();});},
     function(x){if(!c.quiet)clipNote('Couldn’t add “'+label+'”: '+x.message,true);}).then(function(){clipBusy=false;takeClip();});}
  // the Chrome button asks which pages to keep updated, so a page removed here stops updating there too
  // the button also gets a limited key that can only add pages for this student (made by the server, expires in 90 days)
@@ -4538,17 +4538,26 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function isAssignFrame(u){try{return /(^|\.)assignments\.onenote\.com$/i.test(new URL(u).hostname);}catch(e){return false;}}
  // the school sent the reader to a sign-in page instead of the saved one
  function signinPage(saved,now){try{var a=new URL(saved),b=new URL(now);return a.hostname!==b.hostname&&/login|signin|sso|adfs|auth|accounts\.google|workspace\.google/i.test(b.hostname+b.pathname);}catch(e){return false;}}
- function clipPost(c){window.postMessage({type:'taskm-clip',v:2,url:c.url,title:c.title||'',text:c.text||'',quiet:!!c.quiet,signin:!!c.signin},location.origin);}
+ function clipPost(c){window.postMessage({type:'taskm-clip',v:2,url:c.url,title:c.title||'',text:c.text||'',quiet:!!c.quiet,signin:!!c.signin,hint:c.hint||''},location.origin);}
  function notePhonePage(u){var p=jl(NPK,{}),k=pkey(u);if(!k)return;p[k]={url:u,at:Date.now()};js(NPK,p);}
  // Teams shows Assignments (every class) in a frame after a while; keep checking, and get past Teams' "open in the app?" page
  var CLICK_WEBAPP='(function(){var b=[].slice.call(document.querySelectorAll("a,button")).filter(function(e){return /use the web app instead|continue on this browser|use the web app/i.test(e.textContent||"");})[0];if(b)b.click();return true;})()',
   CLICK_ASSIGN='(function(){var b=[].slice.call(document.querySelectorAll("button,a,[role=button],[role=menuitem]")).filter(function(e){return /^assignments\\b/i.test((e.getAttribute("aria-label")||e.title||e.textContent||"").trim());})[0];if(b)b.click();return true;})()';
- function teamsAssignments(){var i=0;
-  function step(){if(i++>=20)return Promise.resolve(null);return pause(2500).then(function(){return SP.frames();}).then(function(f){
-   if((f.frames||[]).some(function(x){return isAssignFrame(x.url)&&String(x.text||'').trim().length>80;}))
-    return pause(3000).then(function(){return SP.frames();}).then(function(g){return joinTexts((g.frames||[]).filter(function(x){return isAssignFrame(x.url);}));});
-   return SP.run({code:i===9?CLICK_ASSIGN:CLICK_WEBAPP}).catch(function(){}).then(step);});}
+ // The Assignments frame counts only once it shows the list (or says there's nothing due). Before that it shows a
+ // spinner, a class picker or, when the phone blocks its sign-in inside Teams, a sign-in or error message: reading
+ // that too early sent a page with no homework on it.
+ var ASSIGN_OK=/\bdue\b|no (upcoming |assigned )?(assignments|work)|all caught up|nothing (is )?due/i,
+  ASSIGN_BAD=/sign in|log in|cookie|something went wrong|try again|can.?t (load|open)|couldn.?t (load|open)|unable to/i;
+ function assignList(fr){var t=joinTexts((fr||[]).filter(function(x){return isAssignFrame(x.url);}));
+  return {text:t,ok:t.length>80&&ASSIGN_OK.test(t),bad:t.length>0&&!ASSIGN_OK.test(t)&&ASSIGN_BAD.test(t)};}
+ // {text} with the Assignments list, or {text:null, blocked} when it never showed (blocked = it asked to sign in or failed)
+ function teamsAssignments(){var i=0,bad=false;
+  function step(){if(i++>=24)return Promise.resolve({text:null,blocked:bad});return pause(2500).then(function(){return SP.frames();}).then(function(f){
+   var a=assignList(f.frames);bad=bad||a.bad;
+   if(a.ok)return pause(3000).then(function(){return SP.frames();}).then(function(g){var b=assignList(g.frames);return {text:b.ok&&b.text.length>=a.text.length?b.text:a.text};});
+   return SP.run({code:i===9||i===16?CLICK_ASSIGN:CLICK_WEBAPP}).catch(function(){}).then(step);});}
   return step();}
+ var TEAMS_BLOCKED='Teams’ Assignments list wouldn’t open inside TaskM, so TaskM read your Teams activity and class posts instead. To get the list too: on your iPhone open Settings, scroll down to TaskM, turn on Allow Cross-Website Tracking, then tap Add to TaskM in Teams again.';
  // TaskM's page reader (crawl.js, shipped inside the app) clicks through the hidden reader's site: the notebook's other
  // sections, each Teams channel, the school site's grade pages. An older app without it just reads the one page.
  function crawlHidden(){var out=[],n=0;
@@ -4561,8 +4570,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   return SP.visit({url:url}).then(function(){return pause(6000);}).then(function(){return SP.frames();}).then(function(f){
    if(signinPage(url,f.url))return {signin:true};
    // Teams: the Assignments app, then the activity feed, chats and each class team's channels
-   if(teams)return teamsAssignments().then(function(t){if(!t)return SP.frames().then(function(g){return signinPage(url,g.url)?{signin:true}:{};});
-     return SP.visit({url:new URL(url).origin+'/'}).then(function(){return pause(12000);}).then(function(){return withCrawl({text:t,title:'Teams assignments'});},function(){return {text:t,title:'Teams assignments'};});});
+   // (no list: still read the activity feed and class channels, where teachers post assignments and tests too)
+   if(teams)return teamsAssignments().then(function(a){return SP.frames().then(function(g){if(signinPage(url,g.url))return {signin:true};
+     var t=a.text||'=== Teams Assignments list (didn’t open) ===\nRead the Teams activity feed and class posts below for homework, tests and due dates.';
+     return SP.visit({url:new URL(url).origin+'/'}).then(function(){return pause(12000);}).then(function(){return withCrawl({text:t,title:'Teams assignments'});},function(){return {text:t,title:'Teams assignments'};})
+      .then(function(x){x.list=!!a.text;x.blocked=!a.text&&a.blocked;if(!a.text&&x.text===t)x.text='';return x;});});});
    var t=joinTexts(f.frames);if(t.length>=200)return withCrawl({text:t,title:f.title});
    return pause(6000).then(function(){return SP.frames();}).then(function(g){return signinPage(url,g.url)?{signin:true}:withCrawl({text:joinTexts(g.frames),title:g.title});});});}
  // the student tapped Add to TaskM. In Teams, TaskM opens the Assignments app (every class) and reads that instead.
@@ -4574,9 +4586,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     // then read it again out of sight, clicking through the rest of the site, and replace the quick read
     phoneBusy=true;return pause(4000).then(function(){return readHidden(r.url);}).then(function(x){if(x.text&&x.text.length>text.length)clipPost({url:r.url,title:x.title||r.title,text:x.text,quiet:true});})
      .then(function(){phoneBusy=false;SP.closeReader().catch(function(){});},function(){phoneBusy=false;SP.closeReader().catch(function(){});});}
-   var au=new URL(r.url).origin+'/l/app/'+ASSIGN_APP;phoneBusy=true;clipNote('Finding your Teams assignments… this takes about a minute.');
-   return readHidden(au).then(function(x){if(x.text&&x.text.length>=40){notePhonePage(au);clipPost({url:au,title:'Teams assignments',text:x.text});return;}
-     var own=joinTexts(r.frames);if(own.length>=40){notePhonePage(r.url);clipPost({url:r.url,title:r.title,text:own});return;}
+   var au=new URL(r.url).origin+'/l/app/'+ASSIGN_APP,seen=assignList(r.frames);phoneBusy=true;clipNote('Finding your Teams assignments… this takes about a minute.');
+   return readHidden(au).then(function(x){
+     // the list the student had open in TaskM's browser counts too, when the hidden reader couldn't get it
+     if(!x.list&&seen.ok)x.text=seen.text+(x.text?'\n\n'+x.text:''),x.blocked=false;
+     if(x.text&&x.text.length>=40){notePhonePage(au);clipPost({url:au,title:'Teams assignments',text:x.text.slice(0,150000),hint:x.blocked?TEAMS_BLOCKED:''});return;}
+     var own=joinTexts(r.frames);if(own.length>=40){notePhonePage(r.url);clipPost({url:r.url,title:r.title,text:own,hint:x.blocked?TEAMS_BLOCKED:''});return;}
      clipNote(x.signin?'Sign in to Teams in TaskM’s browser first, then tap Add to TaskM again.':'TaskM couldn’t open your Teams assignments. Open Assignments in Teams and tap Add to TaskM there.',true);})
     .then(function(){phoneBusy=false;SP.closeReader().catch(function(){});},function(){phoneBusy=false;});}).catch(function(){});}
  A.openSchoolPage=schoolOpen;

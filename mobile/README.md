@@ -8,6 +8,8 @@ The website notices it's inside the app (`window.Capacitor`) and switches on the
 - `www/offline.html` shows when the phone has no internet.
 - **School pages** (`ios/App/App/SchoolPage.swift`, the phone version of the TaskM Chrome button): TaskM's setup steps open OneNote, Teams, Aeries or Outlook in TaskM's own browser. The student signs in on that site's page and taps **Add to TaskM**, and the page's text goes to TaskM like a page from the Chrome button. Sign-ins stay on the phone, so pages added on the phone are read again in a hidden reader when TaskM opens (once their last read is 20+ hours old). See `schoolOpen()` and `phoneRefresh()` in connect.js. Android doesn't have this yet, so it keeps the Chrome-button steps.
 
+**Teams Assignments on the phone:** iPhone apps block sign-ins inside another site's frame (Apple's tracking prevention), and Teams shows the Assignments list in a frame from assignments.onenote.com. The app declares `NSCrossWebsiteTrackingUsageDescription`, which adds an **Allow Cross-Website Tracking** switch under Settings > TaskM. With it off, TaskM still reads Teams' activity feed and class posts and tells the student how to turn the switch on.
+
 Not on the App Store. For now it runs only on Jeremy's own iPhone, installed from his Mac.
 
 ## Run it on your iPhone (free, from a Mac)
