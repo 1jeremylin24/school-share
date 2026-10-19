@@ -367,6 +367,53 @@ function edlioMain(html) {
   return s.slice(from, to > from ? to : undefined);
 }
 
+// Links inside a school page become "text (url)" so the AI can hand them on (only http(s) links; relative ones made absolute)
+function linkText(html, base) {
+  return String(html).replace(/<a\b[^>]*?href\s*=\s*["']([^"'#][^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi, (m, href, inner) => {
+    let url; try { url = new URL(href.replace(/&amp;/g, '&'), base).toString(); } catch (e) { return inner; }
+    if (!/^https?:/i.test(url)) return inner;
+    const label = htmlToText(inner);
+    return label ? `${inner} (${url})` : inner;
+  });
+}
+
+// Bell schedule pictures and PDFs on the school's Bell Schedule page (the school posts them as images)
+function bellFiles(html) {
+  const s = edlioMain(html), out = [];
+  for (const m of s.matchAll(/https:\/\/\d\.files\.edl\.io\/[^"'\s)]+\.(png|jpe?g|gif|webp|pdf)/gi)) if (!out.includes(m[0])) out.push(m[0]);
+  return out.filter(u => !/ace8\/06\/10\/26\//.test(u)).slice(0, 14);  // not the district calendar PDF
+}
+
+// AI-read bell schedules -> [{id, name, weekdays, periods:[{name,start,end}]}]; times are HH:MM (24-hour), periods in order
+function toBells(list) {
+  const out = [], seen = new Set();
+  for (const b of list || []) {
+    const name = String(b && b.name || '').trim().slice(0, 60);
+    if (!name || seen.has(name.toLowerCase())) continue;
+    const periods = (b.periods || []).map(p => ({ name: String(p && p.name || '').trim().slice(0, 40), start: p && p.start, end: p && p.end }))
+      .filter(p => p.name && isHm(p.start) && isHm(p.end) && p.end > p.start).sort((x, y) => x.start.localeCompare(y.start));
+    if (!periods.length) continue;
+    seen.add(name.toLowerCase());
+    const weekdays = [...new Set((b.weekdays || []).map(Number))].filter(n => n >= 1 && n <= 5).sort();
+    out.push({ id: 'bell-' + hash(name.toLowerCase()).slice(0, 10), name, weekdays, periods, note: String(b.note || '').trim().slice(0, 200) || null });
+  }
+  return out;
+}
+
+// AI-read special school days -> [{date, schedule, note}]: schedule is one of the bell schedule names, or 'No school'
+function toDays(list, today, names) {
+  const ok = new Map((names || []).map(n => [n.toLowerCase(), n])), by = {};
+  for (const x of list || []) {
+    if (!x || !isYmd(x.date)) continue;
+    const dd = daysBetween(today, x.date);
+    if (dd < -1 || dd > 120) continue;
+    const raw = String(x.schedule || '').trim(), sched = /^no school$/i.test(raw) ? 'No school' : ok.get(raw.toLowerCase());
+    if (!sched) continue;
+    by[x.date] = { date: x.date, schedule: sched, note: String(x.note || '').trim().slice(0, 200) || null };
+  }
+  return Object.values(by).sort((a, b) => a.date.localeCompare(b.date));
+}
+
 // The school's own student calendar, plus the master calendar minus practices, games and anything already listed
 const ROUTINE = /\b(practice|rehearsal|scrimmage|conditioning|open gym|weight ?room)\b|\b(VR|JV|FS|varsity|frosh)\b|\s(vs\.?|@)\s|^(tennis|volleyball|water polo|football|basketball|soccer|baseball|softball|swim|track|golf|wrestling|cross country|lacrosse)\b/i;
 function schoolEvents(curated, master) {
@@ -404,4 +451,4 @@ function sortSchool(items) {
 }
 
 module.exports = { isOwner, betaSummary, sourceKind, errorGroups, scrubError, TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel,
-  SCHOOL_KINDS, SCHOOL_GRADES, icsEvents, schoolEvents, toSchoolItem, sortSchool, edlioMain };
+  SCHOOL_KINDS, SCHOOL_GRADES, icsEvents, schoolEvents, toSchoolItem, sortSchool, edlioMain, linkText, bellFiles, toBells, toDays };

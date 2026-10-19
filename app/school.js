@@ -39,6 +39,20 @@
  '.sc-tips{list-style:none;margin:0;padding:0;display:grid;gap:8px}.sc-tip{display:grid;grid-template-columns:28px minmax(0,1fr);gap:2px 10px;align-items:start}'+
  '.sc-tip>i{grid-row:span 2;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-style:normal;font-size:15px;background:color-mix(in srgb,var(--accent) 16%,transparent)}'+
  '.sc-tip b{font:600 14px/1.3 var(--ns-body,inherit);color:var(--text)}.sc-tip span{font-size:13px;line-height:1.4;color:var(--muted)}'+
+ '.sd-card{margin:0 0 16px;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}'+
+ '.sd-card.off{background:color-mix(in srgb,#16a34a 7%,var(--panel))}.sd-card.special{border-color:color-mix(in srgb,#d97706 45%,var(--line));background:color-mix(in srgb,#d97706 7%,var(--panel))}'+
+ '.sd-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}'+
+ '.sd-eye{font:700 11.5px var(--ns-body,inherit);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}'+
+ '.sd-hd a{font:600 12.5px var(--ns-body,inherit);color:var(--accent);text-decoration:none}'+
+ '.sd-day{margin:4px 0 2px;font:600 19px/1.25 var(--ns-display,var(--ns-body,inherit));color:var(--text)}'+
+ '.sd-sched{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:14px;color:var(--text)}'+
+ '.sd-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font:700 12.5px var(--ns-body,inherit);background:color-mix(in srgb,var(--sd,var(--accent)) 15%,transparent);color:var(--sd,var(--accent))}'+
+ '.sd-hours{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}'+
+ '.sd-note{margin:6px 0 0;font-size:13.5px;line-height:1.45;color:var(--text);opacity:.86}'+
+ '.sd-card details{margin-top:8px}.sd-card summary{cursor:pointer;list-style:none;font:600 13px var(--ns-body,inherit);color:var(--accent);padding:6px 0;min-height:32px;display:flex;align-items:center}.sd-card summary::-webkit-details-marker{display:none}'+
+ '.sd-per{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:2px}.sd-per li{display:flex;justify-content:space-between;gap:12px;padding:6px 8px;border-radius:8px;font-size:13.5px;color:var(--text);font-variant-numeric:tabular-nums}'+
+ '.sd-per li:nth-child(odd){background:color-mix(in srgb,var(--text) 4%,transparent)}.sd-per li.now{background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:600}.sd-per li span:last-child{color:var(--muted);white-space:nowrap}'+
+ '.sd-today{margin:10px 0 0;padding-top:9px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}.sd-today b{color:var(--text);font-weight:600}'+
  '.sc-rel{margin:10px 0 0;padding-top:9px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}.sc-rel b{color:var(--text);font-weight:600}';
 
  // ---------- the tab ----------
@@ -61,7 +75,7 @@
  function fetchInfo(force){var a=A(),v=data();if(busy||a.demo||!a.uid||!a.token)return Promise.resolve(v);if(!force&&v&&Date.now()-(v.got||0)<3*3600e3)return Promise.resolve(v);
   var cfg=window.TASKM_FIREBASE_CONFIG||{},url='https://us-central1-'+(cfg.projectId||'taskm-sync-d6861')+'.cloudfunctions.net/schoolInfo';busy=true;
   return fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+a.token},body:'{"data":{}}'})
-   .then(function(r){return r.json();}).then(function(j){busy=false;if(!j||!j.result)return v;var n={at:j.result.at,items:j.result.items||[],got:Date.now()};js(SCK,n);return n;})
+   .then(function(r){return r.json();}).then(function(j){busy=false;if(!j||!j.result)return v;var n={at:j.result.at,items:j.result.items||[],days:j.result.days||[],bells:j.result.bells||[],got:Date.now()};js(SCK,n);return n;})
    .catch(function(){busy=false;return v;});}
 
  // ---------- School tab ----------
@@ -110,9 +124,51 @@
    (rel.length?'<p class="sc-rel">From the school: '+rel.map(function(it){return '<b>'+esc(it.title)+'</b> ('+esc(when(it,tk).lbl)+')';}).join(' · ')+'</p>':'')+
    (tips.length>n?'<button type="button" class="sc-swap" data-sccoach>Show other ideas</button>':'')+'</div>';}
 
+ // ---------- what kind of school day: weekend, no school, a special bell schedule, or the normal one for that weekday ----------
+ var BELL_URL='https://pvphs.pvpusd.net/apps/pages/index.jsp?uREC_ID=450032&type=d&pREC_ID=2014024';
+ function addDays(k,n){var x=new Date(k+'T12:00:00');x.setDate(x.getDate()+n);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
+ function bellNamed(bells,name){var n=String(name||'').toLowerCase();for(var i=0;i<bells.length;i++)if(bells[i].name.toLowerCase()===n)return bells[i];return null;}
+ function dayInfo(k,v){var x=new Date(k+'T12:00:00'),dow=x.getDay(),items=(v&&v.items)||[],bells=(v&&v.bells)||[],days=(v&&v.days)||[],r={date:k,dow:dow,off:false,special:false,name:'',bell:null,note:''};
+  var on=items.filter(function(it){return it.date&&it.date<=k&&(it.end_date||it.date)>=k;});
+  var off=on.filter(function(it){return it.kind==='no_school';})[0];
+  if(dow===0||dow===6){r.off=true;r.name='No school';r.note='Weekend';return r;}
+  if(off){r.off=true;r.name='No school';r.note=off.title;return r;}
+  var sp=days.filter(function(dd){return dd.date===k;})[0];
+  if(sp&&sp.schedule==='No school'){r.off=true;r.name='No school';r.note=sp.note||'';return r;}
+  if(sp){r.bell=bellNamed(bells,sp.schedule);r.name=sp.schedule;r.note=sp.note||'';}
+  if(!r.name){var def=bells.filter(function(b){return b.weekdays&&b.weekdays.indexOf(dow)>=0;})[0]||bells.filter(function(b){return /regular/i.test(b.name);})[0];
+   if(def){r.bell=def;r.name=def.name;}else r.name='Regular';}
+  r.special=!/regular/i.test(r.name);
+  // drills and schedule changes on that day are worth a line even when the bell schedule is the usual one
+  var extra=on.filter(function(it){return (it.kind==='drill'||it.kind==='schedule'||it.kind==='exam')&&r.note.toLowerCase().indexOf(it.title.toLowerCase())<0;}).map(function(it){return it.title+(it.time?' at '+clock(it.time):'');});
+  if(extra.length){r.note=(r.note?r.note+'. ':'')+extra.join('. ');if(!sp)r.special=r.special||on.some(function(it){return it.kind==='drill'||it.kind==='schedule';});}
+  return r;}
+ function schedLabel(n){return /schedule|no school/i.test(n)?n:n+' schedule';}
+ function short(t){if(!t)return '';var h=+t.slice(0,2),m=t.slice(3);return (h%12||12)+':'+m;}
+ function nowMin(){var x=new Date();return String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0');}
+ function bellList(b,live){if(!b||!b.periods||!b.periods.length)return '';var t=live?nowMin():'';
+  return '<ol class="sd-per">'+b.periods.map(function(p){return '<li'+(t&&p.start<=t&&t<p.end?' class="now"':'')+'><span>'+esc(p.name)+'</span><span>'+short(p.start)+' – '+short(p.end)+'</span></li>';}).join('')+'</ol>';}
+ function hours(b){return b&&b.periods&&b.periods.length?clock(b.periods[0].start)+' – '+clock(b.periods[b.periods.length-1].end):'';}
+ function dayCard(v,tk){var tom=addDays(tk,1),t=dayInfo(tom,v),next=t,n=1;
+  while(next.off&&n<21){n++;next=dayInfo(addDays(tk,n),v);}  // the next day there is school
+  function fmt(k){return new Date(k+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});}
+  var main=t.off?next:t,cls=t.off?'off':t.special?'special':'',col=t.special?'#d97706':'#16a34a';
+  var h='<div class="sd-card '+cls+'" style="--sd:'+(t.off?'#16a34a':col)+'"><div class="sd-hd"><span class="sd-eye">Tomorrow</span><a href="'+BELL_URL+'" target="_blank" rel="noopener">All bell schedules</a></div>'+
+   '<p class="sd-day">'+esc(fmt(tom))+'</p>';
+  if(t.off){h+='<div class="sd-sched"><span class="sd-pill">No school</span>'+(t.note?'<span class="sd-hours">'+esc(t.note)+'</span>':'')+'</div>';
+   if(n<21)h+='<p class="sd-note">Back at school <b>'+esc(fmt(next.date))+'</b> with the '+esc(schedLabel(next.name).replace(/^./,function(c){return c.toLowerCase();}))+(next.bell?' ('+esc(hours(next.bell))+')':'')+'.'+(next.note?' '+esc(next.note)+'.':'')+'</p>';}
+  else h+='<div class="sd-sched"><span class="sd-pill">'+esc(schedLabel(t.name))+'</span>'+(t.bell?'<span class="sd-hours">'+esc(hours(t.bell))+'</span>':'')+'</div>'+(t.note?'<p class="sd-note">'+esc(t.note)+'</p>':'');
+  if(main&&!main.off&&main.bell)h+='<details><summary>Bell times'+(t.off?' for '+esc(fmt(main.date).split(',')[0]):'')+'</summary>'+bellList(main.bell,false)+'</details>';
+  var td=dayInfo(tk,v);
+  if(!td.off){var cur='';if(td.bell){var m=nowMin(),p=td.bell.periods.filter(function(q){return q.start<=m&&m<q.end;})[0],up=td.bell.periods.filter(function(q){return q.start>m;})[0];
+    cur=p?' · Now: <b>'+esc(p.name)+'</b> until '+esc(clock(p.end)):up&&m>=addMin(td.bell.periods[0].start,-60)?' · Next: <b>'+esc(up.name)+'</b> at '+esc(clock(up.start)):'';}
+   h+='<p class="sd-today">Today: <b>'+esc(schedLabel(td.name))+'</b>'+cur+'</p>';}
+  return h+'</div>';}
+ function addMin(t,n){var x=+t.slice(0,2)*60+(+t.slice(3))+n;x=Math.max(0,x);return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');}
+
  function paint(){var box=d.getElementById('schoolView');if(!box)return;var v=data(),tk=today(),gr=grade(),a=A(),f=jl(SCF,'all');if(!GROUP[f])f='all';
   var h='<section class="panel tc-panel"><div class="tc-hd"><h3>School</h3><small>'+esc(v&&v.at?'From pvphs.pvpusd.net · updated '+new Date(v.at).toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'}):'From the PVPHS website, checked every morning')+'</small></div>'+
-   coach(v,gr,tk)+'<div class="sc-chips" role="group" aria-label="Show">'+Object.keys(GROUP).map(function(k){return '<button type="button" class="sc-chip" data-scf="'+k+'" aria-pressed="'+(k===f)+'">'+GROUP[k][0]+'</button>';}).join('')+'</div>';
+   (a.demo?'':dayCard(v,tk))+coach(v,gr,tk)+'<div class="sc-chips" role="group" aria-label="Show">'+Object.keys(GROUP).map(function(k){return '<button type="button" class="sc-chip" data-scf="'+k+'" aria-pressed="'+(k===f)+'">'+GROUP[k][0]+'</button>';}).join('')+'</div>';
   if(!v||!v.items){box.innerHTML=h+'<p class="sc-empty">'+(a.demo?'Sign in to see what’s happening at PVPHS.':busy?'Reading the school website…':'Nothing from the school website yet. Check back soon.')+'</p></section>';return;}
   var kinds=GROUP[f][1],mine=function(it){return showAll||!gr||!it.grades||!it.grades.length||it.grades.indexOf(gr)>=0;};
   var L=v.items.filter(function(it){return mine(it)&&(!kinds||kinds.indexOf(it.kind)>=0);}),hidden=v.items.filter(function(it){return !mine(it);}).length;
