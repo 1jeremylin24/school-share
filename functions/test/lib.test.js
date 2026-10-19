@@ -166,3 +166,19 @@ test('only the page content of an Edlio school page is kept', () => {
   const html = '<nav>Home | School Info | lots of menu</nav><div id="content_main" class="x"><h1>AP Exams</h1><p>Register by Oct 23</p></div><footer id="footer_main">Address</footer>';
   assert.strictEqual(L.htmlToText(L.edlioMain(html)), 'AP Exams\nRegister by Oct 23');
 });
+
+test('school page links are kept for the AI, bell schedule files found, bells and special days cleaned', () => {
+  const html = '<p>Sign up <a href="/apps/pages/AP">here</a> or <a href="javascript:x()">not this</a></p>';
+  assert.strictEqual(L.htmlToText(L.linkText(html, 'https://pvphs.pvpusd.net/apps/pages/x')), 'Sign up here (https://pvphs.pvpusd.net/apps/pages/AP) or not this');
+  const page = '<div id="content_main"><img src="https://3.files.edl.io/2676/22/06/21/a.png"><a href="https://4.files.edl.io/f6d5/08/26/25/b.pdf">PDF</a>' +
+    '<a href="https://4.files.edl.io/ace8/06/10/26/cal.pdf">cal</a><img src="https://3.files.edl.io/2676/22/06/21/a.png"></div><footer id="footer_main"></footer>';
+  assert.deepStrictEqual(L.bellFiles(page), ['https://3.files.edl.io/2676/22/06/21/a.png', 'https://4.files.edl.io/f6d5/08/26/25/b.pdf']);
+  const bells = L.toBells([
+    { name: 'Regular', weekdays: [1, 2, 4, 5, 9], periods: [{ name: 'Period 2', start: '09:00', end: '09:50' }, { name: 'Period 1', start: '08:00', end: '08:52' }, { name: 'Bad', start: '1:05', end: '2:00' }] },
+    { name: 'regular', weekdays: [], periods: [{ name: 'x', start: '08:00', end: '09:00' }] },
+    { name: 'Late Start', weekdays: [3], periods: [] }]);
+  assert.deepStrictEqual(bells.map(b => [b.name, b.weekdays, b.periods.map(p => p.name)]), [['Regular', [1, 2, 4, 5], ['Period 1', 'Period 2']]]);
+  const days = L.toDays([{ date: '2026-10-23', schedule: 'regular', note: 'Disaster drill' }, { date: '2026-11-11', schedule: 'NO SCHOOL' },
+    { date: '2026-10-21', schedule: 'Made up' }, { date: '2026-09-01', schedule: 'Regular' }], '2026-10-19', ['Regular']);
+  assert.deepStrictEqual(days.map(d => [d.date, d.schedule]), [['2026-10-23', 'Regular'], ['2026-11-11', 'No school']]);
+});
