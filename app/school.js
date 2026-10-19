@@ -70,7 +70,18 @@
   return true;}
 
  // ---------- data ----------
- function data(){return jl(SCK,null);}
+ function data(){return A().demo?sample():jl(SCK,null);}
+ // the demo (no account) shows made-up school news so the tab isn't empty; it is labelled as a sample and never joins the task list
+ function sample(){var tk=today(),dd=function(n){var k=addDays(tk,n),w=new Date(k+'T12:00:00').getDay();return w===6?addDays(k,2):w===0?addDays(k,1):k;};  // school days only
+  return {sample:true,items:[
+   {id:'s1',kind:'deadline',title:'Yearbook photo retakes sign-up closes',date:dd(2),importance:'high',summary:'Sign up in the front office.'},
+   {id:'s2',kind:'sports',title:'Varsity football home game',date:dd(4),time:'19:00',summary:'Student section theme: white out.'},
+   {id:'s3',kind:'counseling',title:'College application workshop',date:dd(6),time:'15:15',grades:[12],summary:'In the library after school.'},
+   {id:'s4',kind:'testing',title:'PSAT practice session',date:dd(9),grades:[10,11]},
+   {id:'s5',kind:'club',title:'Club fair at lunch',date:dd(11),summary:'Find a club or start your own.'},
+   {id:'s6',kind:'no_school',title:'No school: staff development day',date:dd(18),importance:'high'},
+   {id:'s7',kind:'arts',title:'Fall play opening night',date:dd(25),time:'19:00'},
+   {id:'s8',kind:'announcement',title:'Lost and found is cleared out every Friday'}]};}
  function grade(){var a=A(),g=parseInt(a.profile&&a.profile.grade,10);return g>=9&&g<=12?g:null;}
  function fetchInfo(force){var a=A(),v=data();if(busy||a.demo||!a.uid||!a.token)return Promise.resolve(v);if(!force&&v&&Date.now()-(v.got||0)<3*3600e3)return Promise.resolve(v);
   var cfg=window.TASKM_FIREBASE_CONFIG||{},url='https://us-central1-'+(cfg.projectId||'taskm-sync-d6861')+'.cloudfunctions.net/schoolInfo';busy=true;
@@ -167,7 +178,7 @@
  function addMin(t,n){var x=+t.slice(0,2)*60+(+t.slice(3))+n;x=Math.max(0,x);return String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');}
 
  function paint(){var box=d.getElementById('schoolView');if(!box)return;var v=data(),tk=today(),gr=grade(),a=A(),f=jl(SCF,'all');if(!GROUP[f])f='all';
-  var h='<section class="panel tc-panel"><div class="tc-hd"><h3>School</h3><small>'+esc(v&&v.at?'From pvphs.pvpusd.net · updated '+new Date(v.at).toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'}):'From the PVPHS website, checked every morning')+'</small></div>'+
+  var h='<section class="panel tc-panel"><div class="tc-hd"><h3>School</h3><small>'+esc(v&&v.sample?'Sample school news. Sign up to see the real PVPHS website.':v&&v.at?'From pvphs.pvpusd.net · updated '+new Date(v.at).toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'}):'From the PVPHS website, checked every morning')+'</small></div>'+
    (a.demo?'':dayCard(v,tk))+coach(v,gr,tk)+'<div class="sc-chips" role="group" aria-label="Show">'+Object.keys(GROUP).map(function(k){return '<button type="button" class="sc-chip" data-scf="'+k+'" aria-pressed="'+(k===f)+'">'+GROUP[k][0]+'</button>';}).join('')+'</div>';
   if(!v||!v.items){box.innerHTML=h+'<p class="sc-empty">'+(a.demo?'Sign in to see what’s happening at PVPHS.':busy?'Reading the school website…':'Nothing from the school website yet. Check back soon.')+'</p></section>';return;}
   var kinds=GROUP[f][1],mine=function(it){return showAll||!gr||!it.grades||!it.grades.length||it.grades.indexOf(gr)>=0;};
@@ -185,7 +196,7 @@
  // ---------- urgent school items go into the task list (Focus and Calendar) ----------
  var URG={deadline:'form',no_school:'event',schedule:'event',drill:'event',exam:'test',testing:'test',election:'event'};
  function redraw(){if(!d.hidden)try{d.dispatchEvent(new Event('visibilitychange'));}catch(e){}var X=window.TaskMTools;if(X&&X.reload)X.reload();}
- function syncTasks(){var T=window.TaskM,v=data();if(!T||!T.items||!v||!v.items)return;var tk=today(),gr=grade();
+ function syncTasks(){var T=window.TaskM,v=data();if(!T||!T.items||!v||!v.items||v.sample)return;var tk=today(),gr=grade();
   var norm=function(t){return String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,14);},have={},want={};
   T.items.forEach(function(it){if(!it.school_sync&&it.due)have[String(it.due).slice(0,10)+'|'+norm(it.title)]=1;});
   v.items.forEach(function(it){if(!URG[it.kind]||it.importance!=='high'||!it.date)return;var w=when(it,tk).d;if(w<0||w>21)return;

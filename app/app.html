@@ -1824,6 +1824,7 @@ html.au-open,html.au-open body{overflow:hidden}
 .tc-row input.tc-codein{height:48px;font:600 18px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}
 .pv-first .tc-row{margin-top:18px}
 .pv-first .tc-row .tt-btn{height:48px;padding:0 24px}
+.pv-ex{margin:14px 0 0}
 .pv-add{margin:24px 0 0}
 .pv-add .tc-row{max-width:440px}
 .tc-x:focus-visible,.pv-tab:focus-visible,.tc-more>summary:focus-visible,.tc-addg>summary:focus-visible,.pv-add>summary:focus-visible,.pv-list a:focus-visible,.tc-mf a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -2794,7 +2795,7 @@ return;
   setTimeout(function(){r.classList.remove('em-flash');},2600);var cb=r.querySelector('.email-cb');if(cb)try{cb.focus({preventScroll:true});}catch(e){}}
  var NEXT_DAYS=14;
  // phone: collapsible groups (Needs action / School / College / Money open, Personal / Other closed), remembered
- var MQ=window.matchMedia?matchMedia('(max-width:600px)'):{matches:false},GK='taskm-email-groups',GDEF={action:1,school:1,college:1,money:1,personal:0,other:0};
+ var MQ=window.matchMedia?matchMedia('(max-width:600px)'):{matches:false},GK='taskm-email-groups',GDEF={action:1,school:1,college:1,events:1,money:1,personal:0,other:0};
  function gload(){try{var o=JSON.parse(localStorage.getItem(GK)||'{}');return o&&typeof o==='object'?o:{};}catch(e){return {};}}
  function gkey(g){return g.classList.contains('action')?'action':(g.dataset.cat||'other');}
  function gapply(){var gs=gload();q('.em-group').forEach(function(g){var k=gkey(g),o=(k in gs)?!!gs[k]:!!GDEF[k];g.classList.toggle('collapsed',!o);
@@ -3498,7 +3499,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    if(due==null){
     if(w==='today'||w==='tonight'){due=t;use(1);continue;}
     if(w==='tomorrow'||w==='tmr'||w==='tmrw'||w==='tmw'){due=add(t,1);use(1);continue;}
-    if((w==='next'||w==='this')&&DAYS.indexOf(nx.slice(0,3))>=0&&/^[a-z]+$/.test(nx)){var dn=DAYS.indexOf(nx.slice(0,3)),cur=kd(t).getDay(),diff=(dn-cur+7)%7;if(w==='next')diff=diff===0?7:diff+(diff<3?7:0);due=add(t,diff);use(2);i++;continue;}
+    if((w==='next'||w==='this')&&DAYS.indexOf(nx.slice(0,3))>=0&&/^[a-z]+$/.test(nx)){var dn=DAYS.indexOf(nx.slice(0,3)),cur=kd(t).getDay(),diff=(dn-cur+7)%7;if(w==='next')diff=diff===0?7:diff+(diff<3&&cur>=1&&cur<=5?7:0);due=add(t,diff);use(2);i++;continue;}
     if(DAYS.indexOf(w.slice(0,3))>=0&&/^(sun|mon|tue|tues|wed|weds|thu|thur|thurs|fri|sat)(day|nesday|rsday|urday)?$/.test(w)){var dn2=DAYS.indexOf(w.slice(0,3)),c2=kd(t).getDay();due=add(t,(dn2-c2+7)%7);use(1);continue;}
     if(w==='in'&&/^\d+$/.test(nx)&&/^(day|days|d|week|weeks|wk|wks)$/.test((toks[i+2]||'').toLowerCase())){var n=+nx;due=add(t,/^w/.test(toks[i+2].toLowerCase())?n*7:n);use(3);i+=2;continue;}
     var md=/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?$/.exec(w);if(md){due=md[3]?fullDate(+md[3],+md[1]-1,+md[2]):pickYear(+md[1]-1,+md[2]);use(1);continue;}
@@ -3775,17 +3776,19 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  // wording that sync made untrue, the footer rules behind a link, and a Windows-only sync banner
  function syncOn(){return !!(window.TaskMSync&&TaskMSync.state&&TaskMSync.state()!=='off');}
  function wording(){var on=syncOn(),n=document.getElementById('myNotes');
-  if(n){var p=on?'Jot anything here (syncs to your other devices)':'Jot anything here (saved on this device; turn on Sync to share it)';if(n.placeholder!==p)n.placeholder=p;}
+  if(n){var p=on?'Jot anything here (syncs to your other devices)':window.TaskMAccount?'Jot anything here (saved on this device)':'Jot anything here (saved on this device; turn on Sync to share it)';if(n.placeholder!==p)n.placeholder=p;}
   var ea=document.getElementById('emailAgo'),sub=ea&&ea.parentNode;
   if(sub)[].forEach.call(sub.childNodes,function(c){if(c.nodeType===3&&/checkmarks|this browser/.test(c.nodeValue)){var v=' · summarized by TaskM · '+(on?'handled checkmarks sync to your other devices':'handled checkmarks are saved on this device');if(c.nodeValue!==v)c.nodeValue=v;}});
   var ft=q('body footer');if(ft&&!q('.tt-how',ft)){var ver=q('#buildVer',ft);ft.textContent='';
    var d=document.createElement('details');d.className='tt-how';
    d.innerHTML='<summary>How TaskM works</summary><div><p><b>Importance.</b> Tests, projects and applications are High; quizzes and forms are Medium; everything else is Low. Anything due within 2 days moves up one level.</p>'+
     '<p><b>Colors.</b> Red is overdue; amber is due today or tomorrow.</p><p><b>What counts as overdue.</b> Assignments past their date. Tests and quizzes whose date passed ask “Did you take it?” instead. Events, “other” items and optional items drop off once their date passes.</p>'+
-    '<p><b>Where things are saved.</b> Checkmarks, your tasks, new dates, notes and estimates are saved on this device, and with Sync on they stay the same on your other devices. New assignments arrive on your Mac from the daily sync at about 7:10 AM, and with Sync on your phone gets the same list the next time both are open.</p></div>';
+    (window.TaskMAccount?'<p><b>Where things are saved.</b> '+(TaskMAccount.demo||localStorage.getItem('taskm-acct-demo')?'In the demo, everything stays on this device only. With an account, checkmarks':'Checkmarks')+', your tasks, new dates, notes and estimates are saved to your account, so they match on every device you sign in on. New homework comes in by itself every morning from the pages you connected, and again whenever you open them.</p></div>':
+    '<p><b>Where things are saved.</b> Checkmarks, your tasks, new dates, notes and estimates are saved on this device, and with Sync on they stay the same on your other devices. New assignments arrive on your Mac from the daily sync at about 7:10 AM, and with Sync on your phone gets the same list the next time both are open.</p></div>');
    ft.appendChild(d);if(ver)ft.appendChild(ver);}
   var ul=q('.sec-notes ul.notes'),pn=ul&&ul.closest('.panel'),how=q('.tt-how > div');
   if(ul&&how&&!q('.tt-log',how)){var lg=document.createElement('div');lg.className='tt-log';lg.innerHTML='<p><b>Latest note from the daily sync.</b></p>';lg.appendChild(ul);how.appendChild(lg);
+   if(window.TaskMAccount)lg.hidden=true;   // the Mac's daily-sync notes mean nothing on the website
    if(pn){pn.hidden=true;var sn=pn.closest('.sec-notes');if(sn)sn.classList.add('tt-one');}}
   var bn=document.getElementById('tmOffline');if(bn){var tx=(q('.tm-off-t',bn)||bn).title||bn.textContent;
    if(/^Windows hasn.t synced yet/.test(tx))bn.remove();
@@ -4635,11 +4638,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    msg='<p class="tc-mailmsg tc-hint" role="status"'+(mailMsg?'':' hidden')+'>'+mailMsg+'</p>',
    btn=function(k,i,t){return '<button type="button" class="tt-btn" data-tc="'+k+'">'+ico(i)+t+'</button>';};
   // Nothing linked yet: show the whole setup. Once email is linked, the emails come first and setup folds away.
-  if(!linked.length)return hd('Email','TaskM reads your school and personal email, sums up each one below, and adds anything due to your planner')+watch+
+  if(!linked.length)return hd('Link your email','TaskM reads your school and personal email, sums up each one below, and adds anything due to your planner')+watch+
    '<div class="tc-row tc-check">'+btn('gmail','mail','Link Gmail')+btn('outlook','mail','Link school Outlook')+btn('outlook2','mail','Link Outlook.com')+'</div>'+msg;
   var names=[];if(gs.length)names.push(gs.length>1?gs.length+' Gmail':'Gmail');if(hasO)names.push('school Outlook');if(hasL)names.push('Outlook.com');
   var open=false;try{open=localStorage.getItem('taskm-mailset-open')==='1';}catch(e){}
-  return '<div class="tc-mailtop">'+hd('Email','Reading '+names.join(', ').replace(/, ([^,]*)$/,' and $1')+' every day')+
+  return '<div class="tc-mailtop">'+hd('Your inboxes','Reading '+names.join(', ').replace(/, ([^,]*)$/,' and $1')+' every day')+
    '<div class="tc-row tc-check">'+(gs.length?btn('gmail','refresh','Check Gmail'):'')+(hasO?btn('outlook','refresh','Check school Outlook'):'')+(hasL?btn('outlook2','refresh','Check Outlook.com'):'')+'</div></div>'+msg+
    '<details class="tc-mailset"'+(open?' open':'')+'><summary>'+ico('gear',15)+'Email settings<span>'+linked.length+' linked</span></summary>'+
     '<h4 class="tc-sub">Linked email</h4><ul class="tc-grades">'+linked.map(srcRow).join('')+'</ul>'+
@@ -4660,10 +4663,10 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(d.ok){mailNote('Read it. TaskM is finding the homework in your email…');return;}
   mailNote(d.reason==='signin'?(/mail\/u\/[1-9]/.test(d.url||'')?'Sign in to your other Gmail account in Chrome first (your picture in Gmail, then Add another account), then try again.':'Sign in to '+(/outlook/.test(d.url||'')?'Outlook':'Gmail')+' in Chrome first, then try again.'):'TaskM couldn’t read that mailbox. Open it and click the TaskM button there.');});
  // ---- the Email tab: each linked inbox's emails, summed up by the AI, in the same layout as the rest of TaskM
- var MAILCATS=[['school','School'],['college','College & applications'],['events','Events'],['money','Money'],['personal','Personal'],['other','Other']];
+ var MAILCATS=[['school','School'],['college','College & applications'],['events','Events'],['money','Money & orders'],['personal','Personal'],['other','Other']];
  function mday(k,short){if(!k)return '';var a=k.split('-'),d=new Date(Date.UTC(+a[0],+a[1]-1,+a[2]));
   return d.toLocaleDateString('en-US',short?{month:'short',day:'numeric',timeZone:'UTC'}:{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'});}
- // Email tab: every linked inbox in one list (Needs action, This week, Older folded away), a short brief on top,
+ // Email tab: every linked inbox in one list (Needs action, this week's mail by kind, Older folded away), a short brief on top,
  // account tags and filter chips, and "Add as task" for emails with a date. Checkmarks still use TaskM's email-cb.
  var MAILF='taskm-email-filter',MAILOLD='taskm-email-older',MAILT='taskm-email-tasks',mailAll=[],mailMulti=false;
  function mailTasked(id){var t=jl(MAILT,{})[id],T=window.TaskM;return !!(t&&T&&T.items&&T.items.some(function(it){return it.id===t;}));}
@@ -4671,7 +4674,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   return '<div class="em-row'+(m.act?' action':'')+'" data-id="'+esc(id)+'"'+(m.act?' data-action="1"':'')+(m.due?' data-due="'+esc(m.due)+'"':'')+'>'+
    '<label class="cbw"><input type="checkbox" class="email-cb" data-id="'+esc(id)+'" title="Mark handled (hides it)" aria-label="Mark handled: '+esc(m.subj)+'"></label>'+
    '<div class="em-main"><div class="em-top">'+(mailMulti?'<span class="em-tag t'+(x.a.i%4)+'">'+esc(x.a.name)+'</span>':'')+'<span class="em-from">'+esc(m.from||'')+'</span>'+
-   (cat&&!m.act?'<span class="em-cat">'+esc(cat[1])+'</span>':'')+'</div><div class="em-subj">'+esc(m.subj)+'</div><div class="em-sum">'+esc(m.sum)+'</div>'+
+   (cat&&!m.act&&!x.grouped?'<span class="em-cat">'+esc(cat[1])+'</span>':'')+'</div><div class="em-subj">'+esc(m.subj)+'</div><div class="em-sum">'+esc(m.sum)+'</div>'+
    (m.due?'<div class="em-acts"><span class="em-due">'+(m.act?'Due ':'')+esc(mday(m.due))+'</span>'+(mailTasked(id)?'<span class="em-added">'+ico('check')+'In your tasks</span>':
     '<button type="button" class="em-addtask" data-mtask="'+esc(id)+'">+ Add as task</button>')+'</div>':'')+'</div>'+
    '<div class="em-when">'+(m.got?'<span class="w-l">'+esc(mday(m.got))+'</span><span class="w-s">'+esc(mday(m.got,true))+'</span>':'')+'</div></div>';}
@@ -4690,7 +4693,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   box.innerHTML=ids.length?'<section class="panel em-acct em-one"><div class="em-brief" id="emBrief" aria-live="polite"></div>'+
    (mailMulti?'<div class="em-chips" role="group" aria-label="Show emails from">'+[{k:'all',name:'All inboxes'}].concat(accts).map(function(a){
     return '<button type="button" class="em-chip'+(a.i!=null?' t'+(a.i%4):'')+'" data-mf="'+esc(a.k)+'" aria-pressed="'+(a.k===f)+'"'+(a.full?' title="'+esc(a.full)+'"':'')+'>'+esc(a.name)+'</button>';}).join('')+'</div>':'')+
-   grp(' action','','⚡ Needs action',act)+grp('','week','This week',week)+
+   grp(' action','','⚡ Needs action',act)+
+   // the rest of this week's mail is grouped like the Mac app: School, College, Events, Money & orders, Personal, Other
+   MAILCATS.map(function(c){return grp('',c[0],c[1],week.filter(function(x){return (MAILCATS.some(function(k){return k[0]===x.m.cat;})?x.m.cat:'other')===c[0];}).map(function(x){return {m:x.m,a:x.a,grouped:1};}));}).join('')+
    (old.length?'<div class="em-group em-older'+(open?' open':'')+'" data-cat="older"><button type="button" class="em-oh" aria-expanded="'+open+'">Older <span class="em-count">'+old.length+'</span></button>'+old.map(mailRow).join('')+'</div>':'')+
    '<p class="em-allclear" hidden>Nothing left here. Nice.</p></section>':'';
   var ago=document.getElementById('emailAgo');
@@ -4844,7 +4849,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function card(cls,t,sub,body){return '<section class="tc-card'+(cls?' '+cls:'')+'">'+hd(t,sub)+body+'</section>';}
  function paintParent(){var v=document.getElementById('parentView');if(!v){v=document.createElement('div');v.id='parentView';document.body.appendChild(v);}
   var ids=Object.keys(kids),p=A.profile||{},first=(p.name||'').split(' ')[0],ti=document.querySelector('link[rel="apple-touch-icon"]');
-  var h='<header class="pv-bar"><span class="pv-brand">'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="32" height="32">':'')+'<b>TaskM</b><small>Parent</small></span>'+(preview?'<button type="button" class="tt-btn" data-pvexit>Back to my TaskM</button>':'<button type="button" class="tt-btn" data-acct="out">Sign out</button>')+'</header>'+
+  var h='<header class="pv-bar"><span class="pv-brand">'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="32" height="32">':'')+'<b>TaskM</b><small>Parent</small></span>'+(preview?'<button type="button" class="tt-btn" data-pvexit>'+(isParent()?'Back':'Back to my TaskM')+'</button>':'<button type="button" class="tt-btn" data-acct="out">Sign out</button>')+'</header>'+
    (preview?'<p class="pv-sample">Sample parent view. This is what a parent sees after linking to a student. The homework here is made up.</p>':'')+
    '<h1 class="pv-h">'+hello()+(first?', <em>'+esc(first)+'.</em>':'.')+'</h1>';
   if(ids.length>1)h+='<div class="pv-tabs" role="group" aria-label="Your students">'+ids.map(function(id){return '<button type="button" class="pv-tab" data-kid="'+esc(id)+'" aria-pressed="'+(id===cur)+'">'+esc(kids[id].name||'Student')+'</button>';}).join('')+'</div>';
@@ -4853,7 +4858,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   else if(cur&&!s)h+=card('pv-wait','Almost there','','<p class="tc-p">'+esc(kn)+' hasn’t opened TaskM since you linked. Their homework shows up here the next time they do.</p>');
   else if(s){var done=s.done||{},now=Date.now(),we=weekEnd(),today=new Date().setHours(0,0,0,0),open=(s.items||[]).filter(function(i){return i.status!=='done'&&!done[i.id];});
    var over=open.filter(function(i){var d=due(i);return d&&d<today;}),week=open.filter(function(i){var d=due(i);return d&&d>=today&&d<we;}),
-       tests=open.filter(function(i){var d=due(i);return (i.type==='test'||i.type==='quiz')&&d&&d>=now-DAY&&d<now+14*DAY;}),
+       tests=open.filter(function(i){var d=due(i);return (i.type==='test'||i.type==='quiz')&&d&&d>=today&&d<now+14*DAY;}),
        fin=(s.items||[]).filter(function(i){return i.status==='done'||done[i.id];}).sort(function(a,b){return (due(b)||0)-(due(a)||0);}).slice(0,8);
    over.sort(function(a,b){return due(a)-due(b);});week.sort(function(a,b){return due(a)-due(b);});tests.sort(function(a,b){return due(a)-due(b);});
    var parts=[];if(over.length)parts.push('<b class="pv-hi">'+over.length+' overdue</b>');parts.push(week.length?'<b>'+week.length+' due this week</b>':'nothing due this week');
@@ -4870,7 +4875,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     '</div><p class="pv-src">'+ico('link',14)+'<span>'+((s.sources||[]).length?'From '+andList((s.sources||[]).map(function(x){return esc(x.kind==='teams'?'Microsoft Teams':x.kind==='classroom'?'Google Classroom':x.kind)+' (checked '+esc(shortDay(x.at))+')';}))+'.':
      'This only shows tasks '+esc(kn)+' adds. Ask them to connect Google Classroom or Teams so homework comes in on its own.')+'</span></p>';}
   var form='<form class="tc-row" data-tc="redeem"><input type="text" class="tc-codein" placeholder="ABCD-1234" aria-label="Invite code" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="9" enterkeyhint="go"><button type="submit" class="tt-btn tc-pri">Link</button></form>';
-  if(!ids.length)h+='<section class="tc-card pv-first"><h2 class="pv-lh">Link your <em>student.</em></h2><ol class="pv-steps"><li>On their TaskM, they open <b>Settings</b> and tap <b>Invite a parent</b>.</li><li>Type the code they get here. It works for 7 days.</li></ol>'+form+'</section>';
+  if(!ids.length)h+='<section class="tc-card pv-first"><h2 class="pv-lh">Link your <em>student.</em></h2><ol class="pv-steps"><li>On their TaskM, they open <b>Settings</b> and tap <b>Invite a parent</b>.</li><li>Type the code they get here. It works for 7 days.</li></ol>'+form+'<p class="pv-ex"><button type="button" class="tc-linkbtn" data-pvexample>See an example first</button></p></section>';
   else if(!preview)h+='<details class="pv-add"><summary>'+ico('plus')+'Add another student</summary>'+form+'</details>';
   v.innerHTML=h;}
  function loadKid(id){cur=id;paintParent();A.getKidSummary(id).then(function(s){sums[id]=s||null;paintParent();},function(){sums[id]=null;paintParent();});}
@@ -4880,10 +4885,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  function startParent(){document.documentElement.classList.add('taskm-parent');if(window.TaskMAuthUI&&TaskMAuthUI.hide)setTimeout(TaskMAuthUI.hide,0);paintParent();
   A.getKids().then(function(k){kids=k||{};var ids=Object.keys(kids);if(ids.length)loadKid(ids[0]);else paintParent();},function(){paintParent();});}
  // Owner only (app/owner.js): a sample parent dashboard on the owner's own student account. Nothing is saved or linked.
+ function isParent(){return !!(A.profile&&A.profile.role==='parent');}
  A.previewParent=function(on){var r=document.documentElement,v=document.getElementById('parentView');
+  if(!on&&isParent()){preview=false;kids={};sums={};cur=null;window.scrollTo(0,0);startParent();return;}   // a parent's own "See an example" goes back to their real page
   if(!on){preview=false;kids={};sums={};cur=null;r.classList.remove('taskm-parent');if(v)v.remove();window.scrollTo(0,0);return;}
   var T=window.TaskM,t=T&&T.todayKey?T.todayKey():new Date().toISOString().slice(0,10),now=new Date().toISOString(),
-   d=function(n){var x=new Date(t+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
+   d=function(n){return schoolDay(t,n);};
   var items=sampleItems().map(function(s,i){return {id:'pv'+i,title:s.title,type:s.type,category:s.category,due:s.due};});
   items.push({id:'pvo',title:'Reading quiz corrections',type:'assignment',category:'AP English Language',due:d(-2)},
    {id:'pvd1',title:'Lab safety contract',type:'form',category:'AP Biology',due:d(-1),status:'done'},{id:'pvd2',title:'3.6 homework: chain rule',type:'assignment',category:'AP Calculus BC',due:d(-1),status:'done'});
@@ -4891,7 +4898,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   sums={sample:{name:'Alex',school:'Palos Verdes Peninsula High School',grade:'11',updated:now,items:items,done:{},sources:[{kind:'teams',at:now},{kind:'OneNote',at:now}],
    grades:[{course:'AP Calculus BC',pct:94.2,source:'Aeries',graded:18},{course:'AP Biology',pct:88.7,source:'Aeries',graded:12},{course:'AP English Language',pct:91.5,source:'Aeries',graded:9},{course:'Spanish 3',pct:97.1,source:'Aeries',graded:15}]}};
   r.classList.add('taskm-parent');paintParent();window.scrollTo(0,0);};
- document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-pvexit]'))A.previewParent(false);});
+ document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-pvexit]'))A.previewParent(false);else if(e.target.closest&&e.target.closest('[data-pvexample]'))A.previewParent(true);});
 
  // ---- start once signed in
  var started=false;
@@ -4904,7 +4911,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  // ---- First run: a sample student's TaskM with a short tip on each tab, then one screen to connect your own school.
  // Sample tasks live only in the on-screen list (never saved or synced) and leave as soon as real homework arrives.
  var TOURK='taskm-tour',sampleOn=false,tourAt=-1,tourBox=null;
- function sampleItems(){var T=window.TaskM,t=T.todayKey(),d=function(n){var x=new Date(t+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
+ // sample due dates count school days (Mon-Fri), so no quiz or test lands on a weekend
+ function schoolDay(t,n){var x=new Date(t+'T12:00:00'),st=n<0?-1:1;while(x.getDay()===0||x.getDay()===6)x.setDate(x.getDate()+(n<0?-1:1));
+  for(var k=0;k<Math.abs(n);k++){do{x.setDate(x.getDate()+st);}while(x.getDay()===0||x.getDay()===6);}
+  return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');}
+ function sampleItems(){var T=window.TaskM,t=T.todayKey(),d=function(n){return schoolDay(t,n);};
   return [['Spanish vocab quiz: unit 3','quiz','Spanish 3','Span',0,'Teams'],['4.3 homework: related rates #1-15','assignment','AP Calculus BC','Calc BC',1,'OneNote'],
    ['Enzyme lab report','assignment','AP Biology','Bio',1,'Teams'],['Stoichiometry worksheet','assignment','Chemistry Honors','Chem',2,'Teams'],
    ['Chapter 4 quiz','quiz','AP Calculus BC','Calc BC',3,'OneNote'],['Rhetorical analysis essay draft','project','AP English Language','Lang',4,'Google Classroom'],
@@ -4914,7 +4925,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
      description:'Sample task from '+a[5],link:'',sample:true};});}
  function sampleMail(){var t=window.TaskM.todayKey(),d=function(n){var x=new Date(t+'T12:00:00');x.setDate(x.getDate()+n);return x.toISOString().slice(0,10);};
   return {s1:{label:'School Outlook',at:new Date().toISOString(),list:[
-    {id:'smp1',from:'Ms. Rivera',subj:'Lab report: use the new rubric',sum:'Attach the data table and answer the 3 analysis questions. Due Friday.',act:true,due:d(1),got:d(0),cat:'school'},
+    {id:'smp1',from:'Ms. Rivera',subj:'Lab report: use the new rubric',sum:'Attach the data table and answer the 3 analysis questions.',act:true,due:d(1),got:d(0),cat:'school'},
     {id:'smp2',from:'Counseling Office',subj:'Pick your counselor meeting time',sum:'Choose a 15-minute slot this week.',act:true,got:d(-1),cat:'school'},
     {id:'smp3',from:'ASB',subj:'Homecoming tickets on sale',sum:'Tickets are $40 until next week.',got:d(-2),cat:'events'}]},
    s2:{label:'Gmail',at:new Date().toISOString(),list:[

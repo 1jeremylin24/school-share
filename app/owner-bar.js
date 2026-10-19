@@ -35,7 +35,9 @@
     '@media print{.tm-ob{display:none}}';
    document.head.appendChild(st);
    bar=document.createElement('nav');bar.className='tm-ob';bar.id='tmOwnerBar';bar.setAttribute('aria-label','Owner pages');
-   bar.innerHTML=LINKS.map(function(l){return '<a href="'+l[2]+'" data-ob="'+l[0]+'">'+l[1]+'</a>';}).join('');
+   // the iPhone app always opens My TaskM (the home page forwards there), so Home is left out
+   var nat=false;try{nat=!!(window.Capacitor&&(Capacitor.isNativePlatform?Capacitor.isNativePlatform():Capacitor.isNative));}catch(e){}
+   bar.innerHTML=LINKS.filter(function(l){return !(nat&&l[0]==='home');}).map(function(l){return '<a href="'+l[2]+'" data-ob="'+l[0]+'">'+l[1]+'</a>';}).join('');
    bar.addEventListener('click',function(e){var a=e.target.closest('a[data-ob]');if(!a)return;var A=window.TaskMAccount,k=a.dataset.ob,cur=page();
     // inside the app, switch to and from the sample parent view without a reload
     if(A&&A.previewParent&&(cur==='app'||cur==='parent')&&(k==='app'||k==='parent')){e.preventDefault();if(k!==cur){A.previewParent(k==='parent');setTimeout(mark,50);}}});
