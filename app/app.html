@@ -4586,7 +4586,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     // then read it again out of sight, clicking through the rest of the site, and replace the quick read
     phoneBusy=true;return pause(4000).then(function(){return readHidden(r.url);}).then(function(x){if(x.text&&x.text.length>text.length)clipPost({url:r.url,title:x.title||r.title,text:x.text,quiet:true});})
      .then(function(){phoneBusy=false;SP.closeReader().catch(function(){});},function(){phoneBusy=false;SP.closeReader().catch(function(){});});}
-   var au=new URL(r.url).origin+'/l/app/'+ASSIGN_APP,seen=assignList(r.frames);phoneBusy=true;clipNote('Finding your Teams assignments… this takes about a minute.');
+   var au=new URL(r.url).origin+'/l/app/'+ASSIGN_APP,seen=assignList(r.frames);phoneBusy=true;clipNote('Reading your Teams assignments, activity and class posts… this can take up to 5 minutes. Keep TaskM open.');
    return readHidden(au).then(function(x){
      // the list the student had open in TaskM's browser counts too, when the hidden reader couldn't get it
      if(!x.list&&seen.ok)x.text=seen.text+(x.text?'\n\n'+x.text:''),x.blocked=false;
