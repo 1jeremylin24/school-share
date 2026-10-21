@@ -17,7 +17,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* Night-sky world (after authkit.com): near-black navy, a slow spotlight from above, hairline grid frames
    with dot corners, pale-blue glowing headings, and product pieces you can touch. */
@@ -28,7 +28,7 @@
   --accent:#a9a6ff;--accent-2:#7f8cff;--ok:#7ee0ad;--amber:#f5b860;--red:#ff8b9b;
   --glow:0 0 28px rgba(130,150,255,.35);
   --ease-out:cubic-bezier(.23,1,.32,1);--ease-io:cubic-bezier(.77,0,.175,1);
-  --sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --serif:"Instrument Serif",ui-serif,Georgia,serif;--sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 @property --spin{syntax:"<angle>";inherits:false;initial-value:0deg}
 *{box-sizing:border-box}
@@ -100,13 +100,13 @@ button{font:inherit;color:inherit}
 .ttl::before,.ttl::after{content:"";position:absolute;left:-100vw;right:-100vw;height:1px;background:var(--line)}
 .ttl::before{top:-1px}.ttl::after{bottom:-1px}
 .ttl .dot:nth-of-type(1){left:0;top:0}.ttl .dot:nth-of-type(2){left:100%;top:0}.ttl .dot:nth-of-type(3){left:0;top:100%}.ttl .dot:nth-of-type(4){left:100%;top:100%}
-.hero h1{margin:0;padding:4px 0 10px;font:600 clamp(84px,15.5vw,184px)/1 var(--sans);letter-spacing:-.045em;
-  background:linear-gradient(180deg,#f2f4ff 18%,#a8b6ff 88%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.hero h1{margin:0;padding:6px 0 14px;font:400 clamp(64px,9.4vw,136px)/.92 var(--serif);letter-spacing:-.025em;color:var(--ink);text-shadow:0 0 40px rgba(130,150,255,.25);text-wrap:balance}
+.hero h1 em{font-style:italic;color:var(--accent)}
 .tag{position:relative;margin:0 auto;width:min(740px,76vw);padding:18px 0 20px;border-bottom:1px solid var(--line)}
 .tag::after{content:"";position:absolute;left:-100vw;right:-100vw;bottom:-1px;height:1px;background:var(--line)}
 .tag .dot:nth-of-type(1){left:0;top:100%}.tag .dot:nth-of-type(2){left:100%;top:100%}
 .tag p{margin:0;font:400 clamp(22px,2.6vw,32px)/1.25 var(--sans);letter-spacing:-.015em;color:var(--title);text-wrap:balance}
-.lede{max-width:34em;margin:22px auto 0;color:var(--muted);font-size:clamp(16px,1.4vw,18px);line-height:1.55;text-wrap:pretty}
+.lede{max-width:34em;margin:26px auto 0;color:var(--muted);font-size:clamp(16px,1.4vw,18px);line-height:1.55;text-wrap:pretty}
 .ctas{display:flex;gap:10px;justify-content:center;margin-top:28px;flex-wrap:wrap}
 .for{margin:16px 0 0;color:var(--faint);font-size:14px}.for a{color:var(--ink);font-weight:500;text-underline-offset:3px;white-space:nowrap}
 @media (max-width:560px){.ttl,.tag{width:calc(100vw - 48px)}}
@@ -187,7 +187,8 @@ button{font:inherit;color:inherit}
 /* sections */
 section.block{position:relative;padding:clamp(88px,11vw,140px) 0}
 .head{text-align:center;max-width:760px;margin:0 auto}
-h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035em;color:var(--title);text-shadow:var(--glow);text-wrap:balance}
+h2{margin:0;font:400 clamp(44px,5.6vw,80px)/1 var(--serif);letter-spacing:-.02em;color:var(--ink);text-shadow:var(--glow);text-wrap:balance}
+h2 em{font-style:italic;color:var(--accent)}
 .sub{color:var(--muted);max-width:34em;margin:18px auto 0;font-size:18px;line-height:1.55;text-wrap:pretty}
 .rule{border-top:1px solid var(--line)}
 
@@ -231,7 +232,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 .feature{display:grid;grid-template-columns:5fr 7fr;gap:clamp(32px,6vw,80px);align-items:center;margin-top:clamp(80px,10vw,128px)}
 .feature.flip{grid-template-columns:7fr 5fr}
 .feature.flip .ft{order:2}
-.ft h3{font:600 clamp(28px,3vw,40px)/1.1 var(--sans);letter-spacing:-.03em;margin:0;color:var(--title);text-shadow:var(--glow);text-wrap:balance}
+.ft h3{font:400 clamp(36px,3.8vw,54px)/1.02 var(--serif);letter-spacing:-.02em;margin:0;color:var(--ink);text-wrap:balance}
 .ft p{color:var(--muted);margin:16px 0 0;max-width:30em}
 .ft ul{margin:22px 0 0;padding:0;list-style:none;font-size:16px}
 .ft li{padding:11px 0;border-top:1px solid var(--line);display:flex;gap:12px;align-items:center}
@@ -243,7 +244,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 @media (max-width:900px){.duo{grid-template-columns:1fr}}
 .card{position:relative;background:linear-gradient(180deg,rgba(18,22,48,.8),rgba(9,11,26,.8));border:1px solid var(--line-2);border-radius:18px;padding:28px}
 .card .cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.card h3{font:600 26px/1.1 var(--sans);letter-spacing:-.025em;margin:0;color:var(--title)}
+.card h3{font:400 34px/1.05 var(--serif);letter-spacing:-.01em;margin:0;color:var(--ink)}
 .card .cap small{color:var(--faint);font-size:13px}
 .card > p{color:var(--muted);margin:10px 0 0;font-size:16px}
 .mock{margin-top:22px;border-radius:14px;background:rgba(4,5,14,.6);border:1px solid var(--line);padding:6px 16px}
@@ -324,7 +325,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 /* closing */
 .closing{position:relative;text-align:center;padding:clamp(110px,14vw,180px) 0;overflow:hidden;isolation:isolate}
 .closing .spot{top:0;height:100%;animation-duration:8s}
-.closing h2{font-size:clamp(42px,6.4vw,84px)}
+.closing h2{font-size:clamp(52px,7vw,104px)}
 .closing .ctas{margin-top:34px}
 .foot{border-top:1px solid var(--line);color:var(--faint);font-size:14px;padding-bottom:env(safe-area-inset-bottom)}
 .foot .wrap{display:flex;gap:16px 28px;align-items:center;flex-wrap:wrap;padding:28px 0}
@@ -358,8 +359,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
   <svg class="xmark l" viewBox="0 0 66 66" aria-hidden="true"><path d="M0 0L66 66M66 0L0 66" stroke="rgba(170,180,255,.25)" stroke-width="1"/></svg>
   <svg class="xmark r" viewBox="0 0 66 66" aria-hidden="true"><path d="M0 0L66 66M66 0L0 66" stroke="rgba(170,180,255,.25)" stroke-width="1"/></svg>
   <div class="wrap copy">
-    <div class="ttl"><h1>TaskM</h1><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
-    <div class="tag"><p>Homework, handled.<br>Every class, one list, already sorted.</p><i class="dot"></i><i class="dot"></i></div>
+    <div class="ttl"><h1>Homework,<br><em>handled.</em></h1><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
     <p class="lede">TaskM collects your homework from OneNote, Teams, Aeries and email automatically, then shows you what to do today.</p>
     <div class="ctas"><a class="btn btn-pri btn-glow" href="/app?go=up">Sign up</a><a class="btn" href="/app?go=in">Log in</a></div>
     <p class="for">Made for Palos Verdes Peninsula High School students. Parent? <a href="/app?go=in&amp;as=parent">Parent log in</a></p>
@@ -399,7 +399,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 
 <section class="block" id="how">
   <div class="wrap">
-    <div class="head rv"><h2>Set it up once.<br>Then forget it.</h2>
+    <div class="head rv"><h2>Set it up once.<br><em>Then forget it.</em></h2>
       <p class="sub">No more checking five sites every night. TaskM reads the places your teachers already post.</p></div>
     <div class="rail rv" role="group" aria-label="Where TaskM reads from">
       <button type="button" class="src" aria-pressed="true" data-reads="Your class notebooks: homework pages, test dates and the date each page was assigned."><span class="tile"><svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 3.5v17M12 8h4M12 11.5h4"/></svg></span><span>OneNote</span></button>
@@ -420,7 +420,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 
 <section class="block rule" id="features">
   <div class="wrap">
-    <div class="head rv"><h2>Everything for school,<br>in one place.</h2>
+    <div class="head rv"><h2>Everything for school,<br><em>in one place.</em></h2>
       <p class="sub">Today's focus, the week ahead, email, grades and school news, all filled in for you.</p></div>
     <div class="big"><div class="win"><img src="home/app-desktop.webp" alt="TaskM on a computer: today's top three tasks, a focus timer, and the week ahead" width="2400" height="1500" loading="lazy"></div></div>
 
@@ -465,7 +465,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 
 <section class="block rule" id="try">
   <div class="wrap">
-    <div class="head rv"><h2>Paste anything.<br>Get your homework.</h2>
+    <div class="head rv"><h2>Paste anything.<br><em>Get your homework.</em></h2>
       <p class="sub">A teacher's note, an email, a syllabus. TaskM's AI pulls out every task and works out when it's really due.</p></div>
     <div class="try rv">
       <div class="card"><div class="corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -488,7 +488,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 
 <section class="block rule" id="privacy">
   <div class="wrap">
-    <div class="head rv"><h2>Your school password<br>never touches TaskM.</h2>
+    <div class="head rv"><h2>Your school password<br><em>never touches TaskM.</em></h2>
       <p class="sub">TaskM reads your pages through your own signed-in browser or iPhone app. It never asks for, types or stores your school password.</p></div>
     <div class="safe rv">
       <div class="sf"><div class="pic" aria-hidden="true"><div class="pw"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div></div>
@@ -507,7 +507,7 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
 <section class="closing rule">
   <div class="spot" aria-hidden="true"></div>
   <div class="wrap">
-    <h2>Tonight's homework,<br>already sorted.</h2>
+    <h2>Tonight's homework,<br><em>already sorted.</em></h2>
     <div class="ctas"><a class="btn btn-pri btn-glow" href="/app?go=up">Sign up</a><a class="btn" href="/app?go=in">Log in</a></div>
   </div>
 </section>
@@ -534,15 +534,19 @@ h2{margin:0;font:600 clamp(36px,5vw,60px)/1.06 var(--sans);letter-spacing:-.035e
   function navState(){nav.classList.toggle('solid',scrollY>24);}
   addEventListener('scroll',navState,{passive:true});navState();
 
-  // starry sky: still dots that twinkle slowly, drawn only while the hero is on screen
+  // night sky with the original TaskM rain: twinkling stars behind falling drops, drawn only while the hero is on screen
   var hero=document.querySelector('.hero'),cv=hero.querySelector('canvas.sky'),cx=cv.getContext('2d');
-  var W,H,stars=[],dpr=Math.min(devicePixelRatio||1,2),running=true,t0=performance.now();
+  var W,H,stars=[],drops=[],dpr=Math.min(devicePixelRatio||1,2),running=true,t0=performance.now();
   function size(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0);
     var n=Math.round(W*H/5200);stars=[];for(var i=0;i<n;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.1+.25,a:.15+Math.random()*.55,p:Math.random()*6.28,s:.4+Math.random()*1.2});
+    var m=Math.round(W*H/11000);drops=[];for(var j=0;j<m;j++)drops.push(drop(true));
     if(still)draw(0);}
+  function drop(any){var z=Math.random();return {x:Math.random()*W,y:any?Math.random()*H:-20,l:8+z*18,v:3+z*7,a:.06+z*.2};}
   function draw(t){cx.clearRect(0,0,W,H);
     for(var i=0;i<stars.length;i++){var s=stars[i],a=still?s.a:s.a*(.55+.45*Math.sin(s.p+t*.001*s.s));
-      cx.fillStyle='rgba(215,222,255,'+a.toFixed(3)+')';cx.beginPath();cx.arc(s.x,s.y,s.r,0,6.283);cx.fill();}}
+      cx.fillStyle='rgba(215,222,255,'+a.toFixed(3)+')';cx.beginPath();cx.arc(s.x,s.y,s.r,0,6.283);cx.fill();}
+    cx.lineWidth=1;for(var k=0;k<drops.length;k++){var d=drops[k];cx.strokeStyle='rgba(200,204,255,'+d.a+')';cx.beginPath();cx.moveTo(d.x,d.y);cx.lineTo(d.x-d.l*.12,d.y+d.l);cx.stroke();
+      if(!still){d.y+=d.v;d.x-=d.v*.12;if(d.y>H)drops[k]=drop(false);}}}
   function frame(now){draw(now-t0);if(running&&!still)requestAnimationFrame(frame);}
   size();addEventListener('resize',size);
   if(!still)requestAnimationFrame(frame);
