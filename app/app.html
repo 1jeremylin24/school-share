@@ -797,7 +797,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 #shareModalV2 .share-v2-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}#shareModalV2 textarea{font:11px/1.5 ui-monospace,monospace;min-height:76px;overflow-wrap:anywhere}
 #shareModalV2 summary{cursor:pointer;font-size:12px;color:var(--muted);margin:12px 0 6px}#shareModalV2 [aria-disabled=true]{pointer-events:none;opacity:.45}
 
-</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"><style id="taskm-nightshift">/* TaskM Night Shift. A visual layer on top of the existing dashboard: same markup, data, storage keys and features. */
+</style><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Geist:wght@400;500;600;700&display=swap"><style id="taskm-nightshift">/* TaskM Night Shift. A visual layer on top of the existing dashboard: same markup, data, storage keys and features. */
 :root:root{
   --bg:#F4F5FA;--panel:#FFFFFF;--panel2:#EEF0F7;--text:#161B2C;--muted:#5D667D;--line:#E0E3EE;
   --accent:#5550D0;--on-accent:#FFFFFF;--now:#C96A00;
@@ -1834,6 +1834,75 @@ html.au-open,html.au-open body{overflow:hidden}
  .pv-list a:hover,.tc-mf a:hover{text-decoration:underline;text-underline-offset:3px}}
 @media (max-width:700px){.pv-grid{columns:1}.pv-sum{font-size:21px;margin:16px 0 20px}.pv-bar{margin-bottom:24px}.tc-code b{font-size:22px}}
 @media (prefers-reduced-motion:reduce){.tc-modal,.tc-sheet,.tc-spin{animation:none}.pv-tab{transition:none}}
+/* parent view, night-sky look (same world as the home page and admin): dark always, a slow spotlight, hairline frames with dot corners,
+   glowing headings, a 7-day rail you can tap to pick out a day, cards that settle in one after another */
+html.taskm-parent,html.taskm-parent body{background:#05060f!important;color-scheme:dark}
+html.taskm-parent body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+ background:radial-gradient(rgba(215,222,255,.45) .7px,transparent 1px) 13px 29px/173px 157px,radial-gradient(rgba(215,222,255,.25) .6px,transparent 1px) 61px 7px/97px 113px,#05060f;
+ -webkit-mask:linear-gradient(#000 0,rgba(0,0,0,.35) 60%,rgba(0,0,0,.2));mask:linear-gradient(#000 0,rgba(0,0,0,.35) 60%,rgba(0,0,0,.2))}
+#parentView{--bg:#05060f;--panel:#0d1024;--text:#eef0ff;--muted:#a1a7c6;--line:rgba(170,180,255,.14);--accent:#a9a6ff;--high:#ff8b9b;--high-bg:rgba(255,139,155,.12);--med:#f5b860;--med-bg:rgba(245,184,96,.12);
+ --low:#7ee0ad;--low-bg:rgba(126,224,173,.12);--glass:linear-gradient(180deg,rgba(18,22,48,.85),rgba(9,11,26,.85));--pv-title:#c9d3ff;
+ position:relative;isolation:isolate;overflow-x:clip;font-family:"Geist",var(--ns-body)}
+#parentView::before{content:"";position:absolute;left:50%;top:-20px;width:min(900px,150vw);height:620px;transform:translateX(-50%);z-index:-1;pointer-events:none;
+ background:radial-gradient(60% 55% at 50% 0%,rgba(150,165,255,.24),rgba(110,120,230,.07) 55%,transparent 75%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);filter:blur(16px);
+ animation:pv-spot 8s ease-in-out infinite alternate}
+@keyframes pv-spot{from{opacity:.7}to{opacity:1}}
+#parentView .pv-brand b{font-family:"Geist",var(--ns-body)}
+#parentView .pv-brand small{border:1px solid var(--line);background:none}
+#parentView .tt-btn{border-radius:999px;border:1px solid rgba(170,180,255,.28);background:rgba(20,24,52,.55);color:var(--text)}
+#parentView .tt-btn.tc-pri{background:#eef0ff;color:#090b1c;border-color:transparent}
+#parentView .pv-hw{position:relative}
+#parentView .pv-h{position:relative;padding:22px 0 18px;font:600 clamp(36px,6vw,64px)/1.04 "Geist",var(--ns-body);letter-spacing:-.04em;color:var(--pv-title);text-shadow:0 0 28px rgba(130,150,255,.35);
+ border-block:1px solid var(--line)}
+#parentView .pv-h::before,#parentView .pv-h::after{content:"";position:absolute;left:-100vw;right:-100vw;height:1px;background:var(--line)}
+#parentView .pv-h::before{top:-1px}#parentView .pv-h::after{bottom:-1px}
+#parentView .pv-h em{font-style:normal;color:#eef0ff}
+#parentView .pv-dots i{position:absolute;width:5px;height:5px;margin:-2px 0 0 -2px;border-radius:50%;background:#dfe3ff;box-shadow:0 0 8px rgba(200,210,255,.8)}
+#parentView .pv-tab{border-radius:999px;background:rgba(10,12,28,.7)}
+#parentView .pv-tab[aria-pressed=true]{background:#eef0ff;color:#090b1c;border-color:transparent}
+#parentView .pv-sum{font:400 clamp(20px,2.4vw,26px)/1.35 "Geist",var(--ns-body);letter-spacing:-.015em;color:var(--pv-title)}
+#parentView .pv-sum b{font-weight:600;color:#eef0ff}
+#parentView .pv-sum b.pv-hi{color:var(--high)}
+#parentView .pv-sum em{font-style:normal}
+#parentView .pv-sample{background:var(--med-bg);color:var(--med);border:1px solid rgba(245,184,96,.25)}
+#parentView .tc-card{position:relative;border-color:rgba(170,180,255,.16);background:var(--glass)}
+#parentView .tc-card::after{content:"";position:absolute;inset:8px;pointer-events:none;
+ background:radial-gradient(circle,rgba(220,226,255,.7) 1.3px,transparent 1.6px) 0 0/3px 3px no-repeat,radial-gradient(circle,rgba(220,226,255,.7) 1.3px,transparent 1.6px) 100% 0/3px 3px no-repeat,
+  radial-gradient(circle,rgba(220,226,255,.7) 1.3px,transparent 1.6px) 0 100%/3px 3px no-repeat,radial-gradient(circle,rgba(220,226,255,.7) 1.3px,transparent 1.6px) 100% 100%/3px 3px no-repeat}
+#parentView .tc-card.pv-over{border-color:rgba(255,139,155,.35);box-shadow:0 0 40px -18px rgba(255,139,155,.45)}
+#parentView .tc-hd h3{font:600 17px/1.25 "Geist",var(--ns-body);letter-spacing:-.015em;color:var(--pv-title)}
+#parentView .pv-grid .tc-card{animation:pv-in 600ms cubic-bezier(.23,1,.32,1) both}
+#parentView .pv-grid .tc-card:nth-child(2){animation-delay:60ms}#parentView .pv-grid .tc-card:nth-child(3){animation-delay:120ms}
+#parentView .pv-grid .tc-card:nth-child(4){animation-delay:180ms}#parentView .pv-grid .tc-card:nth-child(5){animation-delay:240ms}
+@keyframes pv-in{from{opacity:0;transform:translateY(10px)}}
+#parentView .pv-list li{transition:opacity 200ms ease}
+#parentView .pv-list li.pv-dim{opacity:.28}
+#parentView .pv-list li.pv-on .tc-day{background:#eef0ff;color:#090b1c;box-shadow:0 0 18px rgba(169,166,255,.5)}
+/* the 7-day rail */
+.pv-rail{position:relative;display:grid;grid-template-columns:repeat(7,1fr);margin:4px 0 26px;padding:0;list-style:none}
+.pv-rail::before{content:"";position:absolute;left:calc(100%/14);right:calc(100%/14);top:23px;height:1px;background:rgba(170,180,255,.2)}
+.pv-rail::after{content:"";position:absolute;left:calc(100%/14);right:calc(100%/14);top:22px;height:3px;border-radius:2px;
+ background:linear-gradient(90deg,transparent 0 40%,rgba(169,166,255,.95) 50%,transparent 60%) no-repeat;background-size:30% 100%;animation:pv-run 5s linear infinite}
+@keyframes pv-run{from{background-position:-40% 0}to{background-position:140% 0}}
+.pv-rail button{all:unset;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;padding-bottom:2px}
+.pv-rail .pv-node{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;align-content:center;line-height:1.05;color:#d6dbff;
+ background:linear-gradient(180deg,#1a1f3f,#0d1024);border:1px solid rgba(170,180,255,.28);box-shadow:0 10px 24px -10px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.08) inset;
+ transition:transform 160ms cubic-bezier(.23,1,.32,1),border-color 160ms ease,box-shadow 160ms ease}
+.pv-rail .pv-node small{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#a1a7c6}
+.pv-rail .pv-node b{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.pv-rail .pv-cnt{font-size:12px;color:#a1a7c6;min-height:16px}
+.pv-rail .pv-cnt b{color:#eef0ff;font-weight:600}
+.pv-rail .pv-t .pv-cnt,.pv-rail .pv-t .pv-cnt b{color:#ff8b9b}
+.pv-rail .pv-off .pv-node{opacity:.45}
+.pv-rail button:active .pv-node{transform:scale(.95)}
+.pv-rail button:focus-visible .pv-node{outline:2px solid #a9a6ff;outline-offset:3px}
+.pv-rail button[aria-pressed=true] .pv-node{border-color:rgba(200,206,255,.85);box-shadow:0 0 0 4px rgba(169,166,255,.14),0 0 30px rgba(140,150,255,.5)}
+.pv-rail .pv-today .pv-node{border-color:rgba(169,166,255,.6)}
+@media (hover:hover) and (pointer:fine){.pv-rail button:hover .pv-node{transform:translateY(-2px)}}
+@media (max-width:520px){.pv-rail .pv-node{width:40px;height:42px;border-radius:11px}.pv-rail .pv-node b{font-size:15px}.pv-rail::before{top:21px}.pv-rail::after{top:20px}}
+.pv-pick{margin:-14px 0 18px;font-size:13.5px;color:#a1a7c6;min-height:20px}
+@media (prefers-reduced-motion:reduce){#parentView::before,.pv-rail::after,#parentView .pv-grid .tc-card{animation:none}}
+
 /* Add homework with AI: paste box, the morning re-check box once a link is pasted, saved links */
 #aiPanel .tc-ai{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px;margin:0}
 #aiPanel textarea{grid-column:1/-1;width:100%;box-sizing:border-box;min-height:88px;max-height:240px;field-sizing:content;padding:12px 14px;border-radius:14px;border:1px solid var(--line);
@@ -4842,8 +4911,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  var kids={},cur=null,sums={},preview=false;
  function weekEnd(){var d=new Date();d.setHours(0,0,0,0);return d.getTime()+7*DAY;}
  function due(i){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(i.due||'');if(m)return new Date(+m[1],m[2]-1,+m[3],23,59).getTime();return i.due_sort?Date.parse(i.due_sort):i.due?Date.parse(i.due):null;}
+ function dkey(t){return t.getFullYear()+'-'+(t.getMonth()+1)+'-'+t.getDate();}
  function li(i,extra){var d=due(i),t=d?new Date(d):null;
-  return '<li>'+(t?'<i class="tc-day"><small>'+esc(t.toLocaleDateString(undefined,{weekday:'short'}))+'</small><b>'+t.getDate()+'</b></i>':'<i class="tc-day tc-nod">'+ico('pen')+'</i>')+
+  return '<li'+(t?' data-day="'+dkey(t)+'"':'')+'>'+(t?'<i class="tc-day"><small>'+esc(t.toLocaleDateString(undefined,{weekday:'short'}))+'</small><b>'+t.getDate()+'</b></i>':'<i class="tc-day tc-nod">'+ico('pen')+'</i>')+
    '<span>'+(i.link?'<a href="'+esc(i.link)+'" target="_blank" rel="noopener">'+esc(i.title)+'</a>':'<b>'+esc(i.title)+'</b>')+'<small>'+esc(i.category||'')+(extra?(i.category?' · ':'')+esc(extra):'')+'</small></span></li>';}
  function hello(){var h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
  function card(cls,t,sub,body){return '<section class="tc-card'+(cls?' '+cls:'')+'">'+hd(t,sub)+body+'</section>';}
@@ -4851,7 +4921,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var ids=Object.keys(kids),p=A.profile||{},first=(p.name||'').split(' ')[0],ti=document.querySelector('link[rel="apple-touch-icon"]');
   var h='<header class="pv-bar"><span class="pv-brand">'+(ti?'<img src="'+esc(ti.href)+'" alt="" width="32" height="32">':'')+'<b>TaskM</b><small>Parent</small></span>'+(preview?'<button type="button" class="tt-btn" data-pvexit>'+(isParent()?'Back':'Back to my TaskM')+'</button>':'<button type="button" class="tt-btn" data-acct="out">Sign out</button>')+'</header>'+
    (preview?'<p class="pv-sample">Sample parent view. This is what a parent sees after linking to a student. The homework here is made up.</p>':'')+
-   '<h1 class="pv-h">'+hello()+(first?', <em>'+esc(first)+'.</em>':'.')+'</h1>';
+   '<div class="pv-hw"><h1 class="pv-h">'+hello()+(first?', <em>'+esc(first)+'.</em>':'.')+'</h1><span class="pv-dots" aria-hidden="true"><i style="left:0;top:0"></i><i style="left:100%;top:0"></i><i style="left:0;top:100%"></i><i style="left:100%;top:100%"></i></span></div>';
   if(ids.length>1)h+='<div class="pv-tabs" role="group" aria-label="Your students">'+ids.map(function(id){return '<button type="button" class="pv-tab" data-kid="'+esc(id)+'" aria-pressed="'+(id===cur)+'">'+esc(kids[id].name||'Student')+'</button>';}).join('')+'</div>';
   var s=cur&&sums[cur],kn=cur?String((kids[cur]&&kids[cur].name)||(s&&s.name)||'Your student').split(' ')[0]:'';
   if(cur&&s===undefined)h+='<p class="pv-load" role="status"><span class="tc-spin" aria-hidden="true"></span>Loading '+esc(kn)+'’s week…</p>';
@@ -4865,7 +4935,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    if(tests.length)parts.push('<b>'+(tests.length>1?tests.length+' tests and quizzes':'1 '+(tests[0].type==='quiz'?'quiz':'test'))+'</b> coming up');
    var one=function(i){return li(i);};
    h+='<p class="pv-meta">'+[s.school,s.grade?'Grade '+s.grade:'',s.updated?'Updated '+shortDay(s.updated):''].filter(Boolean).map(esc).join(' · ')+'</p>'+
-    '<p class="pv-sum">'+(!over.length&&!week.length&&!tests.length?esc(kn)+' is all caught up. <em>Nothing due this week.</em>':esc(kn)+' has '+andList(parts)+'.')+'</p>'+
+    '<p class="pv-sum">'+(!over.length&&!week.length&&!tests.length?esc(kn)+' is all caught up. <em>Nothing due this week.</em>':esc(kn)+' has '+andList(parts)+'.')+'</p>'+rail(open,today)+
     '<div class="pv-grid">'+
      (over.length?card('pv-over','Overdue','Past the due date and not checked off',listOf('pv-list',over,one)):'')+
      card('','Due this week','Next 7 days',week.length?listOf('pv-list',week,one):'<p class="tc-empty">Nothing due this week.</p>')+
@@ -4877,8 +4947,21 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var form='<form class="tc-row" data-tc="redeem"><input type="text" class="tc-codein" placeholder="ABCD-1234" aria-label="Invite code" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="9" enterkeyhint="go"><button type="submit" class="tt-btn tc-pri">Link</button></form>';
   if(!ids.length)h+='<section class="tc-card pv-first"><h2 class="pv-lh">Link your <em>student.</em></h2><ol class="pv-steps"><li>On their TaskM, they open <b>Settings</b> and tap <b>Invite a parent</b>.</li><li>Type the code they get here. It works for 7 days.</li></ol>'+form+'<p class="pv-ex"><button type="button" class="tc-linkbtn" data-pvexample>See an example first</button></p></section>';
   else if(!preview)h+='<details class="pv-add"><summary>'+ico('plus')+'Add another student</summary>'+form+'</details>';
-  v.innerHTML=h;}
- function loadKid(id){cur=id;paintParent();A.getKidSummary(id).then(function(s){sums[id]=s||null;paintParent();},function(){sums[id]=null;paintParent();});}
+  v.innerHTML=h;applyPick();}
+ // next 7 days as a rail of day tiles; tap one to pick out that day's work in the cards below
+ var pick=null;
+ function rail(open,today){var out='',b=new Date(today);
+  for(var k=0;k<7;k++){var t=new Date(b.getFullYear(),b.getMonth(),b.getDate()+k),key=dkey(t),its=open.filter(function(i){var d=due(i);return d&&dkey(new Date(d))===key;}),
+    n=its.length,tst=its.some(function(i){return i.type==='test'||i.type==='quiz';}),wk=t.getDay()===0||t.getDay()===6;
+   out+='<li class="'+(k===0?'pv-today ':'')+(tst?'pv-t ':'')+(wk&&!n?'pv-off':'')+'"><button type="button" data-pvday="'+key+'" aria-pressed="'+(pick===key)+'" aria-label="'+esc(t.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}))+': '+(n?n+' due'+(tst?', includes a test or quiz':''):'nothing due')+'">'+
+    '<span class="pv-node"><small>'+(k===0?'Today':esc(t.toLocaleDateString(undefined,{weekday:'short'})))+'</small><b>'+t.getDate()+'</b></span><span class="pv-cnt">'+(n?'<b>'+n+'</b> due':'—')+'</span></button></li>';}
+  return '<ul class="pv-rail" aria-label="The next 7 days">'+out+'</ul><p class="pv-pick" role="status"></p>';}
+ function applyPick(){var v=document.getElementById('parentView');if(!v)return;var rows=v.querySelectorAll('.pv-list li[data-day]'),hit=0;
+  v.querySelectorAll('[data-pvday]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.pvday===pick));});
+  rows.forEach(function(li){var on=!!pick&&li.dataset.day===pick;if(on)hit++;li.classList.toggle('pv-on',on);li.classList.toggle('pv-dim',!!pick&&!on);});
+  var p=v.querySelector('.pv-pick');if(p){var b=pick&&v.querySelector('[data-pvday="'+pick+'"]');p.textContent=pick?(hit?'Showing '+(b?b.getAttribute('aria-label').split(':')[0]:'that day')+'. Tap it again to show everything.':'Nothing due that day.'):'';}}
+ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-pvday]');if(!b)return;pick=pick===b.dataset.pvday?null:b.dataset.pvday;applyPick();});
+ function loadKid(id){pick=null;cur=id;paintParent();A.getKidSummary(id).then(function(s){sums[id]=s||null;paintParent();},function(){sums[id]=null;paintParent();});}
  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-kid]');if(b)loadKid(b.dataset.kid);});
  document.addEventListener('submit',function(e){var f=e.target.closest('form[data-tc="redeem"]');if(!f)return;e.preventDefault();e.stopPropagation();var b=f.querySelector('button');b.disabled=true;
   A.redeemInvite(f.querySelector('input').value).then(function(k){kids[k.uid]={name:k.name};toast('Linked to '+(k.name||'your student'));loadKid(k.uid);},function(x){b.disabled=false;formErr(f,x.message);});},true);
