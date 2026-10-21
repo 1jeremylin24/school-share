@@ -311,8 +311,8 @@ h2 span{font-style:italic;color:var(--lamp)}
           <div class="gr"><span class="l b">B</span><div><b>AP English Language</b><small>Aeries</small></div><span class="tg">Curved?</span><span class="pc">88.2%</span></div></div></div>
       <div class="tile"><div class="cap"><h3>School</h3><small>pvphs.pvpusd.net</small></div><p>Events, deadlines and counseling news from the PVPHS website, filtered to your grade.</p>
         <div class="mock" aria-hidden="true">
-          <div class="sc"><span class="d">Oct<b>20</b></span><div><strong>Disaster drill</strong><span>Fire evacuation drill, 2nd period</span></div></div>
-          <div class="sc"><span class="d">Oct<b>24</b></span><div><strong>PSAT/NMSQT</strong><span>11th grade · counts for National Merit</span></div></div></div></div>
+          <div class="sc"><span class="d" data-in="2">Oct<b>20</b></span><div><strong>Disaster drill</strong><span>Fire evacuation drill, 2nd period</span></div></div>
+          <div class="sc"><span class="d" data-in="6">Oct<b>24</b></span><div><strong>PSAT/NMSQT</strong><span>11th grade · counts for National Merit</span></div></div></div></div>
     </div>
     <div class="phone-row">
       <div class="ft"><h3>On your iPhone too</h3><p>The same TaskM in your pocket, with a reminder at 7 PM for anything still open tonight. Sign in to your school inside the app and it keeps itself updated.</p><ul><li>Swipe through your top three</li><li>Everything stays in sync with your computer</li></ul></div>
@@ -420,6 +420,8 @@ h2 span{font-style:italic;color:var(--lamp)}
   if(!signedIn)return;document.querySelectorAll('.nav .cta a').forEach(function(a){a.hidden=!a.hasAttribute('data-signed-in');});
   document.querySelectorAll('.ctas').forEach(function(c){c.innerHTML='<a class="btn btn-pri" href="/app">Open TaskM</a>';});})();
 </script>
+<script>// sample school dates stay a few days ahead of today so the example never looks stale
+[].forEach.call(document.querySelectorAll('.sc .d[data-in]'),function(e){var d=new Date();d.setDate(d.getDate()+(+e.dataset.in));e.innerHTML=d.toLocaleDateString('en-US',{month:'short'})+'<b>'+d.getDate()+'</b>';});</script>
 <script src="owner-bar.js" defer></script>
 </body>
 </html>

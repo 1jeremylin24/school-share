@@ -17,6 +17,10 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/z/TaskM Chrome" && cp -r extension/. "$RUNNER_TEMP/z/TaskM Chrome/"
           cd "$RUNNER_TEMP/z" && zip -qr "$GITHUB_WORKSPACE/app/taskm-chrome.zip" "TaskM Chrome"
+      - name: Stamp the build version in the app footer (date + commit)
+        run: |
+          V="v$(TZ=America/Los_Angeles date +%Y.%m.%d-%H%M) · ${GITHUB_SHA::7}"
+          sed -i -E "s|(id=\"buildVer\">)[^<]*<|\1$V<|" app/app.html
       - name: Skip until the Firebase key is added
         if: env.HAS_KEY != 'true'
         run: echo "FIREBASE_SERVICE_ACCOUNT secret not set yet; skipping deploy."
