@@ -18,7 +18,7 @@
  '#schoolView{display:none}:root[data-view=school] #listView{display:none}:root[data-view=school] #schoolView{display:block}'+
  '#dNav #viewSeg button{display:flex;align-items:center;gap:9px}'+      /* desktop sidebar: icon beside the label */
  '@media (max-width:600px){#viewSeg button{flex-direction:column;font-size:11px;font-weight:600;gap:3px;padding:7px 0 5px;letter-spacing:0}#viewSeg button svg{width:19px;height:19px}}'+  /* five tabs on a phone: icon over label */
- '.sc-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:2px 0 14px;padding-bottom:2px}.sc-chips::-webkit-scrollbar{display:none}'+
+ '.sc-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:2px 0 14px;padding-bottom:2px}.sc-chips::-webkit-scrollbar{display:none}@media (max-width:700px){.sc-chips{padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}}'+
  '.sc-chip{flex:none;min-height:34px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);font:600 13px var(--ns-body,inherit);cursor:pointer;touch-action:manipulation}'+
  '.sc-chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}'+
  '.sc-day{margin:16px 2px 6px;font:700 11.5px var(--ns-body,inherit);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}'+
