@@ -2073,6 +2073,7 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
 .au-split .au-art{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;padding:max(28px,env(safe-area-inset-top)) 52px 0 max(52px,env(safe-area-inset-left));border-right:1px solid var(--line)}
 .au-split .au-pitch{margin-top:clamp(48px,13vh,140px)}
 .au-split .au-shot{margin:auto -34% 0 0;padding-top:44px}
+[data-view=onboard] .au-shot{display:none}[data-view=onboard] .au-pitch{margin-block:auto}
 .au-split .au-shot img{width:100%;height:auto;border-radius:14px 14px 0 0;border:1px solid var(--line-2);border-bottom:0;box-shadow:0 40px 120px -20px rgba(70,60,200,.55),0 20px 40px -10px rgba(0,0,0,.6)}
 .au-split .au-bar .au-logo{display:none}
 /* phones and narrow windows: no room for two columns, so the sky goes behind the form */
@@ -2547,15 +2548,20 @@ html.tt-kbup .tt-sheetbox{padding-bottom:12px}
   // 7-day timeline: today + the next 6 days only
   // email to-dos (email builds only; action_needed with a due date) come from the same provider as the phone's Next up
   var ex=[];T.extras().forEach(function(x){try{if(x.next)ex=ex.concat(x.next()||[]);}catch(e){}});
-  h+='<h3 class="dk-sec">Next 7 days</h3><div class="dk-tl" id="dTimeline">';
-  for(var i=0;i<7;i++){var k=addDays(tk,i),d=kd(k),ts=P.filter(function(it){return it.due_sort&&it.due_sort.slice(0,10)===k&&!it.overdue;}).sort(function(a,b){return LV.indexOf(b.importance)-LV.indexOf(a.importance)||cmp(a,b);});
+  var noneAtAll=!base().length,run=[];
+  function flushRun(){if(!run.length)return;var a=run[0],b=run[run.length-1];
+   h+='<div class="dk-day empty dk-run"><div class="dk-dh"><span class="dk-dn">'+(a===b?DOW[kd(a).getDay()]+', '+MON[kd(a).getMonth()]+' '+kd(a).getDate():DOW[kd(a).getDay()]+' \u2013 '+DOW[kd(b).getDay()])+'</span></div><div class="dk-items"><span class="dk-none">Nothing due</span></div></div>';run=[];}
+  if(!noneAtAll)h+='<h3 class="dk-sec">Next 7 days</h3><div class="dk-tl" id="dTimeline">';
+  for(var i=0;i<7&&!noneAtAll;i++){var k=addDays(tk,i),d=kd(k),ts=P.filter(function(it){return it.due_sort&&it.due_sort.slice(0,10)===k&&!it.overdue;}).sort(function(a,b){return LV.indexOf(b.importance)-LV.indexOf(a.importance)||cmp(a,b);});
    var hv=base().filter(function(it){return it.due_sort&&it.due_sort.slice(0,10)===k&&isBig(it);}).length,mail=[];
    ex.forEach(function(x){if(String(x.sort).slice(0,10)===k)mail.push(x.html);});
    var emp=!ts.length&&!mail.length;
+   if(emp&&i>0){run.push(k);continue;}
+   flushRun();
    h+='<div class="dk-day'+(i===0?' today':'')+(emp&&i>0?' empty':'')+(hv>=HEAVY_MIN?' heavy':'')+'" data-day="'+k+'"><div class="dk-dh">'+(i===0?'<b>Today</b> ':i===1?'<b>Tomorrow</b> ':'')+'<span class="dk-dn">'+DOW[d.getDay()]+', '+MON[d.getMonth()]+' '+d.getDate()+'</span>'+
     (hv>=HEAVY_MIN?'<span class="dk-warn" title="'+hv+' tests, quizzes or big deadlines">\u26a0 heavy day</span>':'')+'</div><div class="dk-items">'+
     (ts.map(chip).join('')+mail.join('')||(i===0?'<span class="dk-none">Nothing due today \u2014 nice.</span>':''))+'</div></div>';}
-  h+='</div>';
+  flushRun();if(!noneAtAll)h+='</div>';
   // everything else
   var G={nx:[],later:[],nodate:[],done:[]};
   G.done=base().filter(function(it){return passCP(it)&&T.isChecked(it.id);});   // Done always lists everything checked off
@@ -3354,9 +3360,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var wk=jl(RK,0)===1,tn=tonight(),r=wk?w:tn,lbl=wk?'this week':'tonight',
    sub=wk?(w.total?w.done+' of '+w.total+' done this week':'Nothing due this week'):(tn.total?(tn.done?tn.done+' done · '+(tn.total-tn.done)+' left':tn.total+' planned tonight'):'Nothing planned');
   return '<div class="ws-hl"><div class="ws-pills">'+
-    '<span class="ws-pill">'+ic('cal',14)+(due?due+' due today':'Nothing due today')+'</span>'+
+    (td.total||w.total||sk?'<span class="ws-pill">'+ic('cal',14)+(due?due+' due today':'Nothing due today')+'</span>':'')+
     (ov?'<button type="button" class="ws-pill late" data-cleanup title="Clean up overdue tasks">'+ov+' overdue \u00b7 Clean up</button>':'')+
-    '<span class="ws-pill streak" title="Days in a row you checked something off">'+ic('flame',14)+(sk?sk+'-day streak':'Start a streak today')+'</span></div>'+
+    (td.total||w.total||sk?'<span class="ws-pill streak" title="Days in a row you checked something off">'+ic('flame',14)+(sk?sk+'-day streak':'Start a streak today')+'</span>':'')+'</div>'+
   '</div>'+
    '<div class="ws-hr">'+
     '<button type="button" class="ws-wring'+(wk?' wk':'')+'" data-ring aria-label="'+r.pct+'% '+lbl+'. Tap to show '+(wk?'tonight':'this week')+'"><svg viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="40"/><circle class="arc" cx="48" cy="48" r="40" style="stroke-dasharray:'+C.toFixed(1)+';stroke-dashoffset:'+(C*(1-r.pct/100)).toFixed(1)+'"'+(r.pct?'':' opacity="0"')+'/></svg>'+
@@ -5293,7 +5299,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   '<button type="submit" class="au-btn au-primary">Sign in</button><button type="button" class="au-link" data-act="reset">Forgot your password?</button></form>'+
   '<p class="au-swap"><span data-rt="nw">'+t.nw+'</span><button type="button" class="au-link" data-go="signup" data-rt="na">'+t.na+'</button></p>'+demoLink()+adminLink();}
  // TaskM's owner signs in here for the admin page (admin.html checks the account on the server)
- function adminLink(){return '<a class="au-link au-admin" href="admin.html">Admin sign-in</a>';}
+ function adminLink(){return !/[?&]admin\b/.test(location.search)?'':'<a class="au-link au-admin" href="admin.html">Admin sign-in</a>';}
  function demoLink(){return !window.TASKM_FIREBASE_CONFIG&&A().startDemo?'<button type="button" class="au-link au-demo" data-act="demo">Try it without an account</button>':'';}
  function signup(){var t=RT[draft.role];return brand()+roleSwitch()+'<h1 class="au-h" data-rt="h">'+t.h+'</h1><p class="au-sub" data-rt="s">'+t.s+'</p>'+
   '<button type="button" class="au-btn au-google" data-act="google">'+G+'Sign up with Google</button><div class="au-or"><span>or</span></div>'+
@@ -5355,7 +5361,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var ei=$('#auEmail');if(ei){ei.addEventListener('input',idHint);idHint();}
   if(view==='onboard'&&step===0)schoolList();
   var oi=$('#auOther');if(oi)oi.addEventListener('input',function(){showErr('');});
-  if(A().offline&&(view==='signin'||view==='signup'))showErr('TaskM couldn’t reach its sign-in service. Check your internet (some school Wi-Fi and ad blockers block it), then reload.');}
+}
  function showErr(m){var e=$('.au-err');if(!e)return;e.textContent=m||'';e.hidden=!m;}
  function setBusy(btn,on){busy=on;if(!btn)return;btn.setAttribute('aria-busy',on?'true':'false');btn.disabled=on;}
  function run(btn,p,ok,fail){if(busy)return;showErr('');setBusy(btn,true);
