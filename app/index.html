@@ -35,6 +35,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--sans);-w
 a{color:inherit}
 img{display:block;max-width:100%;height:auto}
 [hidden]{display:none!important}
+@media (max-width:520px){.su-wide{display:none!important}}
 .wrap{width:min(1200px,100% - 32px);margin-inline:auto}
 :focus-visible{outline:2px solid var(--lamp);outline-offset:3px;border-radius:8px}
 
@@ -417,8 +418,8 @@ h2 span{font-style:italic;color:var(--lamp)}
 </script>
 <script>
 (function(){var signedIn=false;try{signedIn=!!localStorage.getItem('taskm-acct-uid');}catch(e){}
-  if(!signedIn)return;document.querySelectorAll('.nav .cta a').forEach(function(a){a.hidden=!a.hasAttribute('data-signed-in');});
-  document.querySelectorAll('.ctas').forEach(function(c){c.innerHTML='<a class="btn btn-pri" href="/app">Open TaskM</a>';});})();
+  if(!signedIn)return;var su=document.querySelector('[data-signup]');su.className='btn btn-sm su-wide';document.querySelector('[data-signed-in]').hidden=false;
+  document.querySelectorAll('.ctas').forEach(function(c){c.innerHTML='<a class="btn btn-pri" href="/app">Open TaskM</a><a class="btn" href="/app?go=in">Log in</a>';});})();
 </script>
 <script>// sample school dates stay a few days ahead of today so the example never looks stale
 [].forEach.call(document.querySelectorAll('.sc .d[data-in]'),function(e){var d=new Date();d.setDate(d.getDate()+(+e.dataset.in));e.innerHTML=d.toLocaleDateString('en-US',{month:'short'})+'<b>'+d.getDate()+'</b>';});</script>
