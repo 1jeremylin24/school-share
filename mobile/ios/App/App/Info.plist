@@ -33,6 +33,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>TaskM uses the camera so you can snap a photo of the board or an assignment sheet and turn it into tasks.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>TaskM reads a photo or screenshot you pick so it can find the due dates in it.</string>
 	<key>NSCrossWebsiteTrackingUsageDescription</key>
 	<string>Teams shows your Assignments list from another Microsoft site inside Teams. Allowing this lets that list sign in inside TaskM’s browser so TaskM can read your homework. TaskM doesn’t track you or show ads.</string>
 	<key>LSRequiresIPhoneOS</key>
