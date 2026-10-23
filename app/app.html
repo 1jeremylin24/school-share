@@ -1162,7 +1162,7 @@ body{font-family:var(--ns-body);background:var(--bg);-webkit-font-smoothing:anti
 .tc-cam{display:none}@media (pointer:coarse){.tc-cam{display:inline-flex}}
 .tc-wif{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:10px}.tc-wif label{display:grid;gap:4px;font-size:12px;color:var(--muted)}.tc-wif input,.tc-wif select{height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:400 15px var(--ns-body,system-ui)}.tc-wio{grid-column:1/-1;margin:2px 0 0;font-size:14px;color:var(--text)}
 .tm-cft .tc-linkbtn{margin:0;padding:6px 2px;border:0;background:none;color:var(--muted);font:500 13px var(--ns-body,system-ui);cursor:pointer}.tm-cft .tc-linkbtn:hover{color:var(--text);text-decoration:underline}
-.ws-new{display:grid;gap:8px;padding:18px 22px 22px}[data-ws] .ws-new .ws-free{margin:0;padding:0;color:var(--text)}.ws-newt{margin:0;color:var(--muted);font:400 14px/1.5 var(--ns-body,system-ui);max-width:56ch}.ws-newb{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.ws-new{display:grid;gap:8px;padding:18px 22px 22px}[data-ws] .ws-new .ws-free{margin:0;padding:0;color:var(--text)}.ws-newt{margin:0;color:var(--muted);font:400 14px/1.5 var(--ns-body,system-ui);max-width:56ch}.ws-newb{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.ws-setup:empty{display:none}.ws-setup small{font:400 12.5px/1.4 var(--ns-body,system-ui)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;margin:2px 0 0!important}.ws-setup{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:18px}.ws-setup h4{margin:0 0 6px;font:700 11.5px var(--ns-body,system-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.ws-sdl{list-style:none;margin:0;padding:0;display:grid;gap:6px}.ws-sdl li{display:flex;gap:12px;align-items:baseline;font-size:14px}.ws-sdl small{flex:none;width:92px;color:var(--muted);font-size:12.5px}
 #dSide h4:has(+ #dCls:empty){display:none}
 .au-mini{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:16px;background:rgba(5,6,15,.55);opacity:0;transition:opacity .2s ease}
 .au-mini.open{opacity:1}
@@ -1970,16 +1970,16 @@ html.tc-dragging body::after{content:"Drop anywhere to add homework";position:fi
 #setupPanel .tc-prog{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0 6px}
 #setupPanel .tc-prog i{display:block;height:100%;background:var(--accent);border-radius:inherit;transition:width .4s var(--ws-out,ease-out)}
 #setupPanel .tc-progt{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
-#setupPanel .tc-steps{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-#setupPanel .tc-steps li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
-#setupPanel .tc-steps li:first-child{border-top:0}
-#setupPanel .tc-steps b{display:block;font-weight:600;font-size:14.5px}
-#setupPanel .tc-steps small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}
-#setupPanel .tc-sn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--ns-body,system-ui);font-style:normal;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
-#setupPanel li.done .tc-sn{background:var(--accent);color:var(--bg)}
-#setupPanel li.done b{color:var(--muted)}
-#setupPanel .tc-ok{font-style:normal;font-size:12.5px;font-weight:600;color:var(--accent)}
-#setupPanel .tt-btn{height:34px;padding:0 14px;text-decoration:none;display:inline-flex;align-items:center}
+#setupPanel .tc-steps,.ws-setup .tc-steps{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+#setupPanel .tc-steps li,.ws-setup .tc-steps li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+#setupPanel .tc-steps li:first-child,.ws-setup .tc-steps li:first-child{border-top:0}
+#setupPanel .tc-steps b,.ws-setup .tc-steps b{display:block;font-weight:600;font-size:14.5px}
+#setupPanel .tc-steps small,.ws-setup .tc-steps small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}
+#setupPanel .tc-sn,.ws-setup .tc-sn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--ns-body,system-ui);font-style:normal;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+#setupPanel li.done .tc-sn,.ws-setup li.done .tc-sn{background:var(--accent);color:var(--bg)}
+#setupPanel li.done b,.ws-setup li.done b{color:var(--muted)}
+#setupPanel .tc-ok,.ws-setup .tc-ok{font-style:normal;font-size:12.5px;font-weight:600;color:var(--accent)}
+#setupPanel .tt-btn,.ws-setup .tt-btn{height:34px;padding:0 14px;text-decoration:none;display:inline-flex;align-items:center}
 #setupPanel .tc-linkbtn{margin-top:8px;background:none;border:0;padding:6px 0;color:var(--muted);font:500 12.5px var(--ns-body,system-ui);cursor:pointer}
 #setupPanel .tc-linkbtn:hover{color:var(--text);text-decoration:underline}
 #aiPanel .tc-acts .tt-btn{justify-content:center}
@@ -3395,7 +3395,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(!t3.length){var any=T.items.some(function(it){return it.status==='open'&&!it.sample&&!/^cal-/.test(String(it.id||''));});
    // a brand-new account has nothing to plan yet: point at the two ways to fill it instead of “you’re free”
    if(!any)return h+'<div class="ws-new"><p class="ws-free">Nothing here yet.</p><p class="ws-newt">Paste a teacher’s email, a syllabus or a screenshot and TaskM finds every due date. Or connect your school once and it fills in by itself.</p>'+
-    '<div class="ws-newb"><button type="button" class="tt-btn tt-pri" data-tt-ai>Paste with AI</button><button type="button" class="tt-btn" data-tmconnect>Connect your school</button></div></div>';
+    '<div class="ws-newb"><button type="button" class="tt-btn tt-pri" data-tt-ai>Paste with AI</button><button type="button" class="tt-btn" data-tmconnect>Connect your school</button></div>'+
+    '<div class="ws-setup">'+(window.TaskMSetup?TaskMSetup.emptyHTML():'')+'</div></div>';
    return h+'<p class="ws-free">You’re free. Nothing urgent left.</p>';}
   return h+t3.map(function(it,i){var ck=T.isChecked(it.id);
    return '<div class="dk-ft tm-item ws-ft'+(i?'':' now')+'" data-id="'+esc(it.id)+'" title="Open notes"><span class="dk-fn">'+(i+1)+'</span>'+
@@ -4942,7 +4943,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   steps.push({k:'grades',n:p.indexOf('aeries')>=0?'Your Aeries grades':'Your grades',u:null,sp:!!SP,t:SP?'Open your grades page (like Aeries), sign in and tap Add to TaskM. Your grades then stay updated here.':'Open your grades page (like Aeries) and click the TaskM button. Your grades then stay updated here.',done:has(/aeries|grade|powerschool|infinitecampus|skyward|portal/i)});
   if(p.indexOf('website')>=0)steps.push({k:'website',n:'School website or calendar',u:null,t:'Paste pvphs.pvpusd.net in the box below and leave “Check this link every morning” on.',done:Object.keys(aiSrc).some(function(k){return !aiSrc[k].kind;})});
   return steps;}
- function setupPanel(){btnBanner();var a=document.getElementById('aiPanel');if(!a||!srcLoaded)return;var el=document.getElementById('setupPanel'),hide=false,open=false;try{hide=localStorage.getItem('taskm-setup-hidden')==='1';open=localStorage.getItem('taskm-setup-open')==='1';}catch(e){}
+ function setupPanel(){btnBanner();fillEmpty();var a=document.getElementById('aiPanel');if(!a||!srcLoaded)return;var el=document.getElementById('setupPanel'),hide=false,open=false;try{hide=localStorage.getItem('taskm-setup-hidden')==='1';open=localStorage.getItem('taskm-setup-open')==='1';}catch(e){}
   var st=setupSteps(),n=st.filter(function(x){return x.done;}).length,next=st.filter(function(x){return !x.done;})[0];
   if(hide||!next){if(el)el.remove();return;}
   if(!el){el=document.createElement('section');el.id='setupPanel';el.className='panel tc-panel';a.parentNode.insertBefore(el,a);}
@@ -4955,6 +4956,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    '<button type="button" class="tc-x" data-tc="hidesetup" aria-label="Hide setup">'+ico('x',14)+'</button></div>'+
    (open?'<p class="tc-progt">'+(SP?'Do this once. Each page opens in TaskM’s browser: sign in there and tap Add to TaskM.':'Do this once'+(phone?', on a computer with Chrome':'')+'.')+' After that, TaskM keeps your homework and grades updated by itself.</p><ol class="tc-steps">'+st.map(function(x,i){return '<li class="'+(x.done?'done':'')+'"><i class="tc-sn" aria-hidden="true">'+(x.done?ico('check',14):(i+1))+'</i><span><b>'+esc(x.n)+'</b><small>'+esc(x.t)+'</small></span>'+
     (x.done?'<em class="tc-ok">Done</em>':stepBtn(x))+'</li>';}).join('')+'</ol>':'');}
+ // a brand-new account's Focus would be mostly blank: show the setup steps and what's coming up at school instead
+ function emptyHTML(){var h='';if(srcLoaded){var st=setupSteps(),n=st.filter(function(x){return x.done;}).length;
+   if(n<st.length)h+='<div><h4>Your setup · '+n+' of '+st.length+'</h4><ol class="tc-steps">'+st.map(function(x,i){return '<li class="'+(x.done?'done':'')+'"><i class="tc-sn" aria-hidden="true">'+(x.done?ico('check',14):(i+1))+'</i><span><b>'+esc(x.n)+'</b><small>'+esc(x.t)+'</small></span>'+(x.done?'<em class="tc-ok">Done</em>':stepBtn(x))+'</li>';}).join('')+'</ol></div>';}
+  var sc=jl('taskm-school',null),tk=new Date().toISOString().slice(0,10),g=parseInt(A.profile&&A.profile.grade,10),
+   up=((sc&&sc.items)||[]).filter(function(it){return it.date&&(it.end_date||it.date)>=tk&&(!g||!it.grades||!it.grades.length||it.grades.indexOf(g)>=0);}).sort(function(a,b){return a.date<b.date?-1:1;}).slice(0,5);
+  if(up.length)h+='<div><h4>Coming up at PVPHS</h4><ul class="ws-sdl">'+up.map(function(it){return '<li><small>'+esc(new Date(it.date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}))+'</small><span>'+esc(it.title)+'</span></li>';}).join('')+'</ul></div>';
+  return h;}
+ window.TaskMSetup={emptyHTML:emptyHTML};
+ function fillEmpty(){document.querySelectorAll('.ws-new .ws-setup').forEach(function(el){el.innerHTML=emptyHTML();});}
  function stepBtn(x){if(x.sp)return '<button type="button" class="tt-btn" data-school="'+esc(x.u||'')+'">Open</button>';
   return x.u?'<a class="tt-btn" href="'+esc(x.u)+'" target="_blank" rel="noopener">'+(x.btn||'Open')+'</a>':'';}
  function paintSources(){setupPanel();paintConnect();var dp=document.getElementById('debriefPanel');if(dp&&srcLoaded)dp.innerHTML=debriefs();var el=document.querySelector('#aiPanel .tc-srcs');if(!el)return;var ids=Object.keys(aiSrc);
