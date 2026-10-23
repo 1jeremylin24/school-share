@@ -9,6 +9,8 @@
    - betaFeedback / betaStats / adminFeedback / reportError: feedback and error reports from the app, and the owner-only
      admin page (app/admin.html): sign-ups, active users, feedback, connected sources, errors and the morning jobs.
    - schoolDaily / schoolInfo / schoolRefresh: the PVPHS website, read every morning for everyone and tagged by grade.
+   - staffInfo / staffPost / staffSet / staffBusy: PVPHS staff post announcements and see busy test days (app/staff.html).
+   - parentWeekly / parentDigest: the Sunday summary email for parents.
    The Claude API key lives in Secret Manager as ANTHROPIC_API_KEY; it never reaches the website. */
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
@@ -620,7 +622,7 @@ exports.schoolInfo = onCall({ cors: ORIGINS, secrets: [ANTHROPIC_API_KEY], timeo
       v = (await ref.once('value')).val() || {};
     }
   }
-  return { at: v.at || null, items: v.items || [], days: v.days || [], bells: (v.bells && v.bells.list) || [] };
+  return { at: v.at || null, items: v.items || [], days: v.days || [], bells: (v.bells && v.bells.list) || [], posts: (await livePosts()).map(({ uid, ...p }) => p) };
 });
 
 // Owner only: read the school website again right now (e.g. right after deploying, or when something big was posted)
@@ -628,6 +630,122 @@ exports.schoolRefresh = onCall({ cors: ORIGINS, secrets: [ANTHROPIC_API_KEY], ti
   signedIn(req);
   if (!L.isOwner(req.auth.token)) throw new HttpsError('permission-denied', 'Only TaskM’s owner can do this.');
   return refreshSchool(true);
+});
+
+// ================= PVPHS staff: announcements and the school-wide test calendar (app/staff.html) =================
+// Staff are added by TaskM's owner (staffSet) and stored by email hash at /school/pvphs/staff. Posts live at
+// /school/pvphs/posts and reach students through schoolInfo. Only the server reads or writes either one.
+async function isStaff(token) {
+  if (L.isOwner(token)) return true;
+  if (!token || !token.email || !token.email_verified) return false;
+  return (await db.ref(`school/pvphs/staff/${L.hash(String(token.email).toLowerCase())}`).once('value')).exists();
+}
+async function needStaff(req) {
+  signedIn(req);
+  if (!(await isStaff(req.auth.token))) throw new HttpsError('permission-denied', 'This page is for PVPHS staff. Ask TaskM to add your school email.');
+}
+async function livePosts() {
+  const today = L.ymdIn(new Date()), all = (await db.ref('school/pvphs/posts').once('value')).val() || {};
+  return Object.entries(all).filter(([, p]) => p && p.until >= today).map(([id, p]) => ({ id, ...p })).sort((a, b) => (b.at || 0) - (a.at || 0));
+}
+
+exports.staffInfo = onCall({ cors: ORIGINS }, async (req) => {
+  await needStaff(req);
+  const owner = L.isOwner(req.auth.token);
+  let staff = null;
+  if (owner) staff = Object.entries((await db.ref('school/pvphs/staff').once('value')).val() || {}).map(([id, s]) => ({ id, ...s }));
+  return { owner, posts: await livePosts(), staff };
+});
+
+exports.staffPost = onCall({ cors: ORIGINS }, async (req) => {
+  await needStaff(req);
+  const d = req.data || {}, ref = db.ref('school/pvphs/posts');
+  if (d.remove) {
+    const id = String(d.remove);
+    if (!/^[-\w]{10,40}$/.test(id)) throw new HttpsError('invalid-argument', 'Unknown post.');
+    await ref.child(id).remove();
+    return { ok: true };
+  }
+  const r = await db.ref(`staffCount/${req.auth.uid}/${L.ymdIn(new Date())}`).transaction(n => (n || 0) + 1);
+  if (r.snapshot.val() > 30) throw new HttpsError('resource-exhausted', 'That’s 30 posts today. Post more tomorrow.');
+  const p = L.toPost(d, d.by || req.auth.token.name || req.auth.token.email, L.ymdIn(new Date()));
+  if (!p) throw new HttpsError('invalid-argument', 'Give the post a title.');
+  const n = ref.push();
+  await n.set({ ...p, uid: req.auth.uid, at: ServerValue.TIMESTAMP });
+  return { ok: true, id: n.key };
+});
+
+// Owner only: add or remove a staff email
+exports.staffSet = onCall({ cors: ORIGINS }, async (req) => {
+  signedIn(req);
+  if (!L.isOwner(req.auth.token)) throw new HttpsError('permission-denied', 'Only TaskM’s owner can do this.');
+  const d = req.data || {};
+  if (d.remove) { await db.ref(`school/pvphs/staff/${String(d.remove).replace(/[^a-f0-9]/g, '')}`).remove(); return { ok: true }; }
+  const email = String(d.email || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(email)) throw new HttpsError('invalid-argument', 'Type a full email address.');
+  await db.ref(`school/pvphs/staff/${L.hash(email)}`).set({ email, name: String(d.name || '').slice(0, 80), role: String(d.role || '').slice(0, 60), added: ServerValue.TIMESTAMP });
+  return { ok: true };
+});
+
+// How many TaskM students have tests on the same day, by grade. Counts only, never names or classes.
+exports.staffBusy = onCall({ cors: ORIGINS, memory: '512MiB' }, async (req) => {
+  await needStaff(req);
+  const users = (await db.ref('users').once('value')).val() || {};
+  const list = Object.values(users).map(u => u && u.shared).filter(Boolean);
+  return L.busyDays(list, Date.now());
+});
+
+// ================= Weekly parent email (Sundays 5 PM Pacific) =================
+// Every parent gets a short summary of each linked student's week, saved at /users/<parent>/digest (shown in the parent view)
+// and emailed when the mail account is set up: /config/mail = {user, pass} (a Gmail address and its app password).
+// /config has no database rules, so only the server can read it. Parents turn the email off with profile.weeklyEmail = false.
+const APP_URL = 'https://taskm-school.web.app/app';
+async function mailer() {
+  const c = (await db.ref('config/mail').once('value')).val();
+  if (!c || !c.user || !c.pass) return null;
+  const nodemailer = require('nodemailer');
+  const t = nodemailer.createTransport({ service: 'gmail', auth: { user: c.user, pass: c.pass } });
+  return { send: m => t.sendMail({ from: `TaskM <${c.user}>`, ...m }) };
+}
+async function parentDigests(onlyUid) {
+  let users;
+  if (onlyUid) {   // one parent: read just their record and their students' summaries
+    const me = (await db.ref(`users/${onlyUid}`).once('value')).val() || {};
+    users = { [onlyUid]: me };
+    for (const sid of Object.keys(me.kids || {})) users[sid] = { shared: (await db.ref(`users/${sid}/shared`).once('value')).val() };
+  } else users = (await db.ref('users').once('value')).val() || {};
+  const mail = onlyUid ? null : await mailer(), now = Date.now();
+  let made = 0, sent = 0, failed = 0;
+  for (const [pid, u] of Object.entries(users)) {
+    if (onlyUid && pid !== onlyUid) continue;
+    if (!u || !u.kids || !u.profile || u.profile.role !== 'parent') continue;
+    const kids = Object.keys(u.kids).map(sid => L.weekDigest(users[sid] && users[sid].shared, now)).filter(Boolean);
+    if (!kids.length) continue;
+    await db.ref(`users/${pid}/digest`).set({ at: now, kids });
+    made++;
+    if (!mail || u.profile.weeklyEmail === false) continue;
+    try {
+      const au = await getAuth().getUser(pid);
+      if (!au.email || !au.emailVerified) continue;
+      const e = L.digestEmail(u.profile.name || au.displayName || '', kids, APP_URL);
+      await mail.send({ to: au.email, subject: `This week: ${kids.map(k => k.name).join(' and ')}`, text: e.text, html: e.html });
+      sent++;
+    } catch (e) { failed++; logger.warn('parent email failed', e.message); }
+  }
+  return { made, sent, failed, mail: !!mail };
+}
+exports.parentWeekly = onSchedule({ schedule: '0 17 * * 0', timeZone: L.TZ, timeoutSeconds: 540, memory: '512MiB' }, async () => {
+  try {
+    const r = await parentDigests();
+    logger.info('parentWeekly done', r);
+    await jobDone('parentWeekly', { ok: true, ...r });
+  } catch (e) { await noteError('parentWeekly', e); await jobDone('parentWeekly', { ok: false, error: L.scrubError(e.message, 200) }); throw e; }
+});
+// A parent can build their own summary right now (the parent view's "This week" card); it is saved but not emailed
+exports.parentDigest = onCall({ cors: ORIGINS }, async (req) => {
+  const uid = signedIn(req);
+  await parentDigests(uid);
+  return (await db.ref(`users/${uid}/digest`).once('value')).val() || null;
 });
 
 if (process.env.TASKM_TEST) exports._test = { readSource, rebuild, fromFile, schoolMaterial };

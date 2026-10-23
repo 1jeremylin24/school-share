@@ -329,7 +329,11 @@ td small{display:block;color:var(--muted)}
     (sd&&sd.ok?'<p>'+(sd.unchanged?'Nothing new on the site.':plural(sd.count||0,'school item')+' saved.')+(sd.failedPages&&sd.failedPages.length?' Couldn’t read: '+esc(sd.failedPages.join(', '))+'.':'')+'</p>':'')+
     '<div class="acts"><button type="button" class="sm" id="schoolNow">Read the school website now</button></div></div>'+
    '<div class="job"><h3><i class="'+s2[0]+'"></i>Saved-link refresh <span class="sub">5:30 AM</span></h3><p>'+esc(s2[1])+'</p>'+
-    (ad&&ad.ok?'<p>'+plural(ad.students||0,'student')+', '+(ad.changed||0)+' changed, '+(ad.failed||0)+' couldn’t be read.</p>':'')+'</div>';
+    (ad&&ad.ok?'<p>'+plural(ad.students||0,'student')+', '+(ad.changed||0)+' changed, '+(ad.failed||0)+' couldn’t be read.</p>':'')+'</div>'+
+   (function(){var pw=jobs.parentWeekly,s3=!pw?['','Runs Sundays at 5 PM. It reports after its first run.']:st(pw);if(pw&&pw.ok&&Date.now()-pw.at<8*864e5)s3=['ok','Ran '+ago(pw.at)];
+    return '<div class="job"><h3><i class="'+s3[0]+'"></i>Parent email <span class="sub">Sun 5 PM</span></h3><p>'+esc(s3[1])+'</p>'+
+     (pw&&pw.ok?'<p>'+(pw.made||0)+' summar'+(pw.made===1?'y':'ies')+', '+(pw.sent||0)+' emailed'+(pw.mail?'':'. Email isn’t set up yet (database config/mail)')+(pw.failed?', '+pw.failed+' failed':'')+'.</p>':'')+
+     '<div class="acts"><a class="sub" href="staff.html">Open the staff page</a></div></div>';})();
   // People
   people();first=false;
  }

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TaskM for schools</title>
+<meta name="description" content="TaskM for Palos Verdes Peninsula High School: what it does for students, parents and staff, and how it protects student data.">
+<link rel="icon" href="icon-192-v2.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f6fb;--card:#fff;--text:#1d1d2b;--muted:#6b6b80;--line:#e4e4ee;--accent:#5550D0;--soft:#ecebfb}
+@media (prefers-color-scheme:dark){:root{--bg:#121219;--card:#1b1b25;--text:#ececf3;--muted:#9a9ab0;--line:#2c2c3a;--accent:#8b95ff;--soft:#24243a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 "Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:640px;margin:0 auto;padding:48px 16px 64px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+header img{width:48px;height:48px;border-radius:12px}
+h1{font-size:28px;line-height:1.2;margin:0;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:12px 0 28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 14px}
+ol{margin:0;padding:0;list-style:none;counter-reset:s}
+ol li{counter-increment:s;position:relative;padding:0 0 14px 40px}
+ol li:last-child{padding-bottom:0}
+ol li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--soft);color:var(--accent);font-weight:700;font-size:13px;display:grid;place-items:center}
+.dl{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:12px;margin:2px 0 6px}
+.dl:hover{filter:brightness(1.08)}
+code{font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:2px 6px;border-radius:6px;user-select:all}
+kbd{font:600 13px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px}
+.note{color:var(--muted);font-size:14px;margin:0}
+h2+p,.card p{margin:0 0 10px}.card p:last-child,.card ul:last-child{margin-bottom:0}.card ul{margin:0 0 10px;padding-left:20px}.card li{margin:4px 0}
+</style>
+<style>.lede a,.card a{color:var(--accent)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media (max-width:640px){.grid2{grid-template-columns:1fr}}.grid2 .card{margin:0}.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.cta a.alt{background:transparent;color:var(--accent);border:1px solid var(--line)}</style>
+</head>
+<body>
+<main>
+  <header><img src="icon-192-v2.png" alt=""><h1>TaskM for schools</h1></header>
+  <p class="lede">TaskM is a homework planner made by a PVPHS student for Palos Verdes Peninsula High School. It gathers each student’s homework from OneNote, Teams, Aeries, school email and the PVPHS website into one list, so fewer assignments slip through.</p>
+
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card"><h2>For students</h2><ul><li>Tonight’s top 3 and a 7-day view</li><li>Heavy-day warnings before test pile-ups</li><li>Grades, curves and “what do I need on the final?”</li><li>School news filtered to their grade</li></ul></div>
+    <div class="card"><h2>For parents</h2><ul><li>A Sunday email with the week ahead</li><li>Grades and which way they moved</li><li>Only after the student shares an invite code</li></ul></div>
+    <div class="card"><h2>For staff</h2><ul><li>Post an announcement to one grade or everyone; it shows in every student’s School tab</li><li>See which days have the most tests, by grade, with no names</li></ul></div>
+    <div class="card"><h2>For the school</h2><ul><li>No cost to PVPHS for a pilot</li><li>No school passwords stored, no ads, no selling data</li><li>Works with what PVPHS already uses</li></ul></div>
+  </div>
+
+  <div class="card">
+    <h2>How TaskM protects student data</h2>
+    <ul>
+      <li><b>Students control it.</b> Each student makes their own account and chooses what to connect. TaskM is for students 13 and older.</li>
+      <li><b>No school passwords.</b> TaskM never asks for, types or keeps a student’s school password. Pages are read through the browser or iPhone app the student is already signed in to.</li>
+      <li><b>Only for school use.</b> Student data is used only to run TaskM for that student. It is never sold, never used for advertising and never used to build profiles for anything outside TaskM. This is what California’s Student Online Personal Information Protection Act (SOPIPA) requires.</li>
+      <li><b>Who can see what.</b> A student’s homework and grades are visible to the student, to a parent they link with a one-time invite code, and to no one else. Staff see only counts (no names or classes), and only for grades with at least 5 TaskM students.</li>
+      <li><b>Where it lives.</b> Data is stored in Google Firebase in the United States. Homework text a student shares is read by Anthropic’s Claude AI, which does not train on it.</li>
+      <li><b>Deleting.</b> A student or parent can delete an account and everything TaskM keeps about it by emailing <a href="mailto:taskm.help@gmail.com">taskm.help@gmail.com</a>.</li>
+      <li><b>Records requests.</b> Parents can ask for a copy of their student’s TaskM data at the same address, as FERPA allows for education records.</li>
+    </ul>
+    <p class="note">Full details are on the <a href="privacy.html">privacy page</a>. We’re glad to go through the district’s student data privacy review.</p>
+  </div>
+
+  <div class="card">
+    <h2>One thing that would help every student</h2>
+    <p>PVPUSD requires IT approval before students can sign in to outside apps with their school Microsoft account. Approving TaskM’s Microsoft app would let students connect Teams, OneNote and Outlook in one step, without the Chrome button.</p>
+  </div>
+
+  <div class="card">
+    <h2>Try it</h2>
+    <p>Staff can sign in to post announcements and see busy test days. Ask us to add your school email first.</p>
+    <div class="cta"><a class="dl" href="staff.html">Staff sign-in</a><a class="dl alt" href="mailto:taskm.help@gmail.com?subject=TaskM%20at%20PVPHS">Email us</a><a class="dl alt" href="/">See TaskM</a></div>
+  </div>
+</main>
+</body>
+</html>

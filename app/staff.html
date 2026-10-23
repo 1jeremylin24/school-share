@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#05060f">
+<title>TaskM for PVPHS staff</title>
+<link rel="icon" href="icon-192-v2.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* PVPHS staff page: post announcements to students by grade, and see which days pile up tests (counts only).
+   Everything goes through staffInfo / staffPost / staffBusy / staffSet (functions/index.js), which check the staff list on the
+   server. Same night-sky look as admin.html, kept quiet. */
+:root{--bg:#05060f;--card:#0b0e1f;--card-2:#0f1328;--text:#eef0ff;--title:#c9d3ff;--muted:#a1a7c6;--faint:#767c9e;
+ --line:rgba(170,180,255,.09);--line-2:rgba(170,180,255,.16);--line-3:rgba(170,180,255,.28);--accent:#a9a6ff;--soft:rgba(169,166,255,.12);
+ --bad:#ff8b9b;--warn:#f5b860;--warn-soft:rgba(245,184,96,.14);--ok:#7ee0ad;--ease:cubic-bezier(.23,1,.32,1);--sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+main{max-width:980px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 64px max(16px,env(safe-area-inset-left))}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;color:var(--text);text-decoration:none}
+.brand img{width:28px;height:28px;border-radius:8px}
+.brand small{font-size:11.5px;font-weight:500;color:var(--muted);padding:3px 8px;border-radius:999px;border:1px solid var(--line-2)}
+.top .who{margin-left:auto;color:var(--faint);font-size:13px;text-align:right}
+h1{margin:0 0 6px;font:600 clamp(30px,5vw,44px)/1.08 var(--sans);letter-spacing:-.03em;color:var(--title)}
+h2{font:600 17px/1.2 var(--sans);margin:0 0 4px;color:var(--title)}
+.lead{color:var(--muted);max-width:60ch;margin:0 0 28px}
+section{margin-bottom:24px}
+.card{background:linear-gradient(180deg,var(--card-2),var(--card));border:1px solid var(--line-2);border-radius:16px;padding:18px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+label{display:grid;gap:6px;font-size:13.5px;color:var(--muted)}
+input,textarea,select{font:inherit;font-size:16px;color:var(--text);background:rgba(10,13,32,.8);border:1px solid var(--line-3);border-radius:12px;padding:10px 12px;width:100%;min-width:0}
+textarea{min-height:96px;resize:vertical}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.row{grid-template-columns:1fr}}
+.grid{display:grid;gap:12px}
+.grades{display:flex;gap:8px;flex-wrap:wrap}
+.grades label{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--line-3);border-radius:999px;color:var(--text);cursor:pointer}
+.grades input{width:16px;height:16px;accent-color:var(--accent)}
+button{font:inherit;font-size:14px;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line-3);background:rgba(20,24,52,.55);color:var(--text);cursor:pointer;
+ touch-action:manipulation;transition:transform 120ms var(--ease),background-color 150ms ease}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.55;cursor:default}
+button.pri{background:#eef0ff;border-color:transparent;color:#090b1c;font-weight:600}
+button.sm{min-height:32px;padding:0 12px;font-size:13px}
+.acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.err{color:var(--bad);font-size:13.5px;margin:0}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.list li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line-2);border-radius:12px}
+.list li div{flex:1;min-width:0}
+.list b{display:block;overflow-wrap:anywhere}
+.list small{color:var(--faint)}
+.list p{margin:4px 0 0;color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.empty{color:var(--faint);font-size:14px;margin:0}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-size:14px}
+th{color:var(--faint);font-weight:500;font-size:12.5px}
+tr.hot td{background:var(--warn-soft)}
+tr.hot td:first-child{border-left:2px solid var(--warn)}
+.tw{overflow-x:auto}.addst{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:12px;align-items:center}@media (max-width:640px){.addst{grid-template-columns:1fr}}
+.gate{text-align:center;padding:48px 18px}
+.gate p{color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#eef0ff;color:#090b1c;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:500;z-index:50}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+ <div class="top"><a class="brand" href="/"><img src="icon-192-v2.png" alt="" width="28" height="28">TaskM<small>PVPHS staff</small></a><span class="who" id="who"></span><button type="button" class="sm" id="out" hidden>Sign out</button></div>
+
+ <div id="gate" class="card gate">
+  <h1 id="gateH">For PVPHS staff</h1>
+  <p id="gateP">Sign in with your school Google account to post to students and see busy test days.</p>
+  <button type="button" class="pri" id="in">Sign in with Google</button>
+ </div>
+
+ <div id="dash" hidden>
+  <h1>Reach every TaskM student.</h1>
+  <p class="lead">Posts show at the top of each student’s School tab, filtered to their grade. Busy test days show how many TaskM students have tests on the same day, without names.</p>
+
+  <section class="card">
+   <h2>Post to students</h2>
+   <p class="sub">Keep it short. Students see the title first.</p>
+   <form id="post" class="grid">
+    <label>Title<input name="title" maxlength="120" required placeholder="PSAT sign-ups close Friday" autocomplete="off"></label>
+    <label>Details (optional)<textarea name="body" maxlength="800" placeholder="Where to sign up, what to bring, who to ask."></textarea></label>
+    <div class="row">
+     <label>Kind<select name="kind">
+      <option value="announcement">News</option><option value="deadline">Deadline</option><option value="counseling">Counseling</option><option value="college">College</option>
+      <option value="testing">Testing</option><option value="event">Event</option><option value="club">Clubs</option><option value="sports">Sports</option><option value="schedule">Schedule change</option></select></label>
+     <label>Link (optional)<input name="link" type="url" inputmode="url" placeholder="https://pvphs.pvpusd.net/…"></label>
+    </div>
+    <div class="row">
+     <label>Date it’s for (optional)<input name="date" type="date"></label>
+     <label>Show it for<select name="days"><option value="7">1 week</option><option value="14" selected>2 weeks</option><option value="30">1 month</option><option value="60">2 months</option></select></label>
+    </div>
+    <div><p class="sub" style="margin:0 0 8px">Grades (none picked = everyone)</p>
+     <div class="grades"><label><input type="checkbox" name="g" value="9">9th</label><label><input type="checkbox" name="g" value="10">10th</label><label><input type="checkbox" name="g" value="11">11th</label><label><input type="checkbox" name="g" value="12">12th</label></div></div>
+    <label>Signed as<input name="by" maxlength="80" placeholder="Counseling office"></label>
+    <p class="err" id="postErr" role="alert" hidden></p>
+    <div class="acts"><button type="submit" class="pri" id="postBtn">Post</button></div>
+   </form>
+  </section>
+
+  <section class="card">
+   <h2>Live posts</h2>
+   <p class="sub">A post comes down on its own after its date, or when you remove it.</p>
+   <ul class="list" id="posts"></ul>
+  </section>
+
+  <section class="card">
+   <h2>Busy test days</h2>
+   <p class="sub" id="busySub">Next 3 weeks, from TaskM students’ own calendars. Grades with fewer than 5 TaskM students are left out.</p>
+   <div class="tw"><table><thead><tr><th>Day</th><th>Grade</th><th>Students with a test</th><th>With 2 or more</th><th>Tests</th></tr></thead><tbody id="busy"></tbody></table></div>
+   <p class="empty" id="busyEmpty" hidden>No test days to show yet.</p>
+  </section>
+
+  <section class="card" id="staffCard" hidden>
+   <h2>Staff who can post</h2>
+   <p class="sub">Only you (TaskM’s owner) see this. People sign in with these emails.</p>
+   <form id="addStaff" class="addst"><input name="email" type="email" required placeholder="name@pvpusd.net" aria-label="Staff email"><input name="name" placeholder="Name and role" aria-label="Name and role"><button type="submit">Add</button></form>
+   <ul class="list" id="staff"></ul>
+  </section>
+ </div>
+</main>
+<div id="toast" role="status" hidden></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+(function(){
+ var CFG={"apiKey":"AIzaSyBc6IcV58GL0p1rICVJU5Y0jbfoaLYYRDs","authDomain":"taskm-sync-d6861.firebaseapp.com","databaseURL":"https://taskm-sync-d6861-default-rtdb.firebaseio.com","projectId":"taskm-sync-d6861","storageBucket":"taskm-sync-d6861.firebasestorage.app","messagingSenderId":"159025581008","appId":"1:159025581008:web:b2b4084fef76770cc087d5"};
+ var FN='https://us-central1-taskm-sync-d6861.cloudfunctions.net/',auth=null,preview=null;
+ var $=function(id){return document.getElementById(id);};
+ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+ var tt;function toast(m){var t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(function(){t.hidden=true;},2600);}
+ function day(k){return new Date(k+'T12:00:00').toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});}
+ function call(name,body){if(preview)return Promise.resolve(preview[name]?preview[name](body||{}):{ok:true});
+  var u=auth&&auth.currentUser;if(!u)return Promise.reject({message:'Sign in again.'});
+  return u.getIdToken().then(function(tok){return fetch(FN+name,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify({data:body||{}})});})
+   .then(function(r){return r.json().catch(function(){return {};});},function(){throw {message:'Couldn’t reach TaskM’s server. Check your connection.'};})
+   .then(function(j){if(j.error)throw {status:j.error.status,message:j.error.message||'Something went wrong.'};return j.result||{};});}
+ function gate(h,p,showIn){$('dash').hidden=true;$('gate').hidden=false;$('gateH').textContent=h;$('gateP').textContent=p;$('in').hidden=!showIn;}
+
+ function paintPosts(list){$('posts').innerHTML=list.length?list.map(function(p){
+   var meta=[p.by,p.date?'for '+day(p.date):'',p.grades&&p.grades.length?p.grades.map(function(g){return g+'th';}).join(', '):'Everyone','until '+day(p.until)].filter(Boolean).join(' · ');
+   return '<li><div><b>'+esc(p.title)+'</b><small>'+esc(meta)+'</small>'+(p.body?'<p>'+esc(p.body)+'</p>':'')+'</div><button type="button" class="sm" data-rm="'+esc(p.id)+'">Remove</button></li>';}).join('')
+  :'<li><p class="empty">Nothing posted yet.</p></li>';}
+ function paintStaff(list){$('staffCard').hidden=!list;if(!list)return;
+  $('staff').innerHTML=list.length?list.map(function(s){return '<li><div><b>'+esc(s.email)+'</b><small>'+esc(s.name||'')+'</small></div><button type="button" class="sm" data-unstaff="'+esc(s.id)+'">Remove</button></li>';}).join(''):'<li><p class="empty">No staff yet.</p></li>';}
+ function paintBusy(b){var rows=b.rows||[];$('busyEmpty').hidden=!!rows.length;
+  var n=b.students||{},tot=Object.keys(n).reduce(function(a,k){return a+(n[k]||0);},0);
+  $('busySub').textContent='Next 3 weeks, from '+tot+' TaskM student'+(tot===1?'':'s')+'’ own calendars. Grades with fewer than '+(b.minGroup||5)+' TaskM students are left out.';
+  $('busy').innerHTML=rows.map(function(r){var hot=r.heavy>=Math.max(2,Math.ceil(r.of*.25));
+   return '<tr'+(hot?' class="hot"':'')+'><td>'+esc(day(r.date))+'</td><td>'+r.grade+'th</td><td>'+r.students+' of '+r.of+'</td><td>'+r.heavy+'</td><td>'+r.tests+'</td></tr>';}).join('');}
+ function load(){return Promise.all([call('staffInfo'),call('staffBusy')]).then(function(r){$('gate').hidden=true;$('dash').hidden=false;paintPosts(r[0].posts||[]);paintStaff(r[0].owner?(r[0].staff||[]):null);paintBusy(r[1]||{});},
+  function(e){gate(e.status==='PERMISSION_DENIED'?'Not on the staff list yet':'Couldn’t load',e.status==='PERMISSION_DENIED'?'Ask TaskM (taskm.help@gmail.com) to add your school email, then sign in again.':(e.message||'Try again in a minute.'),false);});}
+
+ $('post').addEventListener('submit',function(e){e.preventDefault();var f=e.target,b=$('postBtn'),er=$('postErr');er.hidden=true;
+  var d={title:f.title.value,body:f.body.value,kind:f.kind.value,link:f.link.value,date:f.date.value||null,days:+f.days.value,by:f.by.value,
+   grades:[].slice.call(f.querySelectorAll('input[name=g]:checked')).map(function(x){return +x.value;})};
+  b.disabled=true;b.textContent='Posting…';
+  call('staffPost',d).then(function(){f.reset();toast('Posted. Students see it next time they open School.');return load();},function(x){er.textContent=x.message;er.hidden=false;}).then(function(){b.disabled=false;b.textContent='Post';});});
+ $('addStaff').addEventListener('submit',function(e){e.preventDefault();var f=e.target;call('staffSet',{email:f.email.value,name:f.name.value}).then(function(){f.reset();toast('Added');load();},function(x){toast(x.message);});});
+ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-rm],[data-unstaff]');if(!b)return;b.disabled=true;
+  (b.dataset.rm?call('staffPost',{remove:b.dataset.rm}):call('staffSet',{remove:b.dataset.unstaff})).then(function(){toast('Removed');load();},function(x){b.disabled=false;toast(x.message);});});
+
+ // Local preview with made-up data (screenshots only; never on the live site)
+ if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&window.STAFF_PREVIEW){preview=window.STAFF_PREVIEW;$('who').textContent='Preview';load();return;}
+ if(typeof firebase==='undefined'){gate('Couldn’t load','Couldn’t load sign-in. Check your connection and reload.',false);return;}
+ firebase.initializeApp(CFG);auth=firebase.auth();
+ $('in').onclick=function(){var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});auth.signInWithPopup(p).catch(function(e){$('gateP').textContent=e.message;});};
+ $('out').onclick=function(){auth.signOut();};
+ auth.onAuthStateChanged(function(u){if(u){$('who').textContent=u.email||'';$('out').hidden=false;load();}
+  else{$('who').textContent='';$('out').hidden=true;gate('For PVPHS staff','Sign in with your school Google account to post to students and see busy test days.',true);}});
+})();
+</script>
+</body>
+</html>

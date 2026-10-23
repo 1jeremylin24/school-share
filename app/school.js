@@ -81,12 +81,13 @@
    {id:'s5',kind:'club',title:'Club fair at lunch',date:dd(11),summary:'Find a club or start your own.'},
    {id:'s6',kind:'no_school',title:'No school: staff development day',date:dd(18),importance:'high'},
    {id:'s7',kind:'arts',title:'Fall play opening night',date:dd(25),time:'19:00'},
-   {id:'s8',kind:'announcement',title:'Lost and found is cleared out every Friday'}]};}
+   {id:'s8',kind:'announcement',title:'Lost and found is cleared out every Friday'}],
+  posts:[{id:'p1',kind:'deadline',title:'Sign up for the PSAT by Friday',body:'Sign-ups are on the counseling page. The test is during the school day.',by:'Counseling office',grades:[10,11],date:dd(3)}]};}
  function grade(){var a=A(),g=parseInt(a.profile&&a.profile.grade,10);return g>=9&&g<=12?g:null;}
  function fetchInfo(force){var a=A(),v=data();if(busy||a.demo||!a.uid||!a.token)return Promise.resolve(v);if(!force&&v&&Date.now()-(v.got||0)<3*3600e3)return Promise.resolve(v);
   var cfg=window.TASKM_FIREBASE_CONFIG||{},url='https://us-central1-'+(cfg.projectId||'taskm-sync-d6861')+'.cloudfunctions.net/schoolInfo';busy=true;
   return fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+a.token},body:'{"data":{}}'})
-   .then(function(r){return r.json();}).then(function(j){busy=false;if(!j||!j.result)return v;var n={at:j.result.at,items:j.result.items||[],days:j.result.days||[],bells:j.result.bells||[],got:Date.now()};js(SCK,n);return n;})
+   .then(function(r){return r.json();}).then(function(j){busy=false;if(!j||!j.result)return v;var n={at:j.result.at,items:j.result.items||[],days:j.result.days||[],bells:j.result.bells||[],posts:j.result.posts||[],got:Date.now()};js(SCK,n);return n;})
    .catch(function(){busy=false;return v;});}
 
  // ---------- School tab ----------
@@ -179,7 +180,7 @@
 
  function paint(){var box=d.getElementById('schoolView');if(!box)return;var v=data(),tk=today(),gr=grade(),a=A(),f=jl(SCF,'all');if(!GROUP[f])f='all';
   var h='<section class="panel tc-panel"><div class="tc-hd"><h3>School</h3><small>'+esc(v&&v.sample?'Sample school news. Sign up to see the real PVPHS website.':v&&v.at?'From pvphs.pvpusd.net · updated '+new Date(v.at).toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'}):'From the PVPHS website, checked every morning')+'</small></div>'+
-   (a.demo?'':dayCard(v,tk))+coach(v,gr,tk)+'<div class="sc-chips" role="group" aria-label="Show">'+Object.keys(GROUP).map(function(k){return '<button type="button" class="sc-chip" data-scf="'+k+'" aria-pressed="'+(k===f)+'">'+GROUP[k][0]+'</button>';}).join('')+'</div>';
+   (a.demo?'':dayCard(v,tk))+posts(v,gr)+coach(v,gr,tk)+'<div class="sc-chips" role="group" aria-label="Show">'+Object.keys(GROUP).map(function(k){return '<button type="button" class="sc-chip" data-scf="'+k+'" aria-pressed="'+(k===f)+'">'+GROUP[k][0]+'</button>';}).join('')+'</div>';
   if(!v||!v.items){box.innerHTML=h+'<p class="sc-empty">'+(a.demo?'Sign in to see what’s happening at PVPHS.':busy?'Reading the school website…':'Nothing from the school website yet. Check back soon.')+'</p></section>';return;}
   var kinds=GROUP[f][1],mine=function(it){return showAll||!gr||!it.grades||!it.grades.length||it.grades.indexOf(gr)>=0;};
   var L=v.items.filter(function(it){return mine(it)&&(!kinds||kinds.indexOf(it.kind)>=0);}),hidden=v.items.filter(function(it){return !mine(it);}).length;
@@ -192,6 +193,13 @@
   h+='<div class="sc-foot"><span>'+(gr?(showAll?'Showing every grade':'Showing '+gr+'th grade and everyone'+(hidden?' · '+hidden+' for other grades hidden':'')):'Set your grade in Settings to filter')+'</span>'+
    (gr?'<button type="button" data-scall>'+(showAll?'Just my grade':'All grades')+'</button>':'')+'</div></section>';
   box.innerHTML=h;}
+
+ // ---------- posts from PVPHS staff (app/staff.html), newest first, for this student's grade ----------
+ function posts(v,gr){var l=((v&&v.posts)||[]).filter(function(p){return !gr||!p.grades||!p.grades.length||p.grades.indexOf(gr)>=0;});if(!l.length)return '';
+  return '<div class="sc-posts"><h4 class="sc-day">From PVPHS staff</h4><ul class="sc-list">'+l.slice(0,5).map(function(p){var k=KIND[p.kind]||KIND.announcement;
+   return '<li class="sc-it hi" style="--sc:'+k[2]+'"><span class="sc-k" aria-hidden="true">'+k[0]+'</span><b class="sc-t">'+(p.link?'<a href="'+esc(p.link)+'" target="_blank" rel="noopener">'+esc(p.title)+'</a>':esc(p.title))+'</p>'+
+    '<span class="sc-m">'+esc([p.by,p.date?'Date: '+new Date(p.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):'',p.grades&&p.grades.length?p.grades.map(function(g){return g+'th';}).join(', '):''].filter(Boolean).join(' · '))+'</span>'+
+    (p.body?'<p class="sc-s">'+esc(p.body)+'</p>':'')+'</li>';}).join('')+'</ul></div>';}
 
  // ---------- urgent school items go into the task list (Focus and Calendar) ----------
  var URG={deadline:'form',no_school:'event',schedule:'event',drill:'event',exam:'test',testing:'test',election:'event'};

@@ -182,3 +182,35 @@ test('school page links are kept for the AI, bell schedule files found, bells an
     { date: '2026-10-21', schedule: 'Made up' }, { date: '2026-09-01', schedule: 'Regular' }], '2026-10-19', ['Regular']);
   assert.deepStrictEqual(days.map(d => [d.date, d.schedule]), [['2026-10-23', 'Regular'], ['2026-11-11', 'No school']]);
 });
+
+test('parent digest: overdue, week, tests, grade changes and finished work', () => {
+  const now = Date.parse('2026-10-22T19:00:00Z');
+  const s = { name: 'Alex Kim', updated: '2026-10-22T18:00:00Z', done: { d1: '2026-10-20T03:00:00Z' }, grades: [{ course: 'AP Bio', pct: 88.7, prev: 91 }, { course: 'Calc', pct: 94 }],
+    items: [{ id: 'o', title: 'Old', due: '2026-10-20', type: 'assignment' }, { id: 't', title: 'Unit 3 test', due: '2026-10-30', type: 'test', category: 'AP Bio' },
+      { id: 'w', title: 'Lab', due_sort: '2026-10-23T23:59:00-07:00', type: 'assignment' }, { id: 'd1', title: 'Done one', due: '2026-10-19' }, { id: 'x', title: 'Done too', due: '2026-10-21', status: 'done' }] };
+  const k = L.weekDigest(s, now);
+  assert.strictEqual(k.name, 'Alex');
+  assert.deepStrictEqual(k.overdue.map(r => r.title), ['Old']);
+  assert.deepStrictEqual(k.week.map(r => r.title), ['Lab']);
+  assert.deepStrictEqual(k.tests.map(r => r.title), ['Unit 3 test']);
+  assert.strictEqual(k.finished, 2);
+  const e = L.digestEmail('Dana Kim', [k], 'https://taskm-school.web.app/app');
+  assert.match(e.text, /Hi Dana,/);
+  assert.match(e.text, /AP Bio: 88.7% \(down from 91%\)/);
+  assert.doesNotMatch(e.text, /Calc:/);
+  assert.match(e.html, /Open TaskM/);
+});
+
+test('staff posts are cleaned; busy test days hide small grades and never name anyone', () => {
+  const p = L.toPost({ title: '  PSAT sign-up  closes Friday ', grades: [11, '11', 13], kind: 'deadline', date: '2026-10-30', link: 'javascript:alert(1)' }, 'Ms. Lee', '2026-10-22');
+  assert.deepStrictEqual([p.title, p.grades, p.kind, p.until, p.link], ['PSAT sign-up closes Friday', [11], 'deadline', '2026-10-30', null]);
+  assert.strictEqual(L.toPost({ title: 'Hi' }, 'x', '2026-10-22'), null);
+  assert.strictEqual(L.toPost({ title: 'Assembly news', grades: [9, 10, 11, 12] }, 'x', '2026-10-22').until, '2026-11-05');
+  const now = Date.parse('2026-10-22T19:00:00Z');
+  const kid = (g, tests) => ({ grade: String(g), name: 'Secret Name', items: tests.map((d, i) => ({ id: 'i' + i, title: 'T', type: 'test', due: d })) });
+  const list = [...Array(5)].map(() => kid(11, ['2026-10-27', '2026-10-27'])).concat([kid(9, ['2026-10-27'])]);
+  const r = L.busyDays(list, now);
+  assert.deepStrictEqual(r.rows, [{ date: '2026-10-27', grade: 11, students: 5, heavy: 5, tests: 10, of: 5 }]);
+  assert.strictEqual(r.students[9], 1);
+  assert.doesNotMatch(JSON.stringify(r), /Secret/);
+});
