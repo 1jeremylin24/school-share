@@ -450,5 +450,108 @@ function sortSchool(items) {
   return Object.values(by).sort((a, b) => (a.date ? 0 : 1) - (b.date ? 0 : 1) || String(a.date || '').localeCompare(String(b.date || '')) || a.title.localeCompare(b.title));
 }
 
+// ================= Parents, school staff and the school-wide view =================
+// A task's due day (YYYY-MM-DD, Pacific) from the shared summary a student's app publishes for linked parents
+function dueDay(i) {
+  if (!i) return null;
+  if (isYmd(i.due)) return i.due;
+  const t = Date.parse(i.due_sort || i.due || '');
+  return isNaN(t) ? null : ymdIn(new Date(t));
+}
+const isTest = i => i && (i.type === 'test' || i.type === 'quiz');
+// One student's week for the parent email: overdue, due in the next 7 days, tests in the next 14, grade changes, and what got done
+function weekDigest(s, now) {
+  if (!s || !Array.isArray(s.items)) return null;
+  const today = ymdIn(new Date(now)), wk = addDays(today, 7), two = addDays(today, 14), from = addDays(today, -7), done = s.done || {};
+  const isDone = i => i.status === 'done' || !!done[i.id];
+  const open = s.items.filter(i => i && i.id && !isDone(i)), dated = open.map(i => ({ i, d: dueDay(i) })).filter(x => x.d);
+  const by = (a, b) => a.d.localeCompare(b.d);
+  const row = x => ({ title: String(x.i.title || '').slice(0, 140), cls: String(x.i.category || '').slice(0, 60), day: x.d, type: x.i.type || 'assignment' });
+  const finished = s.items.filter(i => {
+    if (!i || !isDone(i)) return false;
+    const at = typeof done[i.id] === 'string' ? ymdIn(new Date(done[i.id])) : dueDay(i);
+    return at && at >= from && at <= today;
+  }).length;
+  return {
+    name: String(s.name || '').split(' ')[0] || 'Your student',
+    overdue: dated.filter(x => x.d < today).sort(by).map(row),
+    week: dated.filter(x => x.d >= today && x.d < wk).sort(by).map(row),
+    tests: dated.filter(x => isTest(x.i) && x.d >= today && x.d < two).sort(by).map(row),
+    grades: (s.grades || []).filter(g => g && g.course && typeof g.pct === 'number').map(g => ({ course: String(g.course).slice(0, 60), pct: g.pct, prev: typeof g.prev === 'number' ? g.prev : null, letter: g.letter || g.cl || null })),
+    finished, updated: s.updated || null, hours: s.hours && typeof s.hours.total === 'number' ? { total: s.hours.total, goal: s.hours.goal || null } : null,
+  };
+}
+// Plain-text and HTML email for one parent; kids = [weekDigest]
+function digestEmail(parentName, kids, appUrl) {
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const day = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const move = g => (g.prev == null || Math.abs(g.pct - g.prev) < 0.5 ? '' : g.pct > g.prev ? ` (up from ${g.prev}%)` : ` (down from ${g.prev}%)`);
+  const text = [], html = [];
+  const hi = parentName ? `Hi ${parentName.split(' ')[0]},` : 'Hi,';
+  text.push(hi, '', 'Here is the week ahead from TaskM.', '');
+  html.push(`<p>${esc(hi)}</p><p>Here is the week ahead from TaskM.</p>`);
+  for (const k of kids) {
+    const line = [k.overdue.length ? `${k.overdue.length} overdue` : null, `${k.week.length} due this week`, k.tests.length ? `${k.tests.length} test${k.tests.length > 1 ? 's and quizzes' : ' or quiz'} in the next 2 weeks` : null, `${k.finished} finished last week`].filter(Boolean).join(', ');
+    text.push(`${k.name}: ${line}.`);
+    html.push(`<h2 style="font:600 18px system-ui;margin:24px 0 4px">${esc(k.name)}</h2><p style="margin:0 0 12px;color:#444">${esc(line)}.</p>`);
+    const list = (title, rows) => {
+      if (!rows.length) return;
+      text.push('', title + ':', ...rows.slice(0, 8).map(r => `- ${day(r.day)}: ${r.title}${r.cls ? ' (' + r.cls + ')' : ''}`));
+      html.push(`<p style="margin:12px 0 4px;font-weight:600">${esc(title)}</p><ul style="margin:0;padding-left:18px">${rows.slice(0, 8).map(r => `<li>${esc(day(r.day))}: ${esc(r.title)}${r.cls ? ' <span style="color:#666">(' + esc(r.cls) + ')</span>' : ''}</li>`).join('')}</ul>`);
+    };
+    list('Overdue', k.overdue);
+    list('Tests and quizzes', k.tests);
+    list('Due this week', k.week.filter(r => !isTest(r)));
+    const moved = k.grades.filter(g => move(g));
+    if (moved.length) {
+      text.push('', 'Grade changes:', ...moved.map(g => `- ${g.course}: ${g.pct}%${move(g)}`));
+      html.push(`<p style="margin:12px 0 4px;font-weight:600">Grade changes</p><ul style="margin:0;padding-left:18px">${moved.map(g => `<li>${esc(g.course)}: ${esc(g.pct)}%${esc(move(g))}</li>`).join('')}</ul>`);
+    }
+    if (k.hours) text.push('', `Service hours: ${k.hours.total}${k.hours.goal ? ' of ' + k.hours.goal : ''}`);
+  }
+  text.push('', `Open TaskM: ${appUrl}`, '', 'You get this because you linked to a student in TaskM. To stop these emails, open TaskM and turn off "Weekly email".');
+  html.push(`<p style="margin:24px 0"><a href="${esc(appUrl)}" style="background:#5b5bd6;color:#fff;padding:10px 16px;border-radius:10px;text-decoration:none">Open TaskM</a></p><p style="color:#777;font-size:12px">You get this because you linked to a student in TaskM. To stop these emails, open TaskM and turn off “Weekly email”.</p>`);
+  return { text: text.join('\n'), html: `<div style="font:15px/1.5 system-ui;color:#111;max-width:560px">${html.join('')}</div>` };
+}
+// Staff announcements (posted from app/staff.html): cleaned and capped
+const POST_KINDS = ['announcement', 'deadline', 'counseling', 'college', 'testing', 'event', 'club', 'sports', 'schedule'];
+function toPost(x, by, today) {
+  const title = String((x && x.title) || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (title.length < 3) return null;
+  const grades = Array.isArray(x.grades) ? [...new Set(x.grades.map(Number).filter(g => SCHOOL_GRADES.includes(g)))].sort() : [];
+  const date = isYmd(x.date) && x.date >= today ? x.date : null;
+  const days = Math.min(60, Math.max(1, parseInt(x.days, 10) || 14));
+  return {
+    title, body: String(x.body || '').trim().slice(0, 800), kind: POST_KINDS.includes(x.kind) ? x.kind : 'announcement',
+    grades: grades.length === 4 ? [] : grades, date, until: date || addDays(today, days),
+    link: safeUrl(x.link || '') || null, by: String(by || 'PVPHS staff').slice(0, 80),
+  };
+}
+// The school-wide test calendar: per day and grade, how many TaskM students have a test or quiz, and how many have 2 or more.
+// No names, no classes, and a grade with fewer than MIN_GROUP students on TaskM is left out so nobody can be singled out.
+const MIN_GROUP = 5;
+function busyDays(summaries, now, days = 21) {
+  const today = ymdIn(new Date(now)), end = addDays(today, days), per = {}, size = {};
+  for (const s of summaries) {
+    const g = parseInt(s && s.grade, 10);
+    if (!SCHOOL_GRADES.includes(g) || !Array.isArray(s.items)) continue;
+    size[g] = (size[g] || 0) + 1;
+    const done = s.done || {}, mine = {};
+    for (const i of s.items) {
+      if (!isTest(i) || i.status === 'done' || done[i.id]) continue;
+      const d = dueDay(i);
+      if (d && d >= today && d < end) mine[d] = (mine[d] || 0) + 1;
+    }
+    for (const [d, n] of Object.entries(mine)) {
+      const k = d + '|' + g, c = per[k] || (per[k] = { date: d, grade: g, students: 0, heavy: 0, tests: 0 });
+      c.students++; c.tests += n; if (n >= 2) c.heavy++;
+    }
+  }
+  const rows = Object.values(per).filter(c => size[c.grade] >= MIN_GROUP).map(c => ({ ...c, of: size[c.grade] }));
+  rows.sort((a, b) => a.date.localeCompare(b.date) || a.grade - b.grade);
+  return { from: today, to: end, rows, students: Object.fromEntries(SCHOOL_GRADES.map(g => [g, size[g] || 0])), minGroup: MIN_GROUP };
+}
+
 module.exports = { isOwner, betaSummary, sourceKind, errorGroups, scrubError, TZ, ymdIn, weekdayIn, offsetOn, addDays, daysBetween, nextSchoolDay, hash, toItem, htmlToText, icsToTasks, safeUrl, combine, TYPES, toGrade, combineGrades, toEmail, MAIL_CATS, officeText, clipKey, clipLabel,
-  SCHOOL_KINDS, SCHOOL_GRADES, icsEvents, schoolEvents, toSchoolItem, sortSchool, edlioMain, linkText, bellFiles, toBells, toDays };
+  SCHOOL_KINDS, SCHOOL_GRADES, icsEvents, schoolEvents, toSchoolItem, sortSchool, edlioMain, linkText, bellFiles, toBells, toDays,
+  dueDay, weekDigest, digestEmail, POST_KINDS, toPost, busyDays, MIN_GROUP };

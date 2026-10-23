@@ -1840,7 +1840,7 @@ html.au-open,html.au-open body{overflow:hidden}
 .pv-over .tc-day{background:color-mix(in srgb,var(--high) 14%,transparent);color:var(--high)}
 .pv-done .tc-day{background:color-mix(in srgb,var(--low) 14%,transparent);color:var(--low)}
 .pv-done .pv-list b,.pv-done .pv-list a{color:var(--muted)}
-.pv-src{display:flex;gap:8px;margin:22px 0 0;font-size:13px;color:var(--muted)}
+.pv-src{display:flex;gap:8px;margin:22px 0 0;font-size:13px;color:var(--muted)}.tc-mv{margin-left:6px;font:600 12px var(--ns-body);font-style:normal}.tc-mv.up{color:var(--low,#16a34a)}.tc-mv.dn{color:var(--high,#dc2626)}.pv-priv{display:flex;gap:8px;margin:10px 0 0;font-size:13px;color:var(--muted)}.pv-wk{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px}.pv-wkc{margin-top:18px}.pv-wk label{display:flex;align-items:center;gap:8px;font-size:14px}.pv-wk input{width:18px;height:18px;accent-color:var(--accent)}.tc-hrs{display:grid;gap:10px}.tc-hrbar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.tc-hrbar i{display:block;height:100%;background:var(--accent);border-radius:inherit}.tc-hrlog{list-style:none;margin:0;padding:0;display:grid;gap:6px}.tc-hrlog li{display:flex;align-items:center;gap:10px;font-size:14px}.tc-hrlog li span{flex:1;min-width:0}.tc-hrlog small{color:var(--muted)}.tc-row.tc-hrf{display:grid;grid-template-columns:minmax(0,2fr) 150px 90px auto;gap:8px;align-items:center}@media (max-width:600px){.tc-row.tc-hrf{grid-template-columns:minmax(0,1fr) 92px}.tc-row.tc-hrf input:first-child,.tc-row.tc-hrf button{grid-column:1/-1}}.tc-hrf input{min-width:0}
 .pv-src .tc-i{margin-top:3px}
 .pv-load{display:flex;align-items:center;gap:10px;margin:24px 0;color:var(--muted)}
 .tc-spin{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:au-spin .7s linear infinite}
@@ -3788,8 +3788,16 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var nx=T.items.filter(function(it){return open(it)&&it.days_remaining>1&&(it.type==='test'||it.type==='quiz');}).sort(function(a,b){return a.days_remaining-b.days_remaining;})[0];
   var tail=(T3.length?'Your top 3 tonight are a head start. ':'')+(nx?'Next up: '+esc(nx.title)+', '+esc(nice(dayOf(nx)))+'.':T3.length?'':'Nothing is due tomorrow.');
   return '<p class="tt-none tt-clear">'+ic('check',16)+'<span><b>All clear for tomorrow.</b> '+tail+'</span></p>';}
+ // “done by 9:20 PM” if you start now (evenings only, so a morning look doesn't promise a 9 AM finish)
+ function doneBy(m){var n=new Date();if(m<=0||n.getHours()<14)return '';var e=new Date(n.getTime()+m*60000);return ' · done by '+e.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
+ // a heavy day (2+ tests or quizzes) 2 to 6 days out: say so now and name something to start tonight
+ function heavyAhead(){var by={};T.items.forEach(function(it){var d=it.days_remaining;if(!openTask(it)||T.swHidden(it)||d==null||d<2||d>6||!(it.type==='test'||it.type==='quiz'||it.type==='project'))return;(by[d]=by[d]||[]).push(it);});
+  var d=Object.keys(by).map(Number).sort(function(a,b){return a-b;}).filter(function(k){return by[k].length>=2;})[0];if(d==null)return '';
+  var L=by[d],dt=new Date();dt.setDate(dt.getDate()+d);
+  return '<div class="tt-heads">'+ic('bell',15)+'<span><b>'+esc(DOW[dt.getDay()])+' looks heavy:</b> '+L.length+(L.every(function(it){return it.type!=='project';})?' tests and quizzes':' tests and big deadlines')+'. '+(L[0].type==='project'?'Start ':'Start studying for ')+esc(L[0].title)+' tonight.</span></div>';}
  function renderPlan(){var L=tonightItems(),T3=top3ids().map(byId).filter(Boolean),tot=L.concat(T3).reduce(function(s,it){return s+est(it);},0),f=focusedToday(),pct=tot?Math.min(100,Math.round(100*f/tot)):0,H=heads(),S=schoolSoon(),calm=!!jl(RK,0);
-  plan.innerHTML='<div class="tt-hd"><div><h3>Tonight</h3><small>'+(T3.length?'After your top 3':'Your plan')+(f?' · '+fmtMin(f)+' focused':'')+'</small></div><span class="tt-tot" title="Your top 3 plus this list">'+(tot?'≈ '+fmtMin(tot)+' total':'')+'</span></div>'+
+  plan.innerHTML='<div class="tt-hd"><div><h3>Tonight</h3><small>'+(T3.length?'After your top 3':'Your plan')+(f?' · '+fmtMin(f)+' focused':'')+'</small></div><span class="tt-tot" title="Your top 3 plus this list">'+(tot?'≈ '+fmtMin(tot)+' total'+doneBy(tot-f):'')+'</span></div>'+
+   heavyAhead()+
    (H.length?'<div class="tt-heads">'+ic('bell',15)+'<span><b>'+esc(H[0].days_remaining===0?'Today':H[0].days_remaining===1?'Tomorrow':'In 2 days')+':</b> '+esc(H[0].title)+' · '+esc(H[0].category)+(H.length>1?' <i>+'+(H.length-1)+' more</i>':'')+'</span></div>':'')+
    (S.length?'<div class="tt-heads sd">'+ic('cal',15)+'<span><b>'+esc(S[0].days_remaining===0?'Today':S[0].days_remaining===1?'Tomorrow':DOW[kd(S[0].due_sort.slice(0,10)).getDay()])+':</b> '+esc(S[0].title)+(S.length>1?' <i>+'+(S.length-1)+' more</i>':'')+'</span></div>':'')+
    (L.length?'<div class="tt-pl">'+L.map(function(it){return '<div class="tt-pr tm-item" data-id="'+esc(it.id)+'"><label class="tt-cbw"><input type="checkbox" class="done-cb dk-cb" data-id="'+esc(it.id)+'" aria-label="Mark done: '+esc(it.title)+'"></label>'+
@@ -3820,7 +3828,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  var opts=document.createElement('div');opts.className='tt-opts';
  function renderOpts(){setTimeout(function(){if(window.TaskMSync&&TaskMSync.paint)TaskMSync.paint(opts);},0);var calm=root.hasAttribute('data-calm'),rem=!!jl(RK,0),perm=canNotify()?Notification.permission:'unsupported';
   opts.innerHTML='<label class="tt-sw"><input type="checkbox" data-opt="calm"'+(calm?' checked':'')+'><span class="tt-tg" aria-hidden="true"></span>'+ic('moon',15)+'<span>Calm mode <small>no moving background or animation</small></span></label>'+
-   (perm==='unsupported'?'':'<label class="tt-sw"><input type="checkbox" data-opt="remind"'+(rem&&perm==='granted'?' checked':'')+'><span class="tt-tg" aria-hidden="true"></span>'+ic('bell',15)+'<span>Test reminders <small>'+(perm==='denied'?'blocked in your browser settings':'the evening before, while TaskM is open')+'</small></span></label>');}
+   (perm==='unsupported'?'':'<label class="tt-sw"><input type="checkbox" data-opt="remind"'+(rem&&perm==='granted'?' checked':'')+'><span class="tt-tg" aria-hidden="true"></span>'+ic('bell',15)+'<span>Test reminders <small>'+(perm==='denied'?'notifications are off for TaskM; turn them on in your browser’s site settings':'the evening before, while TaskM is open')+'</small></span></label>');}
  opts.addEventListener('change',function(e){var i=e.target;if(i.dataset.opt==='calm'){try{if(i.checked)localStorage.setItem(CK,'1');else localStorage.removeItem(CK);}catch(x){}setCalm(i.checked);toast(i.checked?'Calm mode on':'Calm mode off');}
   if(i.dataset.opt==='remind'){if(!i.checked){js(RK,0);return;}
    Notification.requestPermission().then(function(p){js(RK,p==='granted'?1:0);renderOpts();toast(p==='granted'?'You’ll get a reminder the evening before tests':'Reminders need notification permission');remindCheck();});}});
@@ -4566,8 +4574,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   var gap=editable&&list.some(function(g){return g.manual;}),cv=curves();
   return '<ul class="tc-grades">'+list.map(function(g){var L=letterFor(g),c=cv[ckey(g.course)],why=g.letter?'Letter from '+g.source:c?'Curved: A from '+c.A+'%':g.cl?'Curved':g.source;
    return '<li><i class="tc-lg tc-lg-'+esc(L.charAt(0).toLowerCase())+'" aria-hidden="true">'+esc(L)+'</i><span><b>'+esc(g.course)+'</b><small>'+esc(why)+(g.graded?' · '+g.graded+' graded':'')+'</small></span>'+
-   (g.pct!=null?'<em class="tc-pct">'+esc(g.pct)+'<small>%</small></em>':'')+(editable&&!g.letter?'<button type="button" class="tc-linkbtn tc-curvebtn" data-curve="'+esc(g.course)+'">'+(c?'Curve':'Curved?')+'</button>':'')+
+   (g.pct!=null?'<em class="tc-pct">'+esc(g.pct)+'<small>%</small>'+mv(g)+'</em>':'')+(editable&&!g.letter?'<button type="button" class="tc-linkbtn tc-curvebtn" data-curve="'+esc(g.course)+'">'+(c?'Curve':'Curved?')+'</button>':'')+
    (editable&&g.manual?'<button type="button" class="tc-x" data-delgrade="'+esc(g.course)+'" aria-label="Remove '+esc(g.course)+'">'+ico('x')+'</button>':gap?'<i class="tc-xs" aria-hidden="true"></i>':'')+'</li>';}).join('')+'</ul>';}
+ // up/down since about a week ago (the student's app keeps a short history; see gradeHist)
+ function mv(g){if(typeof g.prev!=='number'||typeof g.pct!=='number'||Math.abs(g.pct-g.prev)<0.5)return '';var up=g.pct>g.prev,d=Math.round(Math.abs(g.pct-g.prev)*10)/10;
+  return '<i class="tc-mv '+(up?'up':'dn')+'" title="'+(up?'Up':'Down')+' '+d+' points since last week">'+(up?'▲':'▼')+' '+d+'</i>';}
  function curveForm(course){var c=curves()[ckey(course)]||{A:90,B:80,C:70,D:60};
   return '<form class="tc-curve" data-tc="curve" data-course="'+esc(course)+'"><p><b>'+esc(course)+'</b>: lowest percent for each letter</p><div class="tc-cuts">'+
    ['A','B','C','D'].map(function(k){return '<label>'+k+'<input type="number" inputmode="decimal" min="0" max="120" step="0.5" value="'+esc(c[k])+'" name="'+k+'"></label>';}).join('')+
@@ -4583,9 +4594,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
  // ---- shared summary for linked parents
  var pubT=null,lastPub='';
+ // one reading per class per day, kept for 5 weeks, so parents can see which way a grade moved
+ function gradeHist(gl){var h=jl('taskm-grade-hist',{}),t=new Date().toISOString().slice(0,10),old=new Date(Date.now()-6*DAY).toISOString().slice(0,10),cut=new Date(Date.now()-35*DAY).toISOString().slice(0,10);
+  var out=gl.map(function(g){if(typeof g.pct!=='number')return g;var k=ckey(g.course),l=(h[k]||[]).filter(function(x){return x.d>=cut;});
+   if(!l.length||l[l.length-1].d!==t)l.push({d:t,p:g.pct});else l[l.length-1].p=g.pct;h[k]=l;
+   var before=l.filter(function(x){return x.d<=old;}).pop();return before?Object.assign({},g,{prev:before.p}):g;});
+  js('taskm-grade-hist',h);return out;}
  function summary(){var im=imports(),items=[];
   JSON.parse((orgEl&&orgEl.textContent)||'[]').concat(jl('taskm-added',[])).forEach(function(i){if(i&&i.id)items.push({id:i.id,title:i.title,type:i.type,category:i.category,due:i.due,due_sort:i.due_sort,status:i.status,importance:i.importance,link:i.link||null,source:i.source||'Added by student'});});
-  var p=A.profile||{};return {name:p.name||'',school:p.school||'',grade:p.grade||'',items:items,done:jl('taskm-done',{}),grades:grades().map(function(g){return curves()[ckey(g.course)]&&!g.letter?Object.assign({},g,{cl:letterFor(g)}):g;}),
+  var p=A.profile||{};return {name:p.name||'',school:p.school||'',grade:p.grade||'',items:items,done:jl('taskm-done',{}),grades:gradeHist(grades()).map(function(g){return curves()[ckey(g.course)]&&!g.letter?Object.assign({},g,{cl:letterFor(g)}):g;}),hours:hoursSum(),seen:new Date().toISOString().slice(0,10),
    sources:Object.keys(im).map(function(k){return {kind:k,at:im[k].at};})};}
  function publishSoon(){if(!A.uid||A.demo||(A.profile&&A.profile.role==='parent'))return;clearTimeout(pubT);pubT=setTimeout(function(){var s=summary(),h=JSON.stringify(s);if(h===lastPub)return;lastPub=h;
   s.updated=new Date().toISOString();db('users/'+A.uid+'/shared',{method:'PUT',body:s}).catch(function(){lastPub='';});},1500);}
@@ -4991,11 +5008,27 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   if(em){var d=document.getElementById('debriefPanel');if(!d){d=document.createElement('section');d.id='debriefPanel';d.className='panel tc-panel';em.insertBefore(d,em.firstChild);}d.innerHTML=debriefs();paintMail();}
   if(lv){var gv=document.getElementById('gradesView'),g=document.getElementById('gradesPanel'),nu=document.getElementById('nextUp');
    if(!g){g=document.createElement('section');g.id='gradesPanel';g.className='panel tc-panel';if(gv)gv.appendChild(g);else lv.insertBefore(g,nu?nu.nextSibling:lv.firstChild);}
-   aiPanel(lv,gv?(nu?nu.nextSibling:null):g);setupPanel();var gl=grades();
+   aiPanel(lv,gv?(nu?nu.nextSibling:null):g);setupPanel();var gl=gradeHist(grades());
    g.innerHTML=hd('Grades',gl.some(function(x){return !x.manual;})?'Updated by itself from your grades page. Tap Curved? if a class is curved.':'From your connected classes')+gradeRows(gl,true)+
     (gl.some(function(x){return !x.manual;})?'':'<p class="tc-progt"><button type="button" class="tt-btn" data-tmconnect>Connect your grades page</button></p>')+
     '<details class="tc-addg"><summary>'+ico('plus')+'Add a grade yourself</summary><form class="tc-row" data-tc="addgrade"><input type="text" placeholder="Class name" aria-label="Class" autocapitalize="words" enterkeyhint="next">'+
-    '<input type="number" inputmode="decimal" min="0" max="120" step="0.1" placeholder="%" aria-label="Grade percent" class="tc-pctin" enterkeyhint="done"><button type="submit" class="tt-btn">Add</button></form></details>'+whatIf(gl);}}
+    '<input type="number" inputmode="decimal" min="0" max="120" step="0.1" placeholder="%" aria-label="Grade percent" class="tc-pctin" enterkeyhint="done"><button type="submit" class="tt-btn">Add</button></form></details>'+whatIf(gl);
+   var hp=document.getElementById('hoursPanel');if(!hp){hp=document.createElement('section');hp.id='hoursPanel';hp.className='panel tc-panel';g.parentNode.insertBefore(hp,g.nextSibling);}hp.innerHTML=hoursPanel();}}
+ // ---- service hours (NHS, CSF, clubs): a running log and a goal. Saved on this device and shared with linked parents as a total.
+ var HK='taskm-hours';
+ function hoursData(){var v=jl(HK,null);return v&&Array.isArray(v.log)?v:{goal:null,log:[]};}
+ function hoursSum(){var v=hoursData(),t=v.log.reduce(function(a,x){return a+(+x.h||0);},0);return v.log.length||v.goal?{total:Math.round(t*10)/10,goal:v.goal||null}:null;}
+ function hoursPanel(){var v=hoursData(),s=hoursSum()||{total:0},pct=v.goal?Math.min(100,Math.round(100*s.total/v.goal)):0,log=v.log.slice().sort(function(a,b){return a.d<b.d?1:-1;});
+  return hd('Service hours',v.goal?s.total+' of '+v.goal+' hours'+(s.total>=v.goal?' · goal reached':''):'For NHS, CSF, clubs or volunteering')+'<div class="tc-hrs">'+
+   (v.goal?'<div class="tc-hrbar" role="img" aria-label="'+pct+'% of your goal"><i style="width:'+pct+'%"></i></div>':'')+
+   (log.length?listOf('tc-hrlog',log,function(x){return '<li><span><b>'+esc(x.what||'Volunteering')+'</b> <small>'+esc(new Date(x.d+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}))+'</small></span><small>'+esc(x.h)+' h</small><button type="button" class="tc-x" data-delhr="'+esc(x.id)+'" aria-label="Remove">'+ico('x')+'</button></li>';},5):'<p class="tc-empty">Log each time you volunteer and TaskM adds it up.</p>')+
+   '<form class="tc-row tc-hrf" data-tc="addhr"><input type="text" placeholder="What you did" aria-label="What you did" autocapitalize="sentences" enterkeyhint="next"><input type="date" aria-label="Date" value="'+new Date().toISOString().slice(0,10)+'"><input type="number" inputmode="decimal" min="0.25" max="24" step="0.25" placeholder="Hours" aria-label="Hours"><button type="submit" class="tt-btn">Log</button></form>'+
+   '<details class="tc-addg"><summary>'+ico('chart')+(v.goal?'Change your goal':'Set a goal')+'</summary><form class="tc-row" data-tc="hrgoal"><input type="number" inputmode="numeric" min="1" max="500" placeholder="Hours needed, like 20" aria-label="Goal in hours" value="'+(v.goal||'')+'"><button type="submit" class="tt-btn">Save</button></form></details></div>';}
+ document.addEventListener('submit',function(e){var f=e.target.closest&&e.target.closest('form[data-tc="addhr"],form[data-tc="hrgoal"]');if(!f)return;e.preventDefault();e.stopPropagation();var ins=f.querySelectorAll('input'),v=hoursData();
+  if(f.dataset.tc==='hrgoal'){var gv=parseInt(ins[0].value,10);v.goal=gv>0?gv:null;}
+  else{var h=parseFloat(ins[2].value);if(!(h>0)){toast('Add how many hours');return;}v.log.push({id:Date.now().toString(36),what:ins[0].value.trim().slice(0,80),d:ins[1].value||new Date().toISOString().slice(0,10),h:Math.round(h*100)/100});toast('Logged '+h+' h');}
+  js(HK,v);paintStudent();publishSoon();},true);
+ document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-delhr]');if(!b)return;var v=hoursData();v.log=v.log.filter(function(x){return x.id!==b.dataset.delhr;});js(HK,v);paintStudent();publishSoon();});
  // “what do I need on the final?”: grade now, how much the final counts, and the grade you want
  function whatIf(gl){var cur=gl.filter(function(x){return x.pct!=null&&!isNaN(x.pct);});
   return '<details class="tc-addg tc-wi"><summary>'+ico('chart')+'What do I need on the final?</summary><div class="tc-wif" data-whatif>'+
@@ -5038,6 +5071,16 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   return '<li'+(t?' data-day="'+dkey(t)+'"':'')+'>'+(t?'<i class="tc-day"><small>'+esc(t.toLocaleDateString(undefined,{weekday:'short'}))+'</small><b>'+t.getDate()+'</b></i>':'<i class="tc-day tc-nod">'+ico('pen')+'</i>')+
    '<span>'+(i.link?'<a href="'+esc(i.link)+'" target="_blank" rel="noopener">'+esc(i.title)+'</a>':'<b>'+esc(i.title)+'</b>')+'<small>'+esc(i.category||'')+(extra?(i.category?' · ':'')+esc(extra):'')+'</small></span></li>';}
  function hello(){var h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
+ // “today 6:50 AM”, “yesterday 11:44 PM” or “Oct 20”, so a parent can tell how fresh it is
+ function whenAt(t){var d=new Date(t);if(isNaN(d))return '';var y=new Date();y.setDate(y.getDate()-1);var tm=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  return d.toDateString()===new Date().toDateString()?'today '+tm:d.toDateString()===y.toDateString()?'yesterday '+tm:d.toLocaleDateString([],{month:'short',day:'numeric'});}
+ function opened(day,kn){if(!day)return '';var n=Math.round((new Date(new Date().toISOString().slice(0,10))-new Date(day))/DAY);return n<=0?kn+' opened TaskM today':n===1?kn+' opened TaskM yesterday':kn+' last opened TaskM '+n+' days ago';}
+ // the Sunday email: on unless the parent turns it off (profile.weeklyEmail=false); functions/index.js parentWeekly sends it
+ function weeklyCard(){if(preview)return '<section class="tc-card pv-wkc">'+hd('Weekly email','Sundays at 5 PM')+'<p class="tc-p">Every Sunday you get this week’s homework, tests, grade changes and what got done, by email.</p></section>';
+  var on=!(A.profile&&A.profile.weeklyEmail===false);
+  return '<section class="tc-card pv-wkc">'+hd('Weekly email','Sundays at 5 PM')+'<p class="tc-p">A short summary of the week ahead: what’s due, tests, grade changes and what got finished.</p>'+
+   '<div class="pv-wk"><label><input type="checkbox" data-pvweekly'+(on?' checked':'')+'> Email me every Sunday</label></div></section>';}
+ document.addEventListener('change',function(e){var i=e.target;if(!i.hasAttribute||!i.hasAttribute('data-pvweekly'))return;A.saveProfile({weeklyEmail:i.checked}).then(function(){toast(i.checked?'You’ll get a summary every Sunday':'Weekly email turned off');},function(x){i.checked=!i.checked;toast(x.message||'Couldn’t save that');});});
  function card(cls,t,sub,body){return '<section class="tc-card'+(cls?' '+cls:'')+'">'+hd(t,sub)+body+'</section>';}
  function paintParent(){var v=document.getElementById('parentView');if(!v){v=document.createElement('div');v.id='parentView';document.body.appendChild(v);}
   var ids=Object.keys(kids),p=A.profile||{},first=(p.name||'').split(' ')[0],ti=document.querySelector('link[rel="apple-touch-icon"]');
@@ -5056,16 +5099,18 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    var parts=[];if(over.length)parts.push('<b class="pv-hi">'+over.length+' overdue</b>');parts.push(week.length?'<b>'+week.length+' due this week</b>':'nothing due this week');
    if(tests.length)parts.push('<b>'+(tests.length>1?tests.length+' tests and quizzes':'1 '+(tests[0].type==='quiz'?'quiz':'test'))+'</b> coming up');
    var one=function(i){return li(i);};
-   h+='<p class="pv-meta">'+[s.school,s.grade?'Grade '+s.grade:'',s.updated?'Updated '+shortDay(s.updated):''].filter(Boolean).map(esc).join(' · ')+'</p>'+
+   h+='<p class="pv-meta">'+[s.school,s.grade?'Grade '+s.grade:'',s.updated?'Updated '+whenAt(s.updated):'',opened(s.seen,kn)].filter(Boolean).map(esc).join(' · ')+'</p>'+
     '<p class="pv-sum">'+(!over.length&&!week.length&&!tests.length?esc(kn)+' is all caught up. <em>Nothing due this week.</em>':esc(kn)+' has '+andList(parts)+'.')+'</p>'+rail(open,today)+
     '<div class="pv-grid">'+
      (over.length?card('pv-over','Overdue','Past the due date and not checked off',listOf('pv-list',over,one)):'')+
      card('','Due this week','Next 7 days',week.length?listOf('pv-list',week,one):'<p class="tc-empty">Nothing due this week.</p>')+
      card('','Tests and quizzes','Next 2 weeks',tests.length?listOf('pv-list',tests,function(i){return li(i,i.type==='quiz'?'Quiz':'Test');}):'<p class="tc-empty">None in the next 2 weeks.</p>')+
-     card('','Grades','From their connected classes',gradeRows(s.grades||[],false))+
+     card('','Grades',(s.grades||[]).some(function(g){return typeof g.prev==='number';})?'Arrows show the change since last week':'From their connected classes',(s.grades||[]).length?gradeRows(s.grades,false):'<p class="tc-empty">No grades yet. Ask '+esc(kn)+' to open their Aeries grades page once with the TaskM Chrome button or the iPhone app. After that, grades update on their own.</p>')+
+     (s.hours?card('','Service hours',s.hours.goal?s.hours.total+' of '+s.hours.goal+' hours':s.hours.total+' hours logged','<div class="tc-hrbar"><i style="width:'+(s.hours.goal?Math.min(100,Math.round(100*s.hours.total/s.hours.goal)):100)+'%"></i></div>'):'')+
      card('pv-done','Recently finished','Checked off',fin.length?listOf('pv-list',fin,one,5):'<p class="tc-empty">Nothing checked off yet.</p>')+
     '</div><p class="pv-src">'+ico('link',14)+'<span>'+((s.sources||[]).length?'From '+andList((s.sources||[]).map(function(x){return esc(x.kind==='teams'?'Microsoft Teams':x.kind==='classroom'?'Google Classroom':x.kind)+' (checked '+esc(shortDay(x.at))+')';}))+'.':
-     'This only shows tasks '+esc(kn)+' adds. Ask them to connect Google Classroom or Teams so homework comes in on its own.')+'</span></p>';}
+     'This only shows tasks '+esc(kn)+' adds. Ask them to connect their classes in TaskM so homework comes in on its own.')+'</span></p>'+
+    '<p class="pv-priv">'+ico('lock',14)+'<span>You see due dates, tests, grades and what’s checked off. You don’t see '+esc(kn)+'’s notes, email or school passwords, and '+esc(kn)+' can unlink you any time.</span></p>'+weeklyCard();}
   var form='<form class="tc-row" data-tc="redeem"><input type="text" class="tc-codein" placeholder="ABCD-1234" aria-label="Invite code" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="9" enterkeyhint="go"><button type="submit" class="tt-btn tc-pri">Link</button></form>';
   if(!ids.length)h+='<section class="tc-card pv-first"><h2 class="pv-lh">Link your <em>student.</em></h2><ol class="pv-steps"><li>On their TaskM, they open <b>Settings</b> and tap <b>Invite a parent</b>.</li><li>Type the code they get here. It works for 7 days.</li></ol>'+form+'<p class="pv-ex"><button type="button" class="tc-linkbtn" data-pvexample>See an example first</button></p></section>';
   else if(!preview)h+='<details class="pv-add"><summary>'+ico('plus')+'Add another student</summary>'+form+'</details>';
@@ -5101,7 +5146,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    {id:'pvd1',title:'Lab safety contract',type:'form',category:'AP Biology',due:d(-1),status:'done'},{id:'pvd2',title:'3.6 homework: chain rule',type:'assignment',category:'AP Calculus BC',due:d(-1),status:'done'});
   preview=true;kids={sample:{name:'Alex'}};cur='sample';
   sums={sample:{name:'Alex',school:'Palos Verdes Peninsula High School',grade:'11',updated:now,items:items,done:{},sources:[{kind:'teams',at:now},{kind:'OneNote',at:now}],
-   grades:[{course:'AP Calculus BC',pct:94.2,source:'Aeries',graded:18},{course:'AP Biology',pct:88.7,source:'Aeries',graded:12},{course:'AP English Language',pct:91.5,source:'Aeries',graded:9},{course:'Spanish 3',pct:97.1,source:'Aeries',graded:15}]}};
+   seen:new Date().toISOString().slice(0,10),hours:{total:14.5,goal:20},grades:[{course:'AP Calculus BC',pct:94.2,prev:92.8,source:'Aeries',graded:18},{course:'AP Biology',pct:88.7,prev:90.1,source:'Aeries',graded:12},{course:'AP English Language',pct:91.5,source:'Aeries',graded:9},{course:'Spanish 3',pct:97.1,source:'Aeries',graded:15}]}};
   r.classList.add('taskm-parent');paintParent();window.scrollTo(0,0);};
  document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('[data-pvexit]'))A.previewParent(false);else if(e.target.closest&&e.target.closest('[data-pvexample]'))A.previewParent(true);});
 
